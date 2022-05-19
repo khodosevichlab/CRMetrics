@@ -1,12 +1,25 @@
----
-title: "Inspiration for CRMetrics"
-output: github_document
----
+Inspiration for CRMetrics
+================
 
 ## Setup
-```{r setup, echo=T}
+
+``` r
 library(magrittr)
 library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
 library(ggplot2)
 library(ggbeeswarm)
 source("http://pklab.med.harvard.edu/rasmus/scRNA_helper.R")
@@ -29,14 +42,16 @@ comp <- list(c("CTRL","MSA"),
 pal <- "pearl_earring"
 ```
 
-This is just to show examples of plots. Here, I have three groups and I've alreaded collected the metrics data in a separate file (manually)
-```{r}
+This is just to show examples of plots. Here, I have three groups and
+I’ve alreaded collected the metrics data in a separate file (manually)
+
+``` r
 dat <- read.table("/data/PD-MSA_lentiform_nucleus/rasmus/Sample summary.csv", sep=";", dec=".", header=T)[-31,]
 ```
 
 ## Plots
 
-```{r}
+``` r
 sex.plot <- table(dat$Group, dat$Sex) %>%
   data.frame %>% 
   setNames(c("Group","Sex","Freq")) %>%
@@ -48,11 +63,15 @@ sex.plot <- table(dat$Group, dat$Sex) %>%
     scale_fill_dutchmasters(palette = pal)
 
 sex.plot
+```
 
+![](inspiration_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
+``` r
 # Needs statistics
 ```
 
-```{r}
+``` r
 cells.plot <- ggplot(dat, aes(Group, Cells, col=Group)) + 
   geom_quasirandom(size=3) + 
   mod + 
@@ -66,16 +85,20 @@ cells.plot <- ggplot(dat, aes(Group, Cells, col=Group)) +
 cells.plot
 ```
 
-```{r}
+![](inspiration_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
 cowplot::plot_grid(plotlist = list(
   sex.plot,
   cells.plot
 ), ncol=2)
 ```
 
+![](inspiration_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
 ## Load count matrices
 
-```{r eval=FALSE, include=T}
+``` r
 samples <- dir(path="/data/PD-MSA_lentiform_nucleus/counts_premrna/") %>%
   .[-grep("FAIL",.)]
 
@@ -89,4 +112,3 @@ cms <- samples %>%
 
 # cms <- renameCols(cms, names)
 ```
-
