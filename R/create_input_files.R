@@ -25,7 +25,8 @@ dat <-
 
 metadata <- dat %>%
   select(Sample, Group, Sex) %>%
-  rename_with(tolower)
+  rename_with(tolower) %>%
+  mutate(sample = gsub("([A-Z]+)([0-9]+)", "\\1_\\2", sample))
 
 # save metadata file
 write.csv(metadata, "../data/metadata.csv", row.names = F)
