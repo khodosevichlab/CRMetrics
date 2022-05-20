@@ -10,7 +10,6 @@
 .libPaths(c("~/R/x86_64-redhat-linux-gnu-library/4.1", .libPaths()))
 
 library(tidyverse)
-library(surveillance)
 
 
 ######### metadata
@@ -70,3 +69,54 @@ metrics <- metrics %>%
 # save metrics summary for all samples
 write.csv(metrics, "../data/metrics_summary.csv", row.names = F)
 
+
+######## detailed metrics
+
+cmsFiltered <- samples %>%
+  lapply(function(x) {
+    paste0(
+      "/data/PD-MSA_lentiform_nucleus/counts_premrna/",
+      x,
+      "/outs/filtered_feature_bc_matrix"
+    )
+  }) %>%
+  setNames(samples) %>%
+  pagoda2::read.10x.matrices(n.cores = 10, version = "V2")
+
+
+metricsDetailed <- list()
+for (i in seq(length(samples))) {
+  # count UMIs
+  totalUMI <- as.data.frame(Matrix::colSums(cmsFiltered[[i]]))
+  
+  colnames(totalUMI) <- c("value")
+  totalUMI["metric"] <- "UMI_count"
+  totalUMI["barcode"] <- rownames(totalUMI)
+  
+  # count genes (all genes != 0)
+  cmsFilteredBinary <- cmsFiltered
+  cmsFilteredBinary[[i]][cmsFilteredBinary[[i]] != 0] = 1
+  
+  totalGenes <-
+    as.data.frame(Matrix::colSums(cmsFilteredBinary[[i]]))
+  
+  colnames(totalGenes) <- c("value")
+  totalGenes["metric"] <- "gene_count"
+  totalGenes["barcode"] <- rownames(totalGenes)
+  
+  metricsDetailedSample <- rbind(totalUMI, totalGenes) %>%
+    mutate(sample = samples[i])
+  
+  # make a list of dataframes
+  metricsDetailed[[i]] <- metricsDetailedSample
+}
+
+# concat all dataframes
+# rbind on the go is super slow
+metricsDetailed <- do.call(rbind, metricsDetailed)
+
+# reorder columns
+metricsDetailed <-
+  metricsDetailed[, c("sample", "barcode", "metric", "value")]
+
+write.csv(metricsDetailed, "../data/metrics_detailed.csv", row.names = F)
