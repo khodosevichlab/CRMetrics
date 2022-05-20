@@ -26,7 +26,9 @@ dat <-
 metadata <- dat %>%
   select(Sample, Group, Sex) %>%
   rename_with(tolower) %>%
-  mutate(sample = gsub("([A-Z]+)([0-9]+)", "\\1_\\2", sample))
+  mutate(sample = gsub("([A-Z]+)([0-9]+)", "\\1_\\2", sample)) %>%
+  # this is resolving the sample and directory names fully
+  mutate(sample = str_replace_all(sample, c("PD_1376" = "PD_K1376", "PD_1411" = "PD_K1411", "PD_1449" = "PD_K1449", "PD_1469" = "PD_K1469")))
 
 # save metadata file
 write.csv(metadata, "../data/metadata.csv", row.names = F)
