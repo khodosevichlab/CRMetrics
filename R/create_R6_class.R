@@ -8,6 +8,10 @@
 .libPaths(c("~/R/x86_64-redhat-linux-gnu-library/4.1", .libPaths()))
 library(R6)
 library(tidyverse)
+library(ggbeeswarm)
+# devtools::install_github("EdwinTh/dutchmasters")
+library(dutchmasters)
+library(ggpubr)
 
 
 ########
@@ -116,6 +120,19 @@ create_comp <- function(comp_group, metadata) {
   comp <- as.list(as.data.frame(comp))
   return(comp)
 }
+
+###########
+# For pretty plots
+
+## Mod
+mod <- theme(panel.background = element_rect(fill = "white", colour = "black", size = 1, linetype = "solid"),
+             panel.grid.major = element_blank(),
+             panel.grid.minor = element_blank(),
+             legend.position = "none")
+
+## Pallette
+pal <- "pearl_earring"
+
 
 #########
 # R6 class
