@@ -111,7 +111,31 @@ read_detailed_metrics <- function(samples, data_path) {
 #########
 # R6 class
 
-# this needs a lot more validation
+# logic of the class:
+# initialize: load metadata file and summary statistics
+#   metadata file must at least have a column with sample names
+#   sample names in metadata must match with directory names from Cell Ranger output
+#   failed samples are excluded with a warning
+
+# metadata file could be optional
+# if no metadata, make all plots with the samples on x-axis
+# potentially little informative 
+# function to add metadata as a data frame. Could need a lot of validation
+
+# plotting functions create plots based on metadata and summary and detailed metrics
+#   all plotting functions should work even if no comparison is specified
+
+#   summary plots are based on summary metrics from cell ranger
+#   specify a column from the metadata as comparison group. This can also be the sample column. 
+#   this group will be plotted on the x-axis and statistical comparisons are made
+#   if no comparison is specified, samples are plotted on x-axis and no statistical comparison is made
+# 
+#   detailed plots are based on detailed metrics, extracted from count matrices
+#   throws error if detailed metrics are not loaded
+#   data used for this is per UMI and gene count per bar code 
+#   x-axis are samples and comparison group is used for colors (optional)
+#   legend for colors is only created if comparison group is not samples
+
 
 CRMetrics <- R6Class("CRMetrics", list(
   metadata = NULL,
@@ -119,6 +143,7 @@ CRMetrics <- R6Class("CRMetrics", list(
   summary_metrics = NULL,
   detailed_metrics = NULL, 
 
+  # this needs a lot more validation
   # to initialize new object, requires metadata file and the file to the data
   initialize = function(data_path, metadata_file) {
     # do some validation
