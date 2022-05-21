@@ -108,6 +108,15 @@ read_detailed_metrics <- function(samples, data_path) {
   return(metricsDetailed)
 }
 
+create_comp <- function(comp_group, metadata) {
+  # check if comparison variable is a column in metadata
+  stopifnot(comp_group %in% colnames(metadata))
+
+  comp <- combn(unique(metadata[[comp_group]]), 2)
+  comp <- as.list(as.data.frame(comp))
+  return(comp)
+}
+
 #########
 # R6 class
 
@@ -158,10 +167,16 @@ CRMetrics <- R6Class("CRMetrics", list(
   # this is not done upon initialization for speed
   add_detailed_metrics = function() {
     self$detailed_metrics <- read_detailed_metrics(self$metadata$sample, self$data_path)
-  }
+  },
   
   # here all the plotting functions can be added. 
   # with validation checks whether the metrics are loaded
   
+  # add default comparison variable/column from metadata
+  # this is what goes on the x axis on high-level plots and stat comparisons are made for pairwise comparisons
+  add_comparison = function(comp_group) {
+    stopifnot(comp_group %in% colnames(self$metadata))
+    self$comp_group <- comp_group
+  }
 ))
 
