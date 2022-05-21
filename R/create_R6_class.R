@@ -2,10 +2,13 @@
 
 # create a R6 class that holds the data and has plotting functions
 
+# this loads the data the same way as the files were created in `create_input_files.R`
+
 # my R cannot find the library where I install packages via RStudio...
 .libPaths(c("~/R/x86_64-redhat-linux-gnu-library/4.1", .libPaths()))
 library(R6)
 library(tidyverse)
+
 
 ########
 # summary metrics
@@ -29,9 +32,11 @@ read_summary_metrics <- function(data_path, metadata) {
   metrics <- data.frame()
   for (i in seq(length(samples))) {
     metrics <-
-      rbind(metrics, read_csv(paste0(
-        data_path, samples[i], "/outs/metrics_summary.csv"
-      )))
+      rbind(metrics, read_csv(
+        paste0(data_path, samples[i], "/outs/metrics_summary.csv"),
+        # this suppresses tidyverse output from reading the file
+        col_types = cols()
+      ))
   }
   
   metrics["sample"] <- samples
@@ -113,7 +118,7 @@ CRMetrics <- R6Class("CRMetrics", list(
   data_path = NULL, 
   summary_metrics = NULL,
   detailed_metrics = NULL, 
-  
+
   # to initialize new object, requires metadata file and the file to the data
   initialize = function(data_path, metadata_file) {
     # do some validation
@@ -135,17 +140,3 @@ CRMetrics <- R6Class("CRMetrics", list(
   
 ))
 
-
-########
-# Usage example
-crmetrics <- CRMetrics$new(data_path = "/data/PD-MSA_lentiform_nucleus/counts_premrna/", metadata_file = "../data/metadata.csv")
-
-crmetrics$metadata
-crmetrics$summary_metrics
-crmetrics$metadata$sample
-
-crmetrics$add_detailed_metrics()
-
-head(crmetrics$detailed_metrics)
-
-saveRDS(crmetrics, "../data/crmetrics_R6_class.RDS")
