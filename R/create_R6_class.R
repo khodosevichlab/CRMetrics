@@ -168,6 +168,7 @@ CRMetrics <- R6Class("CRMetrics", list(
   data_path = NULL, 
   summary_metrics = NULL,
   detailed_metrics = NULL, 
+  comp_group = NULL,
 
   # this needs a lot more validation
   # to initialize new object, requires metadata file and the file to the data
