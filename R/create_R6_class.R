@@ -194,6 +194,83 @@ CRMetrics <- R6Class("CRMetrics", list(
   add_comparison = function(comp_group) {
     stopifnot(comp_group %in% colnames(self$metadata))
     self$comp_group <- comp_group
+  },
+
+  # detailed plot
+  plot_gene_count = function(comp_group = NULL) {
+    # abort if detailed metrics are not loaded
+    stopifnot(!is.null(self$detailed_metrics))
+
+    # if no comparison is specified, color by sample
+    if (is.null(comp_group)) {
+      comp_group <- self$comp_group
+    }
+    if (is.null(comp_group)) {
+      comp_group <- "sample"
+    }
+
+    g <- self$detailed_metrics %>%
+      filter(metric == "gene_count") %>%
+      merge(crmetrics$metadata, by = "sample") %>%
+      ggplot(aes(
+        x = sample,
+        y = value,
+        fill = !!sym(comp_group)
+      )) +
+      geom_violin() +
+      labs(y = "# expressed genes") +
+      mod +
+      theme(axis.text.x = element_text(
+        angle = 90,
+        vjust = 0.5,
+        hjust = 1
+      )) +
+      scale_fill_dutchmasters(palette = pal)
+
+    # a legend only makes sense if the comparison is not the samples
+    if (comp_group != "sample") {
+      g <- g + theme(legend.position = "right")
+    }
+    return(g)
+  },
+
+  # detailed plot
+  plot_umi_count = function(comp_group = NULL) {
+    # check if detailed metrics are loaded
+    stopifnot(!is_null(self$detailed_metrics))
+
+    # if no comparison is specified, color by sample
+    if (is.null(comp_group)) {
+      comp_group <- self$comp_group
+    }
+    if (is.null(comp_group)) {
+      comp_group <- "sample"
+    }
+
+    g <- self$detailed_metrics %>%
+      filter(metric == "UMI_count") %>%
+      merge(crmetrics$metadata, by = "sample") %>%
+      ggplot(aes(
+        x = sample,
+        y = value,
+        fill = !!sym(comp_group)
+      )) +
+      geom_violin() +
+      labs(y = "# UMIs") +
+      mod +
+      theme(axis.text.x = element_text(
+        angle = 90,
+        vjust = 0.5,
+        hjust = 1
+      )) +
+      scale_fill_dutchmasters(palette = pal)
+
+    # a legend only makes sense if the comparison is not the samples
+    if (comp_group != "sample") {
+      g <- g + theme(legend.position = "right")
+    }
+
+    return(g)
   }
 ))
 
