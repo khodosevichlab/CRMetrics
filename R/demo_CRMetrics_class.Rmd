@@ -1,0 +1,100 @@
+---
+title: "R Notebook"
+output: github_document
+---
+
+# CRMetrics class
+
+
+## Initializing a CRMetrics class
+
+Source the file in which the class is defined. 
+
+```{r}
+source("create_R6_class.R")
+```
+
+Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file. 
+The metadata file contains a column `sample` with the samples and optionally more columns with factors. 
+
+```{r}
+crmetrics <- CRMetrics$new(data_path = "/data/PD-MSA_lentiform_nucleus/counts_premrna/", 
+                           metadata_file = "../data/metadata.csv")
+```
+
+We populated the metadata and the summary metrics field of the object when initializing it. 
+
+```{r}
+head(crmetrics$metadata)
+head(crmetrics$summary_metrics)
+```
+
+
+## Plotting 
+
+Now we can already create plots from the summary statistics. 
+E.g., `Median UMI Counts per Cell` is defined in the Cell Ranger summary statistics of each sample. 
+
+The comparison group is a column in the metadata file. 
+It will be the variable on the x-axis and pairwise statistical comparisons will be made on these groups. 
+
+```{r}
+crmetrics$plot_median_umi(comp_group = "sex")
+crmetrics$plot_median_umi(comp_group = "group")
+```
+
+If no comparison group is specified, the samples are plotted on the x-axis.  
+This is potentially not very meaningful but it ensures that the plots work even if we don't have groups in the samples. 
+
+```{r}
+crmetrics$plot_median_umi()
+```
+
+
+Specifying comparison that is not a column in the metadata will throw an error.
+
+```{r error=TRUE}
+crmetrics$add_comparison("gropu")
+```
+
+We can add a comparison group globally which will be the default if not specified in the plotting function
+
+```{r}
+crmetrics$add_comparison("group")
+crmetrics$plot_median_umi()
+```
+
+A possibility to reset the comparison group is to se the field in the class to `NULL`. 
+
+```{r}
+crmetrics$comp_group <- NULL
+```
+
+
+We can also create plots on statistics of the count matrices.  
+This requires to load the detailed metrics and will some time. 
+
+```{r}
+crmetrics$add_detailed_metrics()
+
+
+# this is slow so we can also cheat if we already have the file
+
+# metadata <- read.csv("../data/metadata.csv")
+# detailed_metrics <- read_detailed_metrics(samples = metadata$sample, data_path = "/data/PD-MSA_lentiform_nucleus/counts_premrna/")
+
+# crmetrics$detailed_metrics <- detailed_metrics
+```
+
+We can plot the distribution of number of UMIs and expressed genes in each sample. 
+
+```{r}
+crmetrics$plot_gene_count()
+crmetrics$plot_umi_count()
+```
+
+And of course add group information. 
+
+```{r}
+crmetrics$plot_gene_count(comp_group = "group")
+```
