@@ -212,7 +212,7 @@ CRMetrics <- R6Class("CRMetrics", list(
 
     g <- self$detailed_metrics %>%
       filter(metric == "gene_count") %>%
-      merge(crmetrics$metadata, by = "sample") %>%
+      merge(self$metadata, by = "sample") %>%
       ggplot(aes(
         x = sample,
         y = value,
@@ -250,7 +250,7 @@ CRMetrics <- R6Class("CRMetrics", list(
 
     g <- self$detailed_metrics %>%
       filter(metric == "UMI_count") %>%
-      merge(crmetrics$metadata, by = "sample") %>%
+      merge(self$metadata, by = "sample") %>%
       ggplot(aes(
         x = sample,
         y = value,
