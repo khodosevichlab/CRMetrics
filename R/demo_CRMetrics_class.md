@@ -170,3 +170,86 @@ crmetrics$plot_gene_count(comp_group = "group")
 ```
 
 ![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+## 15q
+
+15q sample analyzed with Cell Ranger.
+
+``` r
+list.dirs("/data/15q/counts_premrna/", recursive = F, full.names = F)
+```
+
+    ##  [1] "AAM1_P15q15"  "AAM1_P60q15"  "AAM10_P15q15" "AAM10_P15wt"  "AAM11_15Qa"  
+    ##  [6] "AAM11_15Qb"   "AAM11_wta"    "AAM11_wtb"    "AAM12_15qa"   "AAM12_15qb"  
+    ## [11] "AAM12_wta"    "AAM12_wtb"    "AAM3_P15wt"   "AAM3_P60wt"   "AAM8_P60q15" 
+    ## [16] "AAM8_P60wt"
+
+We need to do the annotation of condition and age manually. All samples
+where no age is specified in sample name are assigned to P60. We are
+lacking sex information.
+
+``` r
+metadata_15q_cr <- c(
+  c("AAM10_P15q15", "15q", "P15"),
+  c("AAM10_P15wt", "wt", "P15"),
+  c("AAM11_15Qa", "15q", "P60"),
+  c("AAM11_15Qb", "15q", "P60"),
+  c("AAM11_wta", "wt", "P60"),
+  c("AAM11_wtb", "wt", "P60"),
+  c("AAM12_15qa", "15q", "P60"),
+  c("AAM12_15qb", "15q", "P60"),
+  c("AAM12_wta", "wt", "P60"),
+  c("AAM12_wtb", "wt", "P60"),
+  c("AAM1_P15q15", "15q", "P15"),
+  c("AAM1_P60q15", "15q", "P60"),
+  c("AAM3_P15wt", "wt", "P15"),
+  c("AAM3_P60wt", "wt", "P60"),
+  c("AAM8_P60q15", "15q", "P60"),
+  c("AAM8_P60wt", "wt", "P60")
+)
+```
+
+Format and save metadata as csv.
+
+``` r
+metadata_15q_cr <- data.frame(matrix(data = metadata_15q_cr, ncol = 3, byrow = TRUE))
+colnames(metadata_15q_cr) <- c("sample", "condition", "age")
+write.csv(metadata_15q_cr, "../data/metadata_15q_CRMetrics.csv", row.names = F)
+```
+
+``` r
+crmetrics_15q <- CRMetrics$new(data_path = "/data/15q/counts_premrna/", 
+                               metadata_file = "../data/metadata_15q_CRMetrics.csv")
+```
+
+``` r
+crmetrics_15q$plot_median_umi(comp_group = "condition")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+
+``` r
+crmetrics_15q$plot_median_umi(comp_group = "age")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
+
+``` r
+crmetrics_15q$add_detailed_metrics()
+```
+
+    ## reading 16 dataset(s)
+
+    ##  done
+
+``` r
+crmetrics_15q$plot_gene_count(comp_group = "condition")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+
+``` r
+crmetrics_15q$plot_umi_count(comp_group = "condition")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
