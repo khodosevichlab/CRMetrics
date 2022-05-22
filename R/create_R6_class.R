@@ -302,11 +302,6 @@ CRMetrics <- R6Class("CRMetrics", list(
       geom_quasirandom(size = 3) +
       labs(y = "Median UMI Counts per Cell") +
       mod +
-      theme(axis.text.x = element_text(
-        angle = 90,
-        vjust = 0.5,
-        hjust = 1
-      )) +
       scale_color_dutchmasters(palette = pal)
 
     # a legend only makes sense if the comparison is not the samples
