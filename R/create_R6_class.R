@@ -65,7 +65,7 @@ read_detailed_metrics <- function(samples, data_path) {
   cmsFiltered <- samples %>%
     lapply(function(x) {
       paste0(
-        "/data/PD-MSA_lentiform_nucleus/counts_premrna/",
+        data_path,
         x,
         "/outs/filtered_feature_bc_matrix"
       )
