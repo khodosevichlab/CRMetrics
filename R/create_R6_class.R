@@ -366,6 +366,45 @@ CRMetrics <- R6Class("CRMetrics", list(
     }
     return(g)
   }
+  
+  plot_cells = function(comp_group = NULL) {
+    plot_stats <- T
+    
+    #if comparison group is not specified, use the one specified in the class
+    if (is.null(comp_group)) {
+      comp_group <- self$comp_group
+    }
+    
+    # if the class comparison is also not specified,
+    # don't do stats and put samples on x-axis
+    if (is.null(comp_group)) {
+      comp_group <- "sample"
+      plot_stats <- F
+    }
+    
+    g <- left_join(dat, metadat, by="sample") %>%
+      filter(metric == "Estimated Number of Cells") %>%
+      ggplot(aes(!!sym(comp_group), value, col=!!sym(comp_group))) +
+      geom_quasirandom(size=3) +
+      mod +
+      labs(x=comp_group, y="Cells") +
+      stat_compare_means(comparisons = comp, exact=F) +
+      stat_compare_means(label.y = 14000) +
+      scale_color_dutchmasters(palette = pal)
+    
+    if (plot_stats) {
+      comp <- create_comp(comp_group, self$metadata)
+      
+      # stat comparisons between comparisons
+      g <- g + stat_compare_means(comparisons = comp, exact = F)
+      
+      # this is to plot the overall p-value above the pairwise comparisons
+      y.upper <- layer_scales(g, 1)$y$range$range[2]
+      
+      g <- g + stat_compare_means(label.y = y.upper + 2000)
+    }
+    Cell.plot
+  }
 
 ))
 
