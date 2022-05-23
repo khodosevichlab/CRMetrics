@@ -32,6 +32,12 @@ head(crmetrics$summary_metrics)
 
 ## Plotting 
 
+From the metadata file we can plot the number of samples per group where we can also compare the sex distribution.
+
+```{r}
+crmetrics$plot_samples(comp_group = "sex")
+```
+
 Now we can already create plots from the summary statistics. 
 E.g., `Median UMI Counts per Cell` is defined in the Cell Ranger summary statistics of each sample. 
 
