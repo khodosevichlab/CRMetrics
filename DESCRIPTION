@@ -1,0 +1,4 @@
+Package: CRMetrics
+Type: package
+Title: Summarization of Cell Ranger count matrics.
+Version: 0.0.1.0
