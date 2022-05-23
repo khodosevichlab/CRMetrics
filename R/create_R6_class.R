@@ -388,8 +388,6 @@ CRMetrics <- R6Class("CRMetrics", list(
       geom_quasirandom(size=3) +
       mod +
       labs(x=comp_group, y="Cells") +
-      stat_compare_means(comparisons = comp, exact=F) +
-      stat_compare_means(label.y = 14000) +
       scale_color_dutchmasters(palette = pal)
     
     if (plot_stats) {
