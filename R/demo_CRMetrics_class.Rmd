@@ -76,6 +76,11 @@ A possibility to reset the comparison group is to se the field in the class to `
 crmetrics$comp_group <- NULL
 ```
 
+Another plot that can be made from the summary metrics is number of cells.
+
+```{r}
+crmetrics$plot_cells("group")
+```
 
 We can also create plots on statistics of the count matrices.  
 This requires to load the detailed metrics and will some time. 
