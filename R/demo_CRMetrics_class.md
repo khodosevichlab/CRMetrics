@@ -65,6 +65,20 @@ head(crmetrics$summary_metrics)
 
 ## Plotting
 
+From the metadata file we can plot the number of samples per group where
+we can also compare the sex distribution.
+
+``` r
+crmetrics$plot_samples(comp_group = "sex")
+```
+
+    ## Note: Using an external vector in selections is ambiguous.
+    ## ℹ Use `all_of(comp_group)` instead of `comp_group` to silence this message.
+    ## ℹ See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>.
+    ## This message is displayed once per session.
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+
 Now we can already create plots from the summary statistics. E.g.,
 `Median UMI Counts per Cell` is defined in the Cell Ranger summary
 statistics of each sample.
@@ -77,13 +91,13 @@ on these groups.
 crmetrics$plot_median_umi(comp_group = "sex")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 crmetrics$plot_median_umi(comp_group = "group")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
 
 If no comparison group is specified, the samples are plotted on the
 x-axis.  
@@ -100,7 +114,7 @@ crmetrics$plot_median_umi()
     ## Please set grouponX=TRUE/FALSE to avoid this warning and ensure proper axis
     ## choice.
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 Specifying comparison that is not a column in the metadata will throw an
 error.
@@ -119,7 +133,7 @@ crmetrics$add_comparison("group")
 crmetrics$plot_median_umi()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 A possibility to reset the comparison group is to se the field in the
 class to `NULL`.
@@ -127,6 +141,15 @@ class to `NULL`.
 ``` r
 crmetrics$comp_group <- NULL
 ```
+
+Another plot that can be made from the summary metrics is number of
+cells.
+
+``` r
+crmetrics$plot_cells("group")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 We can also create plots on statistics of the count matrices.  
 This requires to load the detailed metrics and will some time.
@@ -155,13 +178,13 @@ each sample.
 crmetrics$plot_gene_count()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 crmetrics$plot_umi_count()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
 
 And of course add group information.
 
@@ -169,7 +192,7 @@ And of course add group information.
 crmetrics$plot_gene_count(comp_group = "group")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ## 15q
 
@@ -226,13 +249,13 @@ crmetrics_15q <- CRMetrics$new(data_path = "/data/15q/counts_premrna/",
 crmetrics_15q$plot_median_umi(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 crmetrics_15q$plot_median_umi(comp_group = "age")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
 
 ``` r
 crmetrics_15q$add_detailed_metrics()
@@ -246,10 +269,10 @@ crmetrics_15q$add_detailed_metrics()
 crmetrics_15q$plot_gene_count(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 crmetrics_15q$plot_umi_count(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
