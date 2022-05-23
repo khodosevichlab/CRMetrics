@@ -213,7 +213,7 @@ CRMetrics <- R6Class("CRMetrics", list(
     }
     
     
-    g <- self.metadata %>%
+    g <- self$metadata %>%
       select(comp_group, group) %>%
       table() %>%
       data.frame %>%
@@ -365,7 +365,7 @@ CRMetrics <- R6Class("CRMetrics", list(
       g <- g + stat_compare_means(label.y = y.upper + 2000)
     }
     return(g)
-  }
+  },
   
   plot_cells = function(comp_group = NULL) {
     plot_stats <- T
@@ -403,7 +403,7 @@ CRMetrics <- R6Class("CRMetrics", list(
       
       g <- g + stat_compare_means(label.y = y.upper + 2000)
     }
-    Cell.plot
+    return(g)
   }
 
 ))
