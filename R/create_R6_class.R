@@ -198,6 +198,50 @@ CRMetrics <- R6Class("CRMetrics", list(
   },
 
   # detailed plot
+  plot_samples = function(comp_group = NULL) {
+    plot_stats <- T 
+    
+    # abort if metadata is not loaded
+    stopifnot(!is.null(self$metadata))
+    
+    # if no comparison is specified, color by sex
+    if (is.null(comp_group)) {
+      comp_group <- self$comp_group
+    }
+    if (is.null(comp_group)) {
+      comp_group <- "sex"
+    }
+    
+    
+    g <- self.metadata %>%
+      select(comp_group, group) %>%
+      table() %>%
+      data.frame %>%
+      ggplot(aes(group, Freq, fill=!!sym(comp_group))) + 
+      geom_bar(stat="identity", position="dodge") + 
+      mod + 
+      labs(x="group", y="Freq") +
+      theme(legend.position="right") +
+      scale_fill_dutchmasters(palette = pal)
+    
+    
+    ## TO DO, add statistics
+    # if (plot_stats) {
+    #   comp <- create_comp(comp_group, self$metadata)
+    #   
+    #   # stat comparisons between comparisons
+    #   g <- g + stat_compare_means(comparisons = comp, exact = F)
+    #   
+    #   # this is to plot the overall p-value above the pairwise comparisons
+    #   y.upper <- layer_scales(g, 1)$y$range$range[2]
+    #   
+    #   g <- g + stat_compare_means(label.y = y.upper + 2000)
+    # }
+    
+    return(g)
+  },
+  
+  # detailed plot
   plot_gene_count = function(comp_group = NULL) {
     # abort if detailed metrics are not loaded
     stopifnot(!is.null(self$detailed_metrics))
