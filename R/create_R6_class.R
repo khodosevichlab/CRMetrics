@@ -382,7 +382,7 @@ CRMetrics <- R6Class("CRMetrics", list(
       plot_stats <- F
     }
     
-    g <- left_join(dat, metadat, by="sample") %>%
+    g <- left_join(self$summary_metrics, self$metadata, by="sample") %>%
       filter(metric == "Estimated Number of Cells") %>%
       ggplot(aes(!!sym(comp_group), value, col=!!sym(comp_group))) +
       geom_quasirandom(size=3) +
