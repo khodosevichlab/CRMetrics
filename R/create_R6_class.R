@@ -414,6 +414,13 @@ CRMetrics <- R6Class("CRMetrics", list(
       
       # did not test if stat label position is suitable
       g <- g + stat_compare_means(label.y = y.upper + 500)
+    } else {
+      # rotate x-axis text if samples are on x-axis
+      g <- g + theme(axis.text.x = element_text(
+        angle = 90,
+        vjust = 0.5,
+        hjust = 1
+      ))
     }
     return(g)
   },
