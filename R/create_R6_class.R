@@ -172,12 +172,19 @@ CRMetrics <- R6Class("CRMetrics", list(
 
   # this needs a lot more validation
   # to initialize new object, requires metadata file and the file to the data
-  initialize = function(data_path, metadata_file) {
+  initialize = function(data_path, metadata_file, comp_group = NULL) {
     # do some validation
     stopifnot(file.exists(metadata_file))
     
     self$data_path <- data_path
     self$metadata <- read.csv(metadata_file)
+
+    if (!is.null(comp_group)) {
+      # maybe better to call add_comparison(comp_group) here?
+      stopifnot(comp_group %in% colnames(metadata))
+      self$comp_group <- comp_group
+    }
+
     self$summary_metrics <- read_summary_metrics(data_path, self$metadata)
   },
   
