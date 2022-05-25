@@ -142,6 +142,14 @@ class to `NULL`.
 crmetrics$comp_group <- NULL
 ```
 
+Instead of median UMIs, median number of genes can be expressed as well.
+
+``` r
+crmetrics$plot_median_gene("group")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+
 Another plot that can be made from the summary metrics is number of
 cells.
 
@@ -149,7 +157,7 @@ cells.
 crmetrics$plot_cells("group")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 We can also create plots on statistics of the count matrices.  
 This requires to load the detailed metrics and will some time.
@@ -178,13 +186,13 @@ each sample.
 crmetrics$plot_gene_count()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 crmetrics$plot_umi_count()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 And of course add group information.
 
@@ -192,7 +200,7 @@ And of course add group information.
 crmetrics$plot_gene_count(comp_group = "group")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ## 15q
 
@@ -249,13 +257,13 @@ crmetrics_15q <- CRMetrics$new(data_path = "/data/15q/counts_premrna/",
 crmetrics_15q$plot_median_umi(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 ``` r
 crmetrics_15q$plot_median_umi(comp_group = "age")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-18-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
 
 ``` r
 crmetrics_15q$add_detailed_metrics()
@@ -269,10 +277,10 @@ crmetrics_15q$add_detailed_metrics()
 crmetrics_15q$plot_gene_count(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 crmetrics_15q$plot_umi_count(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->

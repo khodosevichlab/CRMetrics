@@ -76,6 +76,16 @@ A possibility to reset the comparison group is to se the field in the class to `
 crmetrics$comp_group <- NULL
 ```
 
+
+Instead of median UMIs, median number of genes can be expressed as well. 
+
+```{r}
+crmetrics$plot_median_gene("group")
+```
+
+
+
+
 Another plot that can be made from the summary metrics is number of cells.
 
 ```{r}
