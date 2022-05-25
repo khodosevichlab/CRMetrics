@@ -22,6 +22,13 @@ source("create_R6_class.R")
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
+    ## 
+    ## Attaching package: 'cowplot'
+
+    ## The following object is masked from 'package:ggpubr':
+    ## 
+    ##     get_legend
+
 Initialize a new object of class `CRMetrics` with the path to the Cell
 Ranger output and a metadata file. The metadata file contains a column
 `sample` with the samples and optionally more columns with factors.
@@ -159,6 +166,398 @@ crmetrics$plot_cells("group")
 
 ![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
+Plot all summary metrics or multiple selected ones.
+
+``` r
+comp_group <- "group"
+crmetrics$plot_summary_stats(comp_group = "group")
+```
+
+    ## Warning in wilcox.test.default(c(0.968, 0.976, 0.968, 0.964, 0.937, 0.959, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.968, 0.976, 0.968, 0.964, 0.937, 0.959, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.963, 0.964, 0.964, 0.958, 0.963, 0.966, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.968, 0.976, 0.968, 0.964, 0.937, 0.959, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.968, 0.976, 0.968, 0.964, 0.937, 0.959, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.963, 0.964, 0.964, 0.958, 0.963, 0.966, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.673, 0.654, 0.678, 0.391, 0.517, 0.454, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.673, 0.654, 0.678, 0.391, 0.517, 0.454, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.834, 0.702, 0.808, 0.817, 0.827, 0.72, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.673, 0.654, 0.678, 0.391, 0.517, 0.454, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.673, 0.654, 0.678, 0.391, 0.517, 0.454, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.834, 0.702, 0.808, 0.817, 0.827, 0.72, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.961, 0.962, 0.944, 0.963, 0.963, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.961, 0.962, 0.944, 0.963, 0.963, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.963, 0.961, 0.962, 0.956, 0.945, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.961, 0.962, 0.944, 0.963, 0.963, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.961, 0.962, 0.944, 0.963, 0.963, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.963, 0.961, 0.962, 0.956, 0.945, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.786, 0.94, 0.509, 0.927, 0.939, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.786, 0.94, 0.509, 0.927, 0.939, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.939, 0.931, 0.943, 0.925, 0.519, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.786, 0.94, 0.509, 0.927, 0.939, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.786, 0.94, 0.509, 0.927, 0.939, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.939, 0.931, 0.943, 0.925, 0.519, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.915, 0.919, 0.937, 0.813, 0.931, 0.944, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.915, 0.919, 0.937, 0.813, 0.931, 0.944, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.928, 0.895, 0.932, 0.9, 0.932, 0.823, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.915, 0.919, 0.937, 0.813, 0.931, 0.944, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.915, 0.919, 0.937, 0.813, 0.931, 0.944, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.928, 0.895, 0.932, 0.9, 0.932, 0.823, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.959, 0.956, 0.945, 0.957, 0.957, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.959, 0.956, 0.945, 0.957, 0.957, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.957, 0.955, 0.955, 0.954, 0.945, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.959, 0.956, 0.945, 0.957, 0.957, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.959, 0.956, 0.945, 0.957, 0.957, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.957, 0.955, 0.955, 0.954, 0.945, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.918, 0.887, 0.896, 0.712, 0.844, 0.925, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.918, 0.887, 0.896, 0.712, 0.844, 0.925, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.901, 0.868, 0.874, 0.906, 0.849, 0.765, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.918, 0.887, 0.896, 0.712, 0.844, 0.925, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.918, 0.887, 0.896, 0.712, 0.844, 0.925, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.901, 0.868, 0.874, 0.906, 0.849, 0.765, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.877, 0.852, 0.82, 0.681, 0.725, 0.87, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.794, 0.736, 0.78, 0.496, 0.723, 0.737, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.877, 0.852, 0.82, 0.681, 0.725, 0.87, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.794, 0.736, 0.78, 0.496, 0.723, 0.737, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.07, 0.067, 0.07, 0.063, 0.058, 0.093, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.07, 0.067, 0.07, 0.063, 0.058, 0.093, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.071, 0.068, 0.062, 0.056, 0.081, 0.07, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.07, 0.067, 0.07, 0.063, 0.058, 0.093, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.07, 0.067, 0.07, 0.063, 0.058, 0.093, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.071, 0.068, 0.062, 0.056, 0.081, 0.07, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), c(0, 0, : cannot
+    ## compute exact p-value with ties
+
+    ## Warning: Computation failed in `stat_signif()`:
+    ## missing value where TRUE/FALSE needed
+
+    ## Warning in f(...): The default behavior of beeswarm has changed in version
+    ## 0.6.0. In versions <0.6.0, this plot would have been dodged on the y-axis. In
+    ## versions >=0.6.0, grouponX=FALSE must be explicitly set to group on y-axis.
+    ## Please set grouponX=TRUE/FALSE to avoid this warning and ensure proper axis
+    ## choice.
+
+    ## Warning in wilcox.test.default(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), c(0, 0, : cannot
+    ## compute exact p-value with ties
+
+    ## Warning: Computation failed in `stat_signif()`:
+    ## missing value where TRUE/FALSE needed
+
+    ## Warning in f(...): The default behavior of beeswarm has changed in version
+    ## 0.6.0. In versions <0.6.0, this plot would have been dodged on the y-axis. In
+    ## versions >=0.6.0, grouponX=FALSE must be explicitly set to group on y-axis.
+    ## Please set grouponX=TRUE/FALSE to avoid this warning and ensure proper axis
+    ## choice.
+
+    ## Warning in wilcox.test.default(c(0.807, 0.785, 0.75, 0.618, 0.668, 0.777, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.807, 0.785, 0.75, 0.618, 0.668, 0.777, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.722, 0.668, 0.719, 0.44, 0.642, 0.668, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.807, 0.785, 0.75, 0.618, 0.668, 0.777, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.807, 0.785, 0.75, 0.618, 0.668, 0.777, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.722, 0.668, 0.719, 0.44, 0.642, 0.668, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.641, 0.663, 0.621, 0.514, 0.503, 0.471, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.616, 0.565, 0.598, 0.374, 0.546, 0.576, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.641, 0.663, 0.621, 0.514, 0.503, 0.471, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.616, 0.565, 0.598, 0.374, 0.546, 0.576, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.128, 0.085, 0.093, 0.078, 0.133, 0.266, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.128, 0.085, 0.093, 0.078, 0.133, 0.266, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.072, 0.063, 0.081, 0.046, 0.06, 0.06, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.128, 0.085, 0.093, 0.078, 0.133, 0.266, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.128, 0.085, 0.093, 0.078, 0.133, 0.266, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.072, 0.063, 0.081, 0.046, 0.06, 0.06, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.797, 0.828, 0.806, 0.857, 0.845, 0.751, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.797, 0.828, 0.806, 0.857, 0.845, 0.751, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.793, 0.8, 0.803, 0.773, 0.792, 0.906, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.797, 0.828, 0.806, 0.857, 0.845, 0.751, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.797, 0.828, 0.806, 0.857, 0.845, 0.751, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.793, 0.8, 0.803, 0.773, 0.792, 0.906, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.968, 0.976, 0.968, 0.964, 0.937, 0.959, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.968, 0.976, 0.968, 0.964, 0.937, 0.959, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.963, 0.964, 0.964, 0.958, 0.963, 0.966, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.673, 0.654, 0.678, 0.391, 0.517, 0.454, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.673, 0.654, 0.678, 0.391, 0.517, 0.454, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.834, 0.702, 0.808, 0.817, 0.827, 0.72, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.961, 0.962, 0.944, 0.963, 0.963, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.961, 0.962, 0.944, 0.963, 0.963, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.962, 0.963, 0.961, 0.962, 0.956, 0.945, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.786, 0.94, 0.509, 0.927, 0.939, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.786, 0.94, 0.509, 0.927, 0.939, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.937, 0.939, 0.931, 0.943, 0.925, 0.519, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.915, 0.919, 0.937, 0.813, 0.931, 0.944, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.915, 0.919, 0.937, 0.813, 0.931, 0.944, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.928, 0.895, 0.932, 0.9, 0.932, 0.823, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.959, 0.956, 0.945, 0.957, 0.957, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.959, 0.956, 0.945, 0.957, 0.957, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.956, 0.957, 0.955, 0.955, 0.954, 0.945, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.918, 0.887, 0.896, 0.712, 0.844, 0.925, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.918, 0.887, 0.896, 0.712, 0.844, 0.925, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.901, 0.868, 0.874, 0.906, 0.849, 0.765, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.877, 0.852, 0.82, 0.681, 0.725, 0.87, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.794, 0.736, 0.78, 0.496, 0.723, 0.737, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.07, 0.067, 0.07, 0.063, 0.058, 0.093, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.07, 0.067, 0.07, 0.063, 0.058, 0.093, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.071, 0.068, 0.062, 0.056, 0.081, 0.07, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0), c(0, 0, : cannot
+    ## compute exact p-value with ties
+
+    ## Warning: Computation failed in `stat_signif()`:
+    ## missing value where TRUE/FALSE needed
+
+    ## Warning in f(...): The default behavior of beeswarm has changed in version
+    ## 0.6.0. In versions <0.6.0, this plot would have been dodged on the y-axis. In
+    ## versions >=0.6.0, grouponX=FALSE must be explicitly set to group on y-axis.
+    ## Please set grouponX=TRUE/FALSE to avoid this warning and ensure proper axis
+    ## choice.
+
+    ## Warning in wilcox.test.default(c(0.807, 0.785, 0.75, 0.618, 0.668, 0.777, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.807, 0.785, 0.75, 0.618, 0.668, 0.777, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.722, 0.668, 0.719, 0.44, 0.642, 0.668, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.641, 0.663, 0.621, 0.514, 0.503, 0.471, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.616, 0.565, 0.598, 0.374, 0.546, 0.576, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.128, 0.085, 0.093, 0.078, 0.133, 0.266, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.128, 0.085, 0.093, 0.078, 0.133, 0.266, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.072, 0.063, 0.081, 0.046, 0.06, 0.06, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.797, 0.828, 0.806, 0.857, 0.845, 0.751, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.797, 0.828, 0.806, 0.857, 0.845, 0.751, :
+    ## cannot compute exact p-value with ties
+
+    ## Warning in wilcox.test.default(c(0.793, 0.8, 0.803, 0.773, 0.792, 0.906, :
+    ## cannot compute exact p-value with ties
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+
+``` r
+metrics = c("Median UMI Counts per Cell", "Median Genes per Cell")
+
+crmetrics$plot_summary_stats(comp_group = "group", metrics = metrics)
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+
+``` r
+crmetrics$plot_summary_stats(comp_group = "group", metrics = "Median UMI Counts per Cell")
+```
+
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+
 We can also create plots on statistics of the count matrices.  
 This requires to load the detailed metrics and will some time.
 
@@ -186,13 +585,13 @@ each sample.
 crmetrics$plot_gene_count()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 crmetrics$plot_umi_count()
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-15-2.png)<!-- -->
 
 And of course add group information.
 
@@ -200,7 +599,7 @@ And of course add group information.
 crmetrics$plot_gene_count(comp_group = "group")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ## 15q
 
@@ -257,13 +656,13 @@ crmetrics_15q <- CRMetrics$new(data_path = "/data/15q/counts_premrna/",
 crmetrics_15q$plot_median_umi(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 crmetrics_15q$plot_median_umi(comp_group = "age")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-19-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
 
 ``` r
 crmetrics_15q$add_detailed_metrics()
@@ -277,10 +676,10 @@ crmetrics_15q$add_detailed_metrics()
 crmetrics_15q$plot_gene_count(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 ``` r
 crmetrics_15q$plot_umi_count(comp_group = "condition")
 ```
 
-![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-21-2.png)<!-- -->
+![](demo_CRMetrics_class_files/figure-gfm/unnamed-chunk-23-2.png)<!-- -->
