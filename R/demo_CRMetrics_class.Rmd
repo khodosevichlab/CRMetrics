@@ -92,6 +92,23 @@ Another plot that can be made from the summary metrics is number of cells.
 crmetrics$plot_cells("group")
 ```
 
+Plot all summary metrics or multiple selected ones. 
+
+```{r fig.height = 20, fig.width = 12}
+comp_group <- "group"
+crmetrics$plot_summary_stats(comp_group = "group")
+```
+
+
+```{r}
+metrics = c("Median UMI Counts per Cell", "Median Genes per Cell")
+
+crmetrics$plot_summary_stats(comp_group = "group", metrics = metrics)
+crmetrics$plot_summary_stats(comp_group = "group", metrics = "Median UMI Counts per Cell")
+```
+
+
+
 We can also create plots on statistics of the count matrices.  
 This requires to load the detailed metrics and will some time. 
 

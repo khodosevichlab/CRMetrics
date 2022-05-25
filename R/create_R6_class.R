@@ -380,6 +380,81 @@ CRMetrics <- R6Class("CRMetrics", list(
     return(g)
   },
   
+  # plot all summary stats or a selected list
+  plot_summary_stats = function(comp_group = NULL, metrics = NULL) {
+    
+    plot_stats <- T
+    
+    # if comparison group is not specified, use the one specified in the class
+    if (is.null(comp_group)) {
+      comp_group <- self$comp_group
+    }
+    
+    # if the class comparison is also not specified,
+    # don't do stats and put samples on x-axis
+    if (is.null(comp_group)) {
+      comp_group <- "sample"
+      plot_stats <- F
+    }
+    
+    # if no metrics selected, plot all
+    if (is.null(metrics)) {
+      metrics <- unique(self$summary_metrics$metric)
+    } else {
+      # check if selected metrics are available
+      stopifnot(all(metrics %in% unique(self$summary_metrics$metric)))
+    }
+    
+    plotList <- lapply(metrics, function (met) {
+      g <- self$summary_metrics %>%
+        filter(metric == sym(met)) %>%
+        merge(self$metadata, by = "sample") %>%
+        ggplot(aes(
+          x = !!sym(comp_group),
+          y = value,
+          col = !!sym(comp_group)
+        )) +
+        geom_quasirandom(size = 3) +
+        labs(y = met, x = element_blank()) +
+        mod +
+        scale_color_dutchmasters(palette = pal)
+      
+      # a legend only makes sense if the comparison is not the samples
+      if (comp_group != "sample") {
+        g <- g + theme(legend.position = "right")
+      }
+      
+      if (plot_stats) {
+        comp <- create_comp(comp_group, self$metadata)
+        
+        # stat comparisons between comparisons
+        g <- g + stat_compare_means(comparisons = comp, exact = F)
+        
+        # this is to plot the overall p-value above the pairwise comparisons
+        y.upper <- layer_scales(g, 1)$y$range$range[2]
+        y.lower <- layer_scales(g, 1)$y$range$range[1]
+        
+        # did not test if stat label position is suitable
+        g <- g + stat_compare_means(label.y = y.upper + (y.upper - y.lower) * 0.1)
+      } else {
+        # rotate x-axis text if samples are on x-axis
+        g <- g + theme(axis.text.x = element_text(
+          angle = 45,
+          vjust = 1,
+          hjust = 1
+        ))
+      }
+      return(g)
+    })
+    
+    if (length(plotList) == 1) {
+      return(plotList[[1]])
+    } else {
+      return(cowplot::plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
+    }
+  },
+  
+  
   # summary stat plot for median gene number per cell
   # imitate plot_median_umi function
   plot_median_gene = function(comp_group = NULL) {
