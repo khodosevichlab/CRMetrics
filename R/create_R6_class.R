@@ -204,7 +204,6 @@ CRMetrics <- R6Class("CRMetrics", list(
     self$comp_group <- comp_group
   },
 
-  # detailed plot
   plot_samples = function(comp_group = NULL) {
     plot_stats <- T 
     
@@ -270,11 +269,11 @@ CRMetrics <- R6Class("CRMetrics", list(
         fill = !!sym(comp_group)
       )) +
       geom_violin() +
-      labs(y = "# expressed genes") +
+      labs(y = "# expressed genes", x = element_blank()) +
       mod +
       theme(axis.text.x = element_text(
-        angle = 90,
-        vjust = 0.5,
+        angle = 45,
+        vjust = 1,
         hjust = 1
       )) +
       scale_fill_dutchmasters(palette = pal)
@@ -308,11 +307,11 @@ CRMetrics <- R6Class("CRMetrics", list(
         fill = !!sym(comp_group)
       )) +
       geom_violin() +
-      labs(y = "# UMIs") +
+      labs(y = "# UMIs", x = element_blank()) +
       mod +
       theme(axis.text.x = element_text(
-        angle = 90,
-        vjust = 0.5,
+        angle = 45,
+        vjust = 1,
         hjust = 1
       )) +
       scale_fill_dutchmasters(palette = pal)
@@ -351,7 +350,7 @@ CRMetrics <- R6Class("CRMetrics", list(
         col = !!sym(comp_group)
       )) +
       geom_quasirandom(size = 3) +
-      labs(y = "Median UMI Counts per Cell") +
+      labs(y = "Median UMI Counts per Cell", x = element_blank()) +
       mod +
       scale_color_dutchmasters(palette = pal)
 
@@ -370,6 +369,13 @@ CRMetrics <- R6Class("CRMetrics", list(
       y.upper <- layer_scales(g, 1)$y$range$range[2]
 
       g <- g + stat_compare_means(label.y = y.upper + 2000)
+    } else {
+      # rotate x-axis text if samples are on x-axis
+      g <- g + theme(axis.text.x = element_text(
+        angle = 45,
+        vjust = 1,
+        hjust = 1
+      ))
     }
     return(g)
   },
@@ -401,7 +407,7 @@ CRMetrics <- R6Class("CRMetrics", list(
         col = !!sym(comp_group)
       )) +
       geom_quasirandom(size = 3) +
-      labs(y = "Median Genes per Cell") +
+      labs(y = "Median Genes per Cell", x = element_blank()) +
       mod +
       scale_color_dutchmasters(palette = pal)
     
@@ -424,8 +430,8 @@ CRMetrics <- R6Class("CRMetrics", list(
     } else {
       # rotate x-axis text if samples are on x-axis
       g <- g + theme(axis.text.x = element_text(
-        angle = 90,
-        vjust = 0.5,
+        angle = 45,
+        vjust = 1,
         hjust = 1
       ))
     }
@@ -452,7 +458,7 @@ CRMetrics <- R6Class("CRMetrics", list(
       ggplot(aes(!!sym(comp_group), value, col=!!sym(comp_group))) +
       geom_quasirandom(size=3) +
       mod +
-      labs(x=comp_group, y="Cells") +
+      labs(x = element_blank(), y="Cells") +
       scale_color_dutchmasters(palette = pal)
     
     if (plot_stats) {
