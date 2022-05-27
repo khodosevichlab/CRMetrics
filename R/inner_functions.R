@@ -32,34 +32,34 @@ checkCompGroup <- function(comp_group, category, verbose = TRUE) {
 #' @description Checks whether 'comp_group' is any of the column names in metadata
 #' @keywords internal
 checkCompMeta <- function(comp_group, metadata) {
-  if (!is.null(comp_group)) {
-    if (!comp_group %in% colnames(metadata)) stop("'comp_group' doesn't match any column in metadata.")
-  }
+  if (!is.null(comp_group) && (!comp_group %in% colnames(metadata))) stop("'comp_group' doesn't match any column name in metadata.")
 }
 
-#' Add detailed metrics
-#' @description Add detailed metrics, requires to load raw count matrices using pagoda2
+#' Load count matrices
 #' @keywords internal
-addDetailedMetricsInner <- function(version, samples, data_path, n.cores, verbose) {
+addCountMatrices <- function(version, samples, data_path, n.cores, verbose) {
   requireNamespace("pagoda2")
   
-  if (verbose) message("Loading samples... ")
-  cmsFiltered <- samples %>%
+  samples %>%
     lapply(function(x) {
       paste0(data_path,x,"/outs/filtered_feature_bc_matrix")
     }) %>%
     setNames(samples) %>%
     pagoda2::read.10x.matrices(n.cores = n.cores, version = version)
-  if (verbose) message("done!\nFiltering... ")
-  
-  metricsDetailed <- cmsFiltered %>% 
+}
+#' Add detailed metrics
+#' @description Add detailed metrics, requires to load raw count matrices using pagoda2
+#' @keywords internal
+addDetailedMetricsInner <- function(cm.list, verbose = TRUE) {
+  if (verbose) message("Filtering... ")
+  metricsDetailed <- cm.list %>% 
     plapply(\(cm) {
       # count UMIs
       totalUMI <- cm %>% 
         colSums() %>% 
         as.data.frame() %>% 
         setNames("value") %>% 
-        mutate(., metric = "UMI_count", barcode = . %>% rownames())
+        mutate(., metric = "UMI_count", barcode = rownames(.))
       
       cm.bin <- cm
       cm.bin[cm.bin > 0] = 1
@@ -68,12 +68,12 @@ addDetailedMetricsInner <- function(version, samples, data_path, n.cores, verbos
         colSums() %>% 
         as.data.frame() %>% 
         setNames("value") %>% 
-        mutate(., metric = "gene_count", barcode = . %>% rownames())
+        mutate(., metric = "gene_count", barcode = rownames(.))
       
       metricsDetailedSample <- rbind(totalUMI, totalGenes)
       return(metricsDetailedSample)
-    }, n.cores = n.cores) %>% 
-    setNames(cmsFiltered %>% names())
+    }, progress = verbose) %>% 
+    setNames(cm.list %>% names())
   
   metricsDetailed %<>%
     names() %>% 
@@ -91,13 +91,13 @@ addDetailedMetricsInner <- function(version, samples, data_path, n.cores, verbos
 #' Add statistics to plot
 #' @description Use ggpubr to add statistics to plots
 #' @keywords internal
-addPlotStats <- function(p, comp_group, metadata, pos = 0, exact = FALSE) {
+addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, exact = FALSE) {
   checkCompMeta(comp_group, metadata)
   comp <- combn(unique(metadata[[comp_group]]), 2)
   comp <- as.list(as.data.frame(comp))
   g <- p + stat_compare_means(comparisons = comp, exact = exact)
   y.upper <- layer_scales(g, 1)$y$range$range[2]
-  g <- g + stat_compare_means(label.y = y.upper + pos)
+  g <- g + stat_compare_means(label.y = y.upper * (1 + h.adj))
   
   return(g)
 }

@@ -4,7 +4,7 @@
 \alias{addSummaryMetrics}
 \title{Add summary metrics}
 \usage{
-addSummaryMetrics(data_path, metadata)
+addSummaryMetrics(data_path, metadata, verbose = TRUE)
 }
 \description{
 Add summary metrics by reading Cell Ranger metrics summary files

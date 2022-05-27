@@ -27,7 +27,8 @@ CRMetrics class object
 
 \item{\code{theme}}{(default = NULL)}
 
-\item{\code{n.cores}}{(default = 1)}
+\item{\code{n.cores}}{(default = 1)
+Inner function to add detailed metrics}
 }
 \if{html}{\out{</div>}}
 }
@@ -36,6 +37,7 @@ CRMetrics class object
 \itemize{
 \item \href{#method-new}{\code{CRMetrics$new()}}
 \item \href{#method-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
+\item \href{#method-addComparison}{\code{CRMetrics$addComparison()}}
 \item \href{#method-plotSamples}{\code{CRMetrics$plotSamples()}}
 \item \href{#method-plotGeneCounts}{\code{CRMetrics$plotGeneCounts()}}
 \item \href{#method-plotUMICounts}{\code{CRMetrics$plotUMICounts()}}
@@ -84,6 +86,7 @@ CRMetrics class object
 \if{html}{\out{<a id="method-addDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-addDetailedMetrics}{}}}
 \subsection{Method \code{addDetailedMetrics()}}{
+Function to read in detailed metrics. This is not done upon initialization for speed
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
   version = "V2",
@@ -97,11 +100,40 @@ CRMetrics class object
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n.cores}}{Number of cores for calculations (default = 1)}
+\item{\code{version}}{(default = "V2)}
 
-\item{\code{verbose}}{Print messages (default = TRUE)}
+\item{\code{samples}}{vector containing samples. Default is to extract this information from self$metadata$sample}
+
+\item{\code{data_path}}{Path to data (default = self$data_path)}
+
+\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores)}
+
+\item{\code{verbose}}{Print messages or not (default = self$verbose)
+Add comparison group}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-addComparison"></a>}}
+\if{latex}{\out{\hypertarget{method-addComparison}{}}}
+\subsection{Method \code{addComparison()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addComparison(comp_group, metadata = self$metadata)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{comp_group}}{Comparison metric, e.g. "group", "samples"}
+
+\item{\code{metadata}}{Metadata for samples (default = self$metadata)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Vector
+Plot samples
 }
 }
 \if{html}{\out{<hr>}}
@@ -110,13 +142,30 @@ CRMetrics class object
 \subsection{Method \code{plotSamples()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSamples(
-  pos = 2000,
-  exact = FALSE,
   comp_group = self$comp_group,
+  h.adj = 0.05,
+  exact = FALSE,
   metadata = self$metadata
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{comp_group}}{Comparison metric (default = self$comp_group)}
+
+\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05)}
+
+\item{\code{exact}}{Whether to calculate exact p values (default = FALSE)}
+
+\item{\code{metadata}}{Metadata for samples (default = self$metadata)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+ggplot2 object
+Plot gene counts of raw data
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotGeneCounts"></a>}}
@@ -130,6 +179,13 @@ CRMetrics class object
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{metadata}}{Plot UMI counts of raw data}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotUMICounts"></a>}}
@@ -143,6 +199,13 @@ CRMetrics class object
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{metadata}}{Plot median UMI counts}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotMedianUMI"></a>}}
@@ -150,14 +213,21 @@ CRMetrics class object
 \subsection{Method \code{plotMedianUMI()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMedianUMI(
-  pos = 2000,
-  exact = FALSE,
   comp_group = self$comp_group,
+  h.adj = 0.05,
+  exact = FALSE,
   metadata = self$metadata,
   summary_metrics = self$summary_metrics
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{summary_metrics}}{Plot all summary stats or a selected list}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotSummaryStats"></a>}}
@@ -165,14 +235,21 @@ CRMetrics class object
 \subsection{Method \code{plotSummaryStats()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSummaryStats(
-  pos = 2000,
-  exact = FALSE,
-  metrics = NULL,
   comp_group = self$comp_group,
+  metrics = NULL,
+  h.adj = 0.05,
+  exact = FALSE,
   summary_metrics = self$summary_metrics
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{summary_metrics}}{Summary stat plot for median gene number per cell}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotMedianGene"></a>}}
@@ -180,14 +257,21 @@ CRMetrics class object
 \subsection{Method \code{plotMedianGene()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMedianGene(
-  pos = 500,
-  exact = FALSE,
   comp_group = self$comp_group,
+  h.adj = 0.05,
+  exact = FALSE,
   metadata = self$metadata,
   summary_metrics = self$summary_metrics
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{summary_metrics}}{Plot cells}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotCells"></a>}}
@@ -195,13 +279,20 @@ CRMetrics class object
 \subsection{Method \code{plotCells()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCells(
-  pos = 2000,
-  exact = FALSE,
   comp_group = self$comp_group,
+  h.adj = 0.05,
+  exact = FALSE,
   summary_metrics = self$summary_metrics
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{summary_metrics}}{Save summary metrics to text file}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-saveSummaryMetrics"></a>}}
@@ -215,6 +306,13 @@ CRMetrics class object
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{sep}}{Save detailed metrics to text file}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-saveDetailedMetrics"></a>}}

@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Analysis of PD/MSA data"
 output: github_document
 ---
 
@@ -8,21 +8,25 @@ output: github_document
 
 ## Initializing a CRMetrics class
 
-Load the library
+Load libraryies
 
 ```{r}
 library(CRMetrics)
+library(magrittr) # Why do I need to load magrittr?
 ```
 
 Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file. 
 The metadata file contains a column `sample` with the samples and optionally more columns with factors. 
 
 ```{r}
-data_path = "/data/PD-MSA_lentiform_nucleus/counts_premrna/"
-metadata_file = "/people/szr214/CRMetrics/data/metadata.csv"
+crm <- CRMetrics$new(data_path = "/data/PD-MSA_lentiform_nucleus/counts_premrna/", 
+                           metadata_file = "/people/szr214/CRMetrics/data/metadata.csv", n.cores = 10)
+```
 
-crm <- CRMetrics$new(data_path = data_path, 
-                           metadata_file = metadata_file)
+If some of the functionality has been updated, you must update the object for the changes to take effect.
+
+```{r}
+crm %<>% CRMetrics$new()
 ```
 
 We populated the metadata and the summary metrics field of the object when initializing it. 
@@ -38,7 +42,7 @@ head(crm$summary_metrics)
 From the metadata file we can plot the number of samples per group where we can also compare the sex distribution.
 
 ```{r}
-crm$plotSamples(comp_group = "sex")
+# crm$plotSamples(comp_group = "sex")
 ```
 
 Now we can already create plots from the summary statistics. 
@@ -116,94 +120,11 @@ This requires to load the detailed metrics and will some time.
 
 ```{r}
 crm$addDetailedMetrics()
-
-
-# this is slow so we can also cheat if we already have the file
-
-# metadata <- read.csv("../data/metadata.csv")
-# detailed_metrics <- read_detailed_metrics(samples = metadata$sample, data_path = "/data/PD-MSA_lentiform_nucleus/counts_premrna/")
-
-# crmetrics$detailed_metrics <- detailed_metrics
 ```
 
 We can plot the distribution of number of UMIs and expressed genes in each sample. 
 
 ```{r}
-crm$plotGeneCount()
-crm$plotUMICount()
+crm$plotGeneCounts()
+crm$plotUMICounts()
 ```
-
-And of course add group information. 
-
-```{r}
-crm$plotGeneCount(comp_group = "group")
-```
-
-
-
-
-## 15q
-
-15q sample analyzed with Cell Ranger. 
-
-```{r}
-list.dirs("/data/15q/counts_premrna/", recursive = F, full.names = F)
-```
-
-
-We need to do the annotation of condition and age manually. 
-All samples where no age is specified in sample name are assigned to P60. 
-We are lacking sex information. 
-
-```{r}
-metadata_15q_cr <- c(
-  c("AAM10_P15q15", "15q", "P15"),
-  c("AAM10_P15wt", "wt", "P15"),
-  c("AAM11_15Qa", "15q", "P60"),
-  c("AAM11_15Qb", "15q", "P60"),
-  c("AAM11_wta", "wt", "P60"),
-  c("AAM11_wtb", "wt", "P60"),
-  c("AAM12_15qa", "15q", "P60"),
-  c("AAM12_15qb", "15q", "P60"),
-  c("AAM12_wta", "wt", "P60"),
-  c("AAM12_wtb", "wt", "P60"),
-  c("AAM1_P15q15", "15q", "P15"),
-  c("AAM1_P60q15", "15q", "P60"),
-  c("AAM3_P15wt", "wt", "P15"),
-  c("AAM3_P60wt", "wt", "P60"),
-  c("AAM8_P60q15", "15q", "P60"),
-  c("AAM8_P60wt", "wt", "P60")
-)
-```
-
-Format and save metadata as csv. 
-
-```{r eval=F}
-metadata_15q_cr <- data.frame(matrix(data = metadata_15q_cr, ncol = 3, byrow = TRUE))
-colnames(metadata_15q_cr) <- c("sample", "condition", "age")
-write.csv(metadata_15q_cr, "../data/metadata_15q_CRMetrics.csv", row.names = F)
-```
-
-
-```{r}
-crmetrics_15q <- CRMetrics$new(data_path = "/data/15q/counts_premrna/", 
-                               metadata_file = "../data/metadata_15q_CRMetrics.csv")
-```
-
-
-```{r}
-crmetrics_15q$plot_median_umi(comp_group = "condition")
-crmetrics_15q$plot_median_umi(comp_group = "age")
-```
-
-```{r}
-crmetrics_15q$add_detailed_metrics()
-```
-
-
-```{r}
-crmetrics_15q$plot_gene_count(comp_group = "condition")
-crmetrics_15q$plot_umi_count(comp_group = "condition")
-```
-
-

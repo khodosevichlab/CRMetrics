@@ -4,7 +4,7 @@
 \alias{addDetailedMetricsInner}
 \title{Add detailed metrics}
 \usage{
-addDetailedMetricsInner(version, samples, data_path, n.cores, verbose)
+addDetailedMetricsInner(cm.list, verbose = TRUE)
 }
 \description{
 Add detailed metrics, requires to load raw count matrices using pagoda2

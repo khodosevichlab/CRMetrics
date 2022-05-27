@@ -79,6 +79,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   # this needs a lot more validation
   # to initialize new object, requires metadata file and the file to the data
   initialize = function(data_path, metadata_file, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1, version = "V2") {
+    
+    if ('CRMetrics' %in% class(data_path)) { # copy constructor
+      for (n in ls(data_path)) {
+        if (!is.function(get(n, data_path))) assign(n, get(n, data_path), self)
+      }
+      
+      return(NULL)
+    }
+    
     # do some validation
     stopifnot(file.exists(metadata_file))
     
@@ -97,18 +106,34 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
   },
   
-  # function to read in detailed metrics
-  # this is not done upon initialization for speed
+  #' Inner function to add detailed metrics
+  #' @description Function to read in detailed metrics. This is not done upon initialization for speed
+  #' @param version (default = "V2)
+  #' @param samples vector containing samples. Default is to extract this information from self$metadata$sample
+  #' @param data_path Path to data (default = self$data_path)
+  #' @param n.cores Number of cores for the calculations (default = self$n.cores)
+  #' @param verbose Print messages or not (default = self$verbose)
   addDetailedMetrics = function(version = "V2", samples = self$metadata$sample, data_path = self$data_path, n.cores = self$n.cores, verbose = self$verbose) {
-    self$detailed_metrics <- addDetailedMetricsInner(version, samples, data_path, n.cores, verbose)
+    if (is.null(self$cm.list)) self$cm.list <- addCountMatrices(version, samples, data_path, n.cores, verbose)
+    self$detailed_metrics <- addDetailedMetricsInner(self$cm.list, verbose)
   },
   
-  addComparison = function(comp_group) {
-    checkCompMeta(comp_group)
+  #' Add comparison group
+  #' @param comp_group Comparison metric, e.g. "group", "samples"
+  #' @param metadata Metadata for samples (default = self$metadata)
+  #' @return Vector
+  addComparison = function(comp_group, metadata = self$metadata) {
+    checkCompMeta(comp_group, metadata)
     self$comp_group <- comp_group
   },
   
-  plotSamples = function(pos = 2e3, exact = FALSE, comp_group = self$comp_group, metadata = self$metadata) {
+  #' Plot samples
+  #' @param comp_group Comparison metric (default = self$comp_group)
+  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
+  #' @param exact Whether to calculate exact p values (default = FALSE)
+  #' @param metadata Metadata for samples (default = self$metadata)
+  #' @return ggplot2 object
+  plotSamples = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata) {
     comp_group %<>% checkCompGroup("sex", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -121,16 +146,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$theme +
       labs(x="group", y="Freq") +
       theme(legend.position="right") +
-      scale_fill_dutchmasters(palette = self$pal)
+      scale_fill_dutchmasters(palette = self$pal, discrete = FALSE)
     
     if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, pos, exact)
+      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
     }
     
     return(g)
   },
   
-  # detailed plot
+  #' Plot gene counts of raw data
+  #' @param comp_group
+  #' @param detailed_metrics
+  #' @param metadata
   plotGeneCounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
     detailed_metrics %<>% checkDetailedMetrics(self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
@@ -151,7 +179,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         vjust = 1,
         hjust = 1
       )) +
-      scale_fill_dutchmasters(palette = self$pal)
+      scale_fill_dutchmasters(palette = self$pal) +
+      scale_y_log10()
     
     # a legend only makes sense if the comparison is not the samples
     if (comp_group != "sample") {
@@ -160,7 +189,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  # detailed plot
+  #' Plot UMI counts of raw data
+  #' @param comp_group
+  #' @param detailed_metrics
+  #' @param metadata
   plotUMICounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
     detailed_metrics %<>% checkDetailedMetrics(self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
@@ -181,7 +213,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         vjust = 1,
         hjust = 1
       )) +
-      scale_fill_dutchmasters(palette = self$pal)
+      scale_fill_dutchmasters(palette = self$pal) +
+      scale_y_log10()
     
     # a legend only makes sense if the comparison is not the samples
     if (comp_group != "sample") {
@@ -191,8 +224,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  # summary stat plot
-  plotMedianUMI = function(pos = 2e3, exact = FALSE, comp_group = self$comp_group, metadata = self$metadata, summary_metrics = self$summary_metrics) {
+  #' Plot median UMI counts
+  #' @param comp_group
+  #' @param h.adj
+  #' @param exact
+  #' @param metadata
+  #' @param summary_metrics
+  plotMedianUMI = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -218,11 +256,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        angle = 45,
                        vjust = 1,
                        hjust = 1,
-                       colour = metadata$group %>% {grepl.replace(., unique(.), dutchmasters_pal("pearl_earring")(length(unique(.))))}))
+                       colour = metadata$group %>% {
+                         factor(
+                           ., labels = dutchmasters_pal("pearl_earring")(length(unique(.)))
+                           )
+                         }
+                       )
+                     )
     }
     
     if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, pos, exact)
+      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
     } else {
       # rotate x-axis text if samples are on x-axis
       g <- g + theme(axis.text.x = element_text(
@@ -234,8 +278,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  # plot all summary stats or a selected list
-  plotSummaryStats = function(pos = 2e3, exact = FALSE, metrics = NULL, comp_group = self$comp_group, summary_metrics = self$summary_metrics) {
+  #' Plot all summary stats or a selected list
+  #' @param comp_group
+  #' @param metrics
+  #' @param h.adj
+  #' @param exact
+  #' @param summary_metrics
+  plotSummaryStats = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, exact = FALSE, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -249,37 +298,36 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
-    plotList <- lapply(metrics, function (met) {
-      g <- summary_metrics %>%
-        filter(metric == sym(met)) %>%
-        merge(metadata, by = "sample") %>%
-        ggplot(aes(
-          x = !!sym(comp_group),
-          y = value,
-          col = !!sym(comp_group)
-        )) +
-        geom_quasirandom(size = 3, grouponX = TRUE) +
-        labs(y = met, x = element_blank()) +
-        self$theme +
-        scale_color_dutchmasters(palette = self$pal)
-      
-      # a legend only makes sense if the comparison is not the samples
-      if (comp_group != "sample") {
-        g <- g + theme(legend.position = "right")
-      }
-      
-      if (plot_stats) {
-        g %<>% addPlotStats(comp_group, metadata, pos, exact)
-      } else {
-        # rotate x-axis text if samples are on x-axis
-        g <- g + theme(axis.text.x = element_text(
-          angle = 45,
-          vjust = 1,
-          hjust = 1
-        ))
-      }
-      return(g)
-    })
+    plotList <- metrics %T>% 
+      {options(warn = -1)} %>% 
+      plapply(function (met) {
+        g <- summary_metrics %>%
+          filter(metric == met) %>%
+          merge(metadata, by = "sample") %>%
+          ggplot(aes(x = !!sym(comp_group), y = value, col = !!sym(comp_group))) +
+          geom_quasirandom(size = 3, groupOnX = TRUE) +
+          labs(y = met, x = element_blank()) +
+          self$theme +
+          scale_color_dutchmasters(palette = self$pal)
+        
+        # a legend only makes sense if the comparison is not the samples
+        if (comp_group != "sample") {
+          g <- g + theme(legend.position = "right")
+        }
+        
+        if (plot_stats) {
+          g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+        } else {
+          # rotate x-axis text if samples are on x-axis
+          g <- g + theme(axis.text.x = element_text(
+            angle = 45,
+            vjust = 1,
+            hjust = 1
+          ))
+        }
+        return(g)
+      }) %T>% 
+      {options(warn=0)}
     
     if (length(plotList) == 1) {
       return(plotList[[1]])
@@ -288,10 +336,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
   },
   
-  
-  # summary stat plot for median gene number per cell
-  # imitate plot_median_umi function
-  plotMedianGene = function(pos = 5e2, exact = FALSE, comp_group = self$comp_group, metadata = self$metadata, summary_metrics = self$summary_metrics) {
+  #' Summary stat plot for median gene number per cell
+  #' @param comp_group
+  #' @param h.adj
+  #' @param exact
+  #' @param metadata
+  #' @param summary_metrics
+  plotMedianGene = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -303,7 +354,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         y = value,
         col = !!sym(comp_group)
       )) +
-      geom_quasirandom(size = 3, grouponX = TRUE) +
+      geom_quasirandom(size = 3, groupOnX = FALSE) +
       labs(y = "Median Genes per Cell", x = element_blank()) +
       self$theme +
       scale_color_dutchmasters(palette = self$pal)
@@ -314,7 +365,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, pos, exact)
+      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
     } else {
       # rotate x-axis text if samples are on x-axis
       g <- g + theme(axis.text.x = element_text(
@@ -326,28 +377,48 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  plotCells = function(pos = 2e3, exact = FALSE, comp_group = self$comp_group, summary_metrics = self$summary_metrics) {
+  #' Plot cells
+  #' @param comp_group
+  #' @param h.adj
+  #' @param exact
+  #' @param summary_metrics
+  plotCells = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
     g <- left_join(summary_metrics, metadata, by="sample") %>%
-      filter(metric == "Estimated Number of cells") %>%
+      filter(metric == "Estimated Number of Cells") %>%
       ggplot(aes(!!sym(comp_group), value, col=!!sym(comp_group))) +
-      geom_quasirandom(size=3, grouponX = TRUE) +
+      geom_quasirandom(size=3, groupOnX = TRUE) +
       self$theme +
       labs(x = element_blank(), y="Cells") +
       scale_color_dutchmasters(palette = self$pal)
     
     if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, pos, exact)
+      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+    } else {
+      # rotate x-axis text if samples are on x-axis
+      g <- g + theme(axis.text.x = element_text(
+        angle = 45,
+        vjust = 1,
+        hjust = 1
+      ))
     }
     return(g)
   },
   
+  #' Save summary metrics to text file
+  #' @param file
+  #' @param dec
+  #' @param sep
   saveSummaryMetrics = function(file = "Summary_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
   },
   
+  #' Save detailed metrics to text file
+  #' @param file
+  #' @param dec
+  #' @param sep
   saveDetailedMetrics = function(file = "Detailed_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
   }

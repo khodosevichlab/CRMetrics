@@ -4,7 +4,7 @@
 \alias{addPlotStats}
 \title{Add statistics to plot}
 \usage{
-addPlotStats(p, comp_group, metadata, pos = 0, exact = FALSE)
+addPlotStats(p, comp_group, metadata, h.adj = 0.05, exact = FALSE)
 }
 \description{
 Use ggpubr to add statistics to plots
