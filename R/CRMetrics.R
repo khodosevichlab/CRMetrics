@@ -146,7 +146,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$theme +
       labs(x="group", y="Freq") +
       theme(legend.position="right") +
-      scale_fill_dutchmasters(palette = self$pal, discrete = FALSE)
+      scale_fill_dutchmasters(palette = self$pal)
     
     if (plot_stats) {
       g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
@@ -193,7 +193,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param comp_group
   #' @param detailed_metrics
   #' @param metadata
-  plotUMICounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
+  plotUmiCounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
     detailed_metrics %<>% checkDetailedMetrics(self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
@@ -230,7 +230,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param exact
   #' @param metadata
   #' @param summary_metrics
-  plotMedianUMI = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
+  plotMedianUmi = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -259,10 +259,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        colour = metadata$group %>% {
                          factor(
                            ., labels = dutchmasters_pal("pearl_earring")(length(unique(.)))
-                           )
-                         }
-                       )
+                         )
+                       }
                      )
+      )
     }
     
     if (plot_stats) {

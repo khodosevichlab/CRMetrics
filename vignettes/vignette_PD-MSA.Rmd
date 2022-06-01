@@ -52,15 +52,15 @@ The comparison group is a column in the metadata file.
 It will be the variable on the x-axis and pairwise statistical comparisons will be made on these groups. 
 
 ```{r}
-crm$plotMedianUMI(comp_group = "sex")
-crm$plotMedianUMI(comp_group = "group")
+crm$plotMedianUmi(comp_group = "sex")
+crm$plotMedianUmi(comp_group = "group")
 ```
 
 If no comparison group is specified, the samples are plotted on the x-axis.  
 This is potentially not very meaningful but it ensures that the plots work even if we don't have groups in the samples. 
 
 ```{r}
-crm$plotMedianUMI()
+crm$plotMedianUmi()
 ```
 
 
@@ -74,7 +74,7 @@ We can add a comparison group globally which will be the default if not specifie
 
 ```{r}
 crm$addComparison("group")
-crm$plotMedianUMI()
+crm$plotMedianUmi()
 ```
 
 A possibility to reset the comparison group is to se the field in the class to `NULL`. 
@@ -126,5 +126,5 @@ We can plot the distribution of number of UMIs and expressed genes in each sampl
 
 ```{r}
 crm$plotGeneCounts()
-crm$plotUMICounts()
+crm$plotUmiCounts()
 ```

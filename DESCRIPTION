@@ -6,13 +6,13 @@ Description: Sample filtering and visualisation of Cell Ranger output metrics.
 License: GPL-3
 Encoding: UTF-8
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.0.0),
+    ggplot2
 biocViews:
 Imports:
     cowplot,
     dplyr,
     dutchmasters,
-    ggplot2,
     ggpubr,
     magrittr,
     Matrix,
