@@ -10,7 +10,7 @@ output: github_document
 
 Load the library
 
-```{r}
+```{r setup}
 library(CRMetrics)
 ```
 
@@ -44,7 +44,7 @@ Format and save metadata as csv.
 ```{r eval=F}
 metadata_15q_cr <- data.frame(matrix(data = metadata_15q_cr, ncol = 3, byrow = TRUE))
 colnames(metadata_15q_cr) <- c("sample", "condition", "age")
-write.csv(metadata_15q_cr, "../data/metadata_15q_CRMetrics.csv", row.names = F)
+# write.csv(metadata_15q_cr, "../data/metadata_15q_CRMetrics.csv", row.names = F)
 ```
 
 Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file. 
@@ -57,8 +57,8 @@ crm <- CRMetrics$new(data_path = "/data/15q/counts_premrna/",
 
 
 ```{r}
-crm$plotMedianUMI(comp_group = "condition")
-crm$plotMedianUMI(comp_group = "age")
+crm$plotMedianUmi(comp_group = "condition")
+crm$plotMedianUmi(comp_group = "age")
 ```
 
 ```{r}
@@ -68,7 +68,7 @@ crm$addDetailedMetrics()
 
 ```{r}
 crm$plotGeneCounts(comp_group = "condition")
-crm$plotUMICounts(comp_group = "condition")
+crm$plotUmiCounts(comp_group = "condition")
 ```
 
 ```{r}
