@@ -1,4 +1,4 @@
-#' @import dutchmasters dplyr magrittr ggplot2
+#' @import dutchmasters dplyr magrittr ggplot2 conos
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply
 #' @importFrom Matrix colSums
@@ -99,7 +99,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$verbose <- verbose
     self$pal <- pal
     self$theme <- theme
-    self$summary_metrics <- addSummaryMetrics(data_path, self$metadata)
+    # self$summary_metrics <- addSummaryMetrics(data_path, self$metadata)
     
     if (detailed_metrics) {
       self$detailed_metrics <- addDetailedMetrics(version = version)
@@ -405,6 +405,74 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       ))
     }
     return(g)
+  },
+  
+  #' Plot cells in a UMAP using Conos and color by depth and doublets
+  #' @param cms The count matrices (default = self$cm.list)
+  #' @param preprocess The method used for preprocessing, either Pagoda2 or Seurat (default = Pagoda2)
+  #' @param ncores The number of cores to use (default = self$n.cores)
+  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
+  plotUMAP = function(cms = self$cm.list,
+                      preprocess = "Pagoda2",
+                      ncores = self$n.cores,
+                      cutoff_depth = 1e4,
+                      verbose = TRUE) {
+    # Preprocess count matrices with pagoda2 or seurat
+    if (verbose) message('Running preprocessing... ')
+    if (preprocess == "Pagoda2") {
+      self$cm.preprocessed <- lapply(self$cm.list, basicP2proc, ncores)
+    } else if (preprocess == "Seurat") {
+      self$cm.preprocessed <- lapply(self$cm.list, basicSeuratProc, ncores)
+    } else {
+      stop(paste0(
+        "The following 'preprocess method' is not valid: ",
+        paste(preprocess, collapse = " ")
+      ))
+    }
+    if (verbose) message('preprocessing done!\n')
+    
+    # Make a Conos object and plot UMAP
+    if (verbose) message('Creating Conos object... ')
+    con <- Conos$new(self$cm.preprocessed, n.cores = 1)
+    if (verbose) message('done!\n')
+    
+    if (verbose) message('Building graph... ')
+    con$buildGraph()
+    if (verbose) message('done!\n')
+    
+    if (verbose) message('Finding communities... ')
+    con$findCommunities(n.iterations = 1)
+    if (verbose) message('done!\n')
+    
+    if (verbose) message('Create UMAP embedding... ')
+    con$embedGraph(method = 'UMAP')
+    if (verbose) message('done!\n')
+    
+    umap_n <-
+      con$plotGraph() # add clustering same as findCommunities method??
+    
+    #Get depth
+    self$depth <-
+      lapply(con$samples, function(d)
+        d$depth) %>% unlist %>% setNames(., (strsplit(names(.), ".", T) %>%
+                                               sapply(function(d)
+                                                 d[2])))
+    # Plot depth in histogram
+    depth_hist <- data_frame(self$depth) %>% ggplot(aes(x=depth)) +
+      geom_histogram(binwidth = 100) +
+      self$theme +
+      scale_color_dutchmasters(palette = self$pal)
+    # Color UMAP by depth
+    umap_de <-
+      con$plotGraph(
+        colors = depth,
+        show.legend = TRUE,
+        color.range = c(0, cutoff_depth)
+      )
+    
+    return(umap_n)
+    return(depth_hist)
+    return(umap_de)
   },
   
   #' Save summary metrics to text file

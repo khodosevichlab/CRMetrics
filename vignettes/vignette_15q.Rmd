@@ -70,3 +70,9 @@ crm$addDetailedMetrics()
 crm$plotGeneCounts(comp_group = "condition")
 crm$plotUMICounts(comp_group = "condition")
 ```
+
+```{r}
+crm$plotUMAP(cutoff_depth=1e3)
+```
+
+
