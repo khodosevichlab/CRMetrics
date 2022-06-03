@@ -13,6 +13,7 @@ Imports:
     cowplot,
     dplyr,
     dutchmasters,
+    ggbeeswarm,
     ggpubr,
     magrittr,
     Matrix,
@@ -22,10 +23,11 @@ Imports:
     tidyr
 Suggests:
     conos,
-    pagoda2
+    pagoda2,
+    Seurat
 Remotes: EdwinTh/dutchmasters
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 URL: https://github.com/khodosevichlab/CRMetrics
 BugReports: https://github.com/khodosevichlab/CRMetrics/issues
 Author: Rasmus Rydbirk [cre, aut], Henrietta [aut], Fabienne [aut], Xian [aut]

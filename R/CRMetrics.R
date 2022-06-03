@@ -1,4 +1,4 @@
-#' @import dutchmasters dplyr magrittr ggplot2 conos
+#' @import dutchmasters dplyr magrittr ggplot2
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply
 #' @importFrom Matrix colSums
@@ -99,7 +99,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$verbose <- verbose
     self$pal <- pal
     self$theme <- theme
-    # self$summary_metrics <- addSummaryMetrics(data_path, self$metadata)
+    self$summary_metrics <- addSummaryMetrics(data_path, self$metadata)
     
     if (detailed_metrics) {
       self$detailed_metrics <- addDetailedMetrics(version = version)
@@ -420,8 +420,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Preprocess count matrices with pagoda2 or seurat
     if (verbose) message('Running preprocessing... ')
     if (preprocess == "Pagoda2") {
+      requireNamespace("pagoda2")
       self$cm.preprocessed <- lapply(self$cm.list, basicP2proc, ncores)
     } else if (preprocess == "Seurat") {
+      requireNamespace("Seurat")
       self$cm.preprocessed <- lapply(self$cm.list, basicSeuratProc, ncores)
     } else {
       stop(paste0(
@@ -432,6 +434,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (verbose) message('preprocessing done!\n')
     
     # Make a Conos object and plot UMAP
+    requireNamespace("Conos")
     if (verbose) message('Creating Conos object... ')
     con <- Conos$new(self$cm.preprocessed, n.cores = 1)
     if (verbose) message('done!\n')
