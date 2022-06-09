@@ -434,7 +434,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (verbose) message('preprocessing done!\n')
     
     # Make a Conos object and plot UMAP
-    requireNamespace("Conos")
+    requireNamespace("conos")
     if (verbose) message('Creating Conos object... ')
     con <- Conos$new(self$cm.preprocessed, n.cores = 1)
     if (verbose) message('done!\n')
