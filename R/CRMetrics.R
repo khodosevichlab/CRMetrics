@@ -461,14 +461,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                                sapply(function(d)
                                                  d[2])))
     # Plot depth in histogram
-    depth_hist <- data_frame(self$depth) %>% ggplot(aes(x=depth)) +
+    depth_hist <- data_frame(depth=self$depth) %>% ggplot(aes(x=depth)) +
       geom_histogram(binwidth = 100) +
       self$theme +
       scale_color_dutchmasters(palette = self$pal)
     # Color UMAP by depth
     umap_de <-
       con$plotGraph(
-        colors = depth,
+        colors = self$depth,
         show.legend = TRUE,
         color.range = c(0, cutoff_depth)
       )
