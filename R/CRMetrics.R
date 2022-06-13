@@ -284,7 +284,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param h.adj
   #' @param exact
   #' @param summary_metrics
-  plotSummaryStats = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, exact = FALSE, summary_metrics = self$summary_metrics) {
+  plotSummaryStats = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
