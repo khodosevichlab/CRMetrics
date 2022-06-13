@@ -382,7 +382,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param h.adj
   #' @param exact
   #' @param summary_metrics
-  plotCells = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, summary_metrics = self$summary_metrics) {
+  plotCells = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -395,7 +395,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       scale_color_dutchmasters(palette = self$pal)
     
     if (plot_stats) {
-      g %<>% addPlotStats(comp_group, self$metadata, h.adj, exact)
+      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
     } else {
       # rotate x-axis text if samples are on x-axis
       g <- g + theme(axis.text.x = element_text(
