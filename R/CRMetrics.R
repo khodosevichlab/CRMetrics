@@ -395,7 +395,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       scale_color_dutchmasters(palette = self$pal)
     
     if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+      g %<>% addPlotStats(comp_group, self$metadata, h.adj, exact)
     } else {
       # rotate x-axis text if samples are on x-axis
       g <- g + theme(axis.text.x = element_text(
