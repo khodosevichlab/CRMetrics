@@ -128,3 +128,8 @@ We can plot the distribution of number of UMIs and expressed genes in each sampl
 crm$plotGeneCounts()
 crm$plotUmiCounts()
 ```
+
+
+```{r}
+# crm$plotUMAP(cutoff_depth=1e3)
+```

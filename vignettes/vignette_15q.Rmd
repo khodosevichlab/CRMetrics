@@ -72,7 +72,7 @@ crm$plotUmiCounts(comp_group = "condition")
 ```
 
 ```{r}
-crm$plotUMAP(cutoff_depth=1e3)
+# crm$plotUMAP(cutoff_depth=1e3)
 ```
 
 
