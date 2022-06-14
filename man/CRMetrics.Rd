@@ -240,6 +240,7 @@ Plot gene counts of raw data
   metrics = NULL,
   h.adj = 0.05,
   exact = FALSE,
+  metadata = self$metadata,
   summary_metrics = self$summary_metrics
 )}\if{html}{\out{</div>}}
 }
@@ -283,6 +284,7 @@ Plot gene counts of raw data
   comp_group = self$comp_group,
   h.adj = 0.05,
   exact = FALSE,
+  metadata = self$metadata,
   summary_metrics = self$summary_metrics
 )}\if{html}{\out{</div>}}
 }

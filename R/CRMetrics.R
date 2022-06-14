@@ -421,10 +421,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (verbose) message('Running preprocessing... ')
     if (preprocess == "Pagoda2") {
       requireNamespace("pagoda2")
-      self$cm.preprocessed <- lapply(self$cm.list, basicP2proc, ncores)
+      self$cm.preprocessed <- lapply(
+        self$cm.list, 
+        pagoda2::basicP2proc, 
+        ncores,
+        get.largevis = FALSE,
+        get.tsne = FALSE,
+        make.geneknn = FALSE)
     } else if (preprocess == "Seurat") {
-      requireNamespace("Seurat")
-      self$cm.preprocessed <- lapply(self$cm.list, basicSeuratProc, ncores)
+      requireNamespace("conos")
+      self$cm.preprocessed <- lapply(
+        self$cm.list, 
+        conos::basicSeuratProc, 
+        ncores,
+        tsne = FALSE,
+        cluster = FALSE)
     } else {
       stop(paste0(
         "The following 'preprocess method' is not valid: ",
@@ -436,7 +447,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Make a Conos object and plot UMAP
     requireNamespace("conos")
     if (verbose) message('Creating Conos object... ')
-    con <- Conos$new(self$cm.preprocessed, n.cores = 1)
+    con <- conos::Conos$new(self$cm.preprocessed, n.cores = 1)
     if (verbose) message('done!\n')
     
     if (verbose) message('Building graph... ')
@@ -461,10 +472,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                                sapply(function(d)
                                                  d[2])))
     # Plot depth in histogram
-    depth_hist <- data_frame(depth=self$depth) %>% ggplot(aes(x=depth)) +
+    depth_hist <- data_frame(depth=self$depth) %>% add_column(low = self$depth < cutoff_depth) %>%
+      ggplot(aes(x = depth, fill = low)) +
       geom_histogram(binwidth = 100) +
       self$theme +
-      scale_color_dutchmasters(palette = self$pal)
+      scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
+      geom_vline(xintercept = cutoff_depth, color = "black") +
+      xlim(0, 25000) +
+      theme(legend.position = "none")
+    
     # Color UMAP by depth
     umap_de <-
       con$plotGraph(

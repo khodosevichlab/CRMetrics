@@ -20,6 +20,7 @@ Imports:
     readr,
     R6,
     sccore,
+    tibble,
     tidyr
 Suggests:
     conos,
