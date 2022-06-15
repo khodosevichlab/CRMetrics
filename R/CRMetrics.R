@@ -173,7 +173,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         fill = !!sym(comp_group)
       )) +
       geom_violin() +
-      labs(y = "# expressed genes", x = element_blank()) +
+      labs(y = "log10 expressed genes", x = element_blank()) +
       self$theme +
       theme(axis.text.x = element_text(
         angle = 45,
@@ -207,7 +207,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         fill = !!sym(comp_group)
       )) +
       geom_violin() +
-      labs(y = "# UMIs", x = element_blank()) +
+      labs(y = "log10 UMIs", x = element_blank()) +
       self$theme +
       theme(axis.text.x = element_text(
         angle = 45,
