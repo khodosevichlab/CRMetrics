@@ -134,24 +134,29 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param exact Whether to calculate exact p values (default = FALSE)
   #' @param metadata Metadata for samples (default = self$metadata)
   #' @return ggplot2 object
-  plotSamples = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata) {
-    comp_group %<>% checkCompGroup("sex", self$verbose)
+  plotSamples = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, second_comp_group = NULL) {
+    comp_group %<>% checkCompGroup(comp_group, self$verbose)
+    if (!is.null(second_comp_group)) {
+      second_comp_group %<>% checkCompGroup(second_comp_group, self$verbose)
+    } else {
+      second_comp_group <- comp_group
+    }
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
-    
+
     g <- metadata %>%
-      select(comp_group, group) %>%
-      table() %>%
+      select(comp_group, second_comp_group) %>%
+      table(dnn = comp_group) %>%
       data.frame %>%
-      ggplot(aes(group, Freq, fill=!!sym(comp_group))) + 
-      geom_bar(stat="identity", position="dodge") + 
+      ggplot(aes(!!sym(comp_group), Freq, fill = !!sym(second_comp_group))) +
+      geom_bar(stat = "identity", position = "dodge") +
       self$theme +
-      labs(x="group", y="Freq") +
-      theme(legend.position="right") +
+      labs(x = comp_group, y = "Freq") +
+      theme(legend.position = "right") +
       scale_fill_dutchmasters(palette = self$pal)
     
-    if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
-    }
+    # if (plot_stats) {
+    #   g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+    # }
     
     return(g)
   },
