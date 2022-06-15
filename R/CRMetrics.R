@@ -7,6 +7,7 @@
 #' @importFrom stats setNames
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggbeeswarm geom_quasirandom
+#' @importFrom tibble add_column
 NULL
 
 # R6 class
@@ -354,7 +355,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         y = value,
         col = !!sym(comp_group)
       )) +
-      geom_quasirandom(size = 3, groupOnX = FALSE) +
+      geom_quasirandom(size = 3, groupOnX = TRUE) +
       labs(y = "Median Genes per Cell", x = element_blank()) +
       self$theme +
       scale_color_dutchmasters(palette = self$pal)
@@ -447,7 +448,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Make a Conos object and plot UMAP
     requireNamespace("conos")
     if (verbose) message('Creating Conos object... ')
-    con <- conos::Conos$new(self$cm.preprocessed, n.cores = 1)
+    con <- conos::Conos$new(self$cm.preprocessed, n.cores = ncores)
     if (verbose) message('done!\n')
     
     if (verbose) message('Building graph... ')
