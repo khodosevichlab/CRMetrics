@@ -129,7 +129,9 @@ crm$plotGeneCounts()
 crm$plotUmiCounts()
 ```
 
-
+We can plot the cells in a UMAP and color the UMAP for low depth
 ```{r}
-# crm$plotUMAP(cutoff_depth=1e3)
+crm$plotUMAP(cutoff_depth=1e3)
+crm$plotDepth(cutoff_depth = 1e3, per_sample = TRUE)
+crm$plotUMAPDepth(cutoff_depth = 1e3, per_sample = TRUE)
 ```

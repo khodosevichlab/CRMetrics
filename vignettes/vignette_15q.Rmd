@@ -72,7 +72,9 @@ crm$plotUmiCounts(comp_group = "condition")
 ```
 
 ```{r}
-# crm$plotUMAP(cutoff_depth=1e3)
+crm$plotUMAP()
+crm$plotDepth(cutoff_depth = 1e3, per_sample = TRUE)
+crm$plotUMAPDepth(cutoff_depth = 1e3, per_sample = TRUE)
 ```
 
 

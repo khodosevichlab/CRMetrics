@@ -417,18 +417,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cms The count matrices (default = self$cm.list)
   #' @param preprocess The method used for preprocessing, either Pagoda2 or Seurat (default = Pagoda2)
   #' @param ncores The number of cores to use (default = self$n.cores)
-  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
   plotUMAP = function(cms = self$cm.list,
                       preprocess = "Pagoda2",
                       ncores = self$n.cores,
-                      cutoff_depth = 1e4,
                       verbose = TRUE) {
     # Preprocess count matrices with pagoda2 or seurat
     if (verbose) message('Running preprocessing... ')
     if (preprocess == "Pagoda2") {
       requireNamespace("pagoda2")
       self$cm.preprocessed <- lapply(
-        self$cm.list, 
+        cms, 
         pagoda2::basicP2proc, 
         ncores,
         get.largevis = FALSE,
@@ -437,7 +435,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else if (preprocess == "Seurat") {
       requireNamespace("conos")
       self$cm.preprocessed <- lapply(
-        self$cm.list, 
+        cms, 
         conos::basicSeuratProc, 
         ncores,
         tsne = FALSE,
@@ -453,30 +451,52 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Make a Conos object and plot UMAP
     requireNamespace("conos")
     if (verbose) message('Creating Conos object... ')
-    con <- conos::Conos$new(self$cm.preprocessed, n.cores = ncores)
+    self$con <- conos::Conos$new(self$cm.preprocessed, n.cores = ncores)
     if (verbose) message('done!\n')
     
     if (verbose) message('Building graph... ')
-    con$buildGraph()
+    self$con$buildGraph()
     if (verbose) message('done!\n')
     
     if (verbose) message('Finding communities... ')
-    con$findCommunities(n.iterations = 1)
+    self$con$findCommunities(n.iterations = 1)
     if (verbose) message('done!\n')
     
     if (verbose) message('Create UMAP embedding... ')
-    con$embedGraph(method = 'UMAP')
+    self$con$embedGraph(method = 'UMAP')
     if (verbose) message('done!\n')
     
-    umap_n <-
-      con$plotGraph() # add clustering same as findCommunities method??
+    self$umap_n <-
+      self$con$plotGraph()
     
+    return(self$umap_n)
+  },
+  
+  #' Plot the depth in histogram
+  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
+  #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
+  plotDepth = function(cutoff_depth = 1e4, per_sample = FALSE){
     #Get depth
     self$depth <-
-      lapply(con$samples, function(d)
+      lapply(self$con$samples, function(d)
         d$depth) %>% unlist %>% setNames(., (strsplit(names(.), ".", T) %>%
                                                sapply(function(d)
                                                  d[2])))
+    if (per_sample){
+      # somehow match names(crm$detailed_metrics) with names(crm$depth) and add crm$detailed_metrics$sample
+      depth_hist <- data_frame(depth=self$depth) %>% 
+        add_column(sample = self$detailed_metrics[match(rownames(filter(self$detailed_metrics, metric=="UMI_count")), 
+                                                        names(self$depth)), "sample"]) %>%
+        add_column(low = self$depth < cutoff_depth) %>%
+        ggplot(aes(x = depth, fill = low)) +
+        geom_histogram(binwidth = 100) +
+        self$theme + 
+        scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
+        geom_vline(xintercept = cutoff_depth, color = "black") +
+        xlim(0,2500) +
+        theme(legend.position = "none") +
+        facet_wrap(~sample, scales="free_y")
+    } else {
     # Plot depth in histogram
     depth_hist <- data_frame(depth=self$depth) %>% add_column(low = self$depth < cutoff_depth) %>%
       ggplot(aes(x = depth, fill = low)) +
@@ -486,32 +506,55 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       geom_vline(xintercept = cutoff_depth, color = "black") +
       xlim(0, 25000) +
       theme(legend.position = "none")
+    }
     
-    # Color UMAP by depth
-    umap_de <-
-      con$plotGraph(
-        colors = self$depth,
-        show.legend = TRUE,
-        color.range = c(0, cutoff_depth)
-      )
-    
-    return(umap_n)
     return(depth_hist)
-    return(umap_de)
+  },
+  
+  #' Plot UMAP with coloring for the depth
+  #' @param depth The object which holds the depth (default = self$depth)
+  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
+  #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
+  plotUMAPDepth = function(depth = self$depth, cutoff_depth = 1e4, per_sample = FALSE){
+    if (per_sample){
+      umap_depth <-
+        self$con$plotPanel(
+          use.common.embedding = FALSE,
+          embedding = "UMAP",
+          groups = factor(self$depth<cutoff_depth),
+          palette = c("#BEBEBE","#FF0000"),
+          show.legend = FALSE,
+          mark.groups = FALSE,
+          alpha = 0.2
+        )
+    } else {
+    # Color UMAP by depth
+    umap_depth <-
+      self$con$plotPanel(
+        use.common.embedding = TRUE,
+        embedding = "UMAP",
+        groups = factor(self$depth<cutoff_depth),
+        show.legend = FALSE,
+        mark.groups = FALSE,
+        palette = c("#BEBEBE","#FF0000"),
+        alpha = 0.2
+      )
+    }
+    return(umap_depth)
   },
   
   #' Save summary metrics to text file
-  #' @param file
-  #' @param dec
-  #' @param sep
+  #' @param file Output file (default = "Summary_metrics.txt")
+  #' @param dec How the decimals are defined (default = ".")
+  #' @param sep How the values are separated (default = "\t")
   saveSummaryMetrics = function(file = "Summary_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
   },
   
   #' Save detailed metrics to text file
-  #' @param file
-  #' @param dec
-  #' @param sep
+  #' @param file Output file (default = "Summary_metrics.txt")
+  #' @param dec How the decimals are defined (default = ".")
+  #' @param sep How the values are separated (default = "\t")
   saveDetailedMetrics = function(file = "Detailed_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
   }
