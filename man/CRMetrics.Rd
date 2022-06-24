@@ -35,30 +35,32 @@ Inner function to add detailed metrics}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-CRMetrics-new}{\code{CRMetrics$new()}}
-\item \href{#method-CRMetrics-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
-\item \href{#method-CRMetrics-addComparison}{\code{CRMetrics$addComparison()}}
-\item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
-\item \href{#method-CRMetrics-plotGeneCounts}{\code{CRMetrics$plotGeneCounts()}}
-\item \href{#method-CRMetrics-plotUmiCounts}{\code{CRMetrics$plotUmiCounts()}}
-\item \href{#method-CRMetrics-plotMedianUmi}{\code{CRMetrics$plotMedianUmi()}}
-\item \href{#method-CRMetrics-plotSummaryStats}{\code{CRMetrics$plotSummaryStats()}}
-\item \href{#method-CRMetrics-plotMedianGene}{\code{CRMetrics$plotMedianGene()}}
-\item \href{#method-CRMetrics-plotCells}{\code{CRMetrics$plotCells()}}
-\item \href{#method-CRMetrics-plotUMAP}{\code{CRMetrics$plotUMAP()}}
-\item \href{#method-CRMetrics-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
-\item \href{#method-CRMetrics-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
-\item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
+\item \href{#method-new}{\code{CRMetrics$new()}}
+\item \href{#method-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
+\item \href{#method-addComparison}{\code{CRMetrics$addComparison()}}
+\item \href{#method-plotSamples}{\code{CRMetrics$plotSamples()}}
+\item \href{#method-plotGeneCounts}{\code{CRMetrics$plotGeneCounts()}}
+\item \href{#method-plotUmiCounts}{\code{CRMetrics$plotUmiCounts()}}
+\item \href{#method-plotMedianUmi}{\code{CRMetrics$plotMedianUmi()}}
+\item \href{#method-plotSummaryStats}{\code{CRMetrics$plotSummaryStats()}}
+\item \href{#method-plotMedianGene}{\code{CRMetrics$plotMedianGene()}}
+\item \href{#method-plotCells}{\code{CRMetrics$plotCells()}}
+\item \href{#method-plotUMAP}{\code{CRMetrics$plotUMAP()}}
+\item \href{#method-plotDepth}{\code{CRMetrics$plotDepth()}}
+\item \href{#method-plotUMAPDepth}{\code{CRMetrics$plotUMAPDepth()}}
+\item \href{#method-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
+\item \href{#method-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
+\item \href{#method-clone}{\code{CRMetrics$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-new"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-new}{}}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$new(
   data_path,
-  metadata_file,
+  metadata_file = NULL,
   comp_group = NULL,
   detailed_metrics = FALSE,
   verbose = TRUE,
@@ -84,8 +86,8 @@ Inner function to add detailed metrics}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-addDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-addDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-addDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-addDetailedMetrics}{}}}
 \subsection{Method \code{addDetailedMetrics()}}{
 Function to read in detailed metrics. This is not done upon initialization for speed
 \subsection{Usage}{
@@ -116,8 +118,8 @@ Add comparison group}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-addComparison"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-addComparison}{}}}
+\if{html}{\out{<a id="method-addComparison"></a>}}
+\if{latex}{\out{\hypertarget{method-addComparison}{}}}
 \subsection{Method \code{addComparison()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addComparison(comp_group, metadata = self$metadata)}\if{html}{\out{</div>}}
@@ -138,15 +140,16 @@ Plot samples
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotSamples"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotSamples}{}}}
+\if{html}{\out{<a id="method-plotSamples"></a>}}
+\if{latex}{\out{\hypertarget{method-plotSamples}{}}}
 \subsection{Method \code{plotSamples()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSamples(
   comp_group = self$comp_group,
   h.adj = 0.05,
   exact = FALSE,
-  metadata = self$metadata
+  metadata = self$metadata,
+  second_comp_group = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -169,8 +172,8 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotGeneCounts"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotGeneCounts}{}}}
+\if{html}{\out{<a id="method-plotGeneCounts"></a>}}
+\if{latex}{\out{\hypertarget{method-plotGeneCounts}{}}}
 \subsection{Method \code{plotGeneCounts()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotGeneCounts(
@@ -189,8 +192,8 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotUmiCounts"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotUmiCounts}{}}}
+\if{html}{\out{<a id="method-plotUmiCounts"></a>}}
+\if{latex}{\out{\hypertarget{method-plotUmiCounts}{}}}
 \subsection{Method \code{plotUmiCounts()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotUmiCounts(
@@ -209,8 +212,8 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotMedianUmi"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotMedianUmi}{}}}
+\if{html}{\out{<a id="method-plotMedianUmi"></a>}}
+\if{latex}{\out{\hypertarget{method-plotMedianUmi}{}}}
 \subsection{Method \code{plotMedianUmi()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMedianUmi(
@@ -231,8 +234,8 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotSummaryStats"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotSummaryStats}{}}}
+\if{html}{\out{<a id="method-plotSummaryStats"></a>}}
+\if{latex}{\out{\hypertarget{method-plotSummaryStats}{}}}
 \subsection{Method \code{plotSummaryStats()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSummaryStats(
@@ -254,8 +257,8 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotMedianGene"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotMedianGene}{}}}
+\if{html}{\out{<a id="method-plotMedianGene"></a>}}
+\if{latex}{\out{\hypertarget{method-plotMedianGene}{}}}
 \subsection{Method \code{plotMedianGene()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMedianGene(
@@ -276,8 +279,8 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotCells"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotCells}{}}}
+\if{html}{\out{<a id="method-plotCells"></a>}}
+\if{latex}{\out{\hypertarget{method-plotCells}{}}}
 \subsection{Method \code{plotCells()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCells(
@@ -298,16 +301,16 @@ Plot gene counts of raw data
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotUMAP"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotUMAP}{}}}
+\if{html}{\out{<a id="method-plotUMAP"></a>}}
+\if{latex}{\out{\hypertarget{method-plotUMAP}{}}}
 \subsection{Method \code{plotUMAP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotUMAP(
   cms = self$cm.list,
   preprocess = "Pagoda2",
-  ncores = self$n.cores,
-  cutoff_depth = 10000,
-  verbose = TRUE
+  n.cores = self$n.cores,
+  verbose = self$verbose,
+  force = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -316,21 +319,68 @@ Plot gene counts of raw data
 \describe{
 \item{\code{cms}}{The count matrices (default = self$cm.list)}
 
-\item{\code{preprocess}}{The method used for preprocessing, either Pagoda2 or Seurat (default = Pagoda2)}
+\item{\code{preprocess}}{The method used for preprocessing, either Pagoda2 or Seurat (default = "Pagoda2")}
 
-\item{\code{ncores}}{The number of cores to use (default = self$n.cores)}
+\item{\code{n.cores}}{The number of cores to use (default = self$n.cores)}
 
-\item{\code{cutoff_depth}}{The depth cutoff to color the UMAP (default = 1e4)
-Save summary metrics to text file}
+\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
 
-\item{\code{verbose}}{Print messages (default = TRUE)}
+\item{\code{force}}{boolean Force calculations (default = FALSE)
+Plot the depth in histogram}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-saveSummaryMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-saveSummaryMetrics}{}}}
+\if{html}{\out{<a id="method-plotDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-plotDepth}{}}}
+\subsection{Method \code{plotDepth()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(cutoff_depth = 10000, per_sample = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{cutoff_depth}}{The depth cutoff to color the UMAP (default = 1e4)}
+
+\item{\code{per_sample}}{Whether to plot the depth per sample or for all the samples (default = FALSE)
+Plot UMAP with coloring for the depth}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plotUMAPDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-plotUMAPDepth}{}}}
+\subsection{Method \code{plotUMAPDepth()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotUMAPDepth(
+  depth = self$depth,
+  cutoff_depth = 1000,
+  per_sample = FALSE,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{depth}}{The object which holds the depth (default = self$depth)}
+
+\item{\code{cutoff_depth}}{The depth cutoff to color the UMAP (default = 1e4)}
+
+\item{\code{per_sample}}{Whether to plot the depth per sample or for all the samples (default = FALSE)}
+
+\item{\code{...}}{Additional parameters fed to Conos$plotGraph()
+Save summary metrics to text file}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-saveSummaryMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-saveSummaryMetrics}{}}}
 \subsection{Method \code{saveSummaryMetrics()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveSummaryMetrics(
@@ -343,14 +393,19 @@ Save summary metrics to text file}
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{sep}}{Save detailed metrics to text file}
+\item{\code{file}}{Output file (default = "Summary_metrics.txt")}
+
+\item{\code{dec}}{How the decimals are defined (default = ".")}
+
+\item{\code{sep}}{How the values are separated (default = "\t")
+Save detailed metrics to text file}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-saveDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-saveDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-saveDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-saveDetailedMetrics}{}}}
 \subsection{Method \code{saveDetailedMetrics()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveDetailedMetrics(
@@ -360,10 +415,21 @@ Save summary metrics to text file}
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{file}}{Output file (default = "Summary_metrics.txt")}
+
+\item{\code{dec}}{How the decimals are defined (default = ".")}
+
+\item{\code{sep}}{How the values are separated (default = "\t")}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-clone}{}}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

@@ -50,7 +50,7 @@ addCountMatrices <- function(version, samples, data_path, n.cores, verbose) {
 #' Add detailed metrics
 #' @description Add detailed metrics, requires to load raw count matrices using pagoda2
 #' @keywords internal
-addDetailedMetricsInner <- function(cm.list, verbose = TRUE) {
+addDetailedMetricsInner <- function(cm.list, verbose = TRUE, n.cores = 1) {
   if (verbose) message("Filtering... ")
   metricsDetailed <- cm.list %>% 
     plapply(\(cm) {
@@ -72,7 +72,7 @@ addDetailedMetricsInner <- function(cm.list, verbose = TRUE) {
       
       metricsDetailedSample <- rbind(totalUMI, totalGenes)
       return(metricsDetailedSample)
-    }, progress = verbose) %>% 
+    }, progress = verbose, n.cores = n.cores) %>% 
     setNames(cm.list %>% names())
   
   metricsDetailed %<>%
