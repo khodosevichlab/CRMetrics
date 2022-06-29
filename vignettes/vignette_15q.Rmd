@@ -12,8 +12,6 @@ Load the library
 
 ```{r setup}
 library(CRMetrics)
-/usr/local/cuda-11.6/targets/x86_64-linux/lib/libnvblas.so
-
 ```
 
 Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file. 

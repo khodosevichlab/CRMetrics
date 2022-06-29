@@ -40,6 +40,10 @@ checkCompMeta <- function(comp_group, metadata) {
 addCountMatrices <- function(version, samples, data_path, n.cores, verbose) {
   requireNamespace("pagoda2")
   
+  if (version == "auto") {
+    tmp <- dir(paste0(data_path,samples[[1]],"/outs/filtered_feature_bc_matrix"))
+    if (any(grepl("features", tmp))) version <- "V3" else if (any(grepl("genes", tmp))) version <- "V2" else stop("10x chemistry version could not be inferred, please manually set 'version' to either 'V2' or 'V3'.")
+  }
   samples %>%
     lapply(function(x) {
       paste0(data_path,x,"/outs/filtered_feature_bc_matrix")

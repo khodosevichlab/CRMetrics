@@ -112,12 +112,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Inner function to add detailed metrics
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed
-  #' @param version (default = "V2)
+  #' @param version 10x chemistry version. If set to "auto", tries to infer chemsitry from output files for first sample (default = "auto")
   #' @param samples vector containing samples. Default is to extract this information from self$metadata$sample
   #' @param data_path Path to data (default = self$data_path)
   #' @param n.cores Number of cores for the calculations (default = self$n.cores)
   #' @param verbose Print messages or not (default = self$verbose)
-  addDetailedMetrics = function(version = "V2", samples = self$metadata$sample, data_path = self$data_path, n.cores = self$n.cores, verbose = self$verbose) {
+  addDetailedMetrics = function(version = c("auto","V2","V3"), samples = self$metadata$sample, data_path = self$data_path, n.cores = self$n.cores, verbose = self$verbose) {
+    version %<>% match.arg(c("auto","V2","V3"))
     if (is.null(self$cm.list)) self$cm.list <- addCountMatrices(version, samples, data_path, n.cores, verbose)
     self$detailed_metrics <- addDetailedMetricsInner(self$cm.list, verbose = verbose, n.cores = n.cores)
   },
@@ -483,7 +484,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Plot the depth in histogram
   #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
   #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
-  plotDepth = function(cutoff_depth = 1e4, per_sample = FALSE){
+  plotDepth = function(cutoff_depth = 1e3, per_sample = FALSE){
     #Get depth
     if (is.null(self$depth)) {
       self$depth <-
@@ -500,7 +501,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                                         names(self$depth)), "sample"]) %>%
         add_column(low = self$depth < cutoff_depth) %>%
         ggplot(aes(x = depth, fill = low)) +
-        geom_histogram(binwidth = 100) +
+        geom_histogram(binwidth = 25) +
         self$theme + 
         scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
         geom_vline(xintercept = cutoff_depth, color = "black") +
@@ -511,7 +512,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Plot depth in histogram
     depth_hist <- data_frame(depth=self$depth) %>% add_column(low = self$depth < cutoff_depth) %>%
       ggplot(aes(x = depth, fill = low)) +
-      geom_histogram(binwidth = 100) +
+      geom_histogram(binwidth = 25) +
       self$theme +
       scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
       geom_vline(xintercept = cutoff_depth, color = "black") +
