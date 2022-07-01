@@ -1,7 +1,7 @@
 #' @import dutchmasters dplyr magrittr ggplot2
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply
-#' @importFrom Matrix colSums
+#' @importFrom Matrix colSums t
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom cowplot plot_grid
 #' @importFrom stats setNames
@@ -78,7 +78,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    n.cores = 1,
   
   # # To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
-  initialize = function(data_path, metadata_file=NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1, version = "V2") {
+  initialize = function(data_path, metadata_file=NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
       for (n in ls(data_path)) {
@@ -92,7 +92,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$metadata <- data.frame(sample = dir(data_path))
     } else {
       stopifnot(file.exists(metadata_file))
-      self$metadata <- read.csv(metadata_file)
+      self$metadata <- read.csv(metadata_file, header = TRUE)
     }
     
     self$data_path <- data_path
@@ -102,10 +102,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$verbose <- verbose
     self$pal <- pal
     self$theme <- theme
-    self$summary_metrics <- addSummaryMetrics(data_path, self$metadata)
+    self$summary_metrics <- addSummaryMetrics(data_path, self$metadata, verbose)
     
     if (detailed_metrics) {
-      self$detailed_metrics <- addDetailedMetrics(version = version)
+      self$detailed_metrics <- self$addDetailedMetrics()
     }
     self$n.cores <- n.cores
   },
@@ -119,8 +119,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param verbose Print messages or not (default = self$verbose)
   addDetailedMetrics = function(version = c("auto","V2","V3"), samples = self$metadata$sample, data_path = self$data_path, n.cores = self$n.cores, verbose = self$verbose) {
     version %<>% match.arg(c("auto","V2","V3"))
-    if (is.null(self$cm.list)) self$cm.list <- addCountMatrices(version, samples, data_path, n.cores, verbose)
-    self$detailed_metrics <- addDetailedMetricsInner(self$cm.list, verbose = verbose, n.cores = n.cores)
+    if (is.null(self$cms)) self$cms <- addCountMatrices(version, samples, data_path, n.cores, verbose)
+    self$detailed_metrics <- addDetailedMetricsInner(self$cms, verbose = verbose, n.cores = n.cores)
   },
   
   #' Add comparison group
@@ -418,67 +418,39 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' Plot cells in a UMAP using Conos and color by depth and doublets
-  #' @param cms The count matrices (default = self$cm.list)
-  #' @param preprocess The method used for preprocessing, either Pagoda2 or Seurat (default = "Pagoda2")
-  #' @param n.cores The number of cores to use (default = self$n.cores)
-  #' @param verbose boolean Print progress (default = self$verbose)
-  #' @param force boolean Force calculations (default = FALSE)
-  plotUMAP = function(cms = self$cm.list,
-                      preprocess = "Pagoda2",
-                      n.cores = self$n.cores,
-                      verbose = self$verbose,
-                      force = FALSE) {
-    # Preprocess count matrices with pagoda2 or seurat
-    if(!is.null(self$cm.list)) {
-      if (verbose) message('Running preprocessing... ')
-      if (preprocess == "Pagoda2") {
-        requireNamespace("pagoda2")
-        self$cm.preprocessed <- suppressMessages(plapply(
-          cms, 
-          pagoda2::basicP2proc,
-          get.largevis = FALSE,
-          get.tsne = FALSE,
-          make.geneknn = FALSE, 
-          progress = FALSE, 
-          n.cores = n.cores))
-      } else if (preprocess == "Seurat") {
-        requireNamespace("conos")
-        self$cm.preprocessed <- lapply(
-          cms, 
-          conos::basicSeuratProc, 
-          ncores,
-          tsne = FALSE,
-          cluster = FALSE)
-      } else {
-        stop(paste0(
-          "The following 'preprocess method' is not valid: ",
-          paste(preprocess, collapse = " ")
-        ))
-      }
-      if (verbose) message('preprocessing done!\n')
-    }
-    
-    # Make a Conos object and plot UMAP
+  #' @param ... Plotting parameters passed to `conos::embeddingPlot`
+  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, ...) {
+    # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
-      requireNamespace("conos")
-      if (verbose) message('Creating Conos object... ')
-      self$con <- conos::Conos$new(self$cm.preprocessed, n.cores = n.cores)
-      if (verbose) message('done!\n')
-      
-      if (verbose) message('Building graph... ')
-      self$con$buildGraph()
-      if (verbose) message('done!\n')
-      
-      if (verbose) message('Finding communities... ')
-      self$con$findCommunities(n.iterations = 1)
-      if (verbose) message('done!\n')
-      
-      if (verbose) message('Create UMAP embedding... ')
-      self$con$embedGraph(method = 'UMAP')
-      if (verbose) message('done!\n')
+      if(is.null(self$cms.preprocessed)) {
+        self$doPreprocessing()
+      }
+      self$createEmbedding()
     }
     
-    self$con$plotGraph()
+    # Depth
+    if (depth) {
+      depths <- getConosDepth(self$con)
+      g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
+    }
+    
+    # Doublets
+    if (!is.null(doublet_method)) {
+      dres <- self$doublets[[doublet_method]]$result
+      if (is.null(dres)) stop("No results found for doublet_method '",doublet_method,"'. Please run doubletDetection(method = '",doublet_method,"'.")
+      if (doublet_scores) {
+        doublets <- dres$scores
+        label = "scores"
+      } else {
+        doublets <- dres$labels * 1
+        label = "labels"
+      } 
+      doublets %<>% setNames(rownames(dres))
+      g <- self$con$plotGraph(colors = doublets, title = paste(doublet_method,label, collapse = " "), ...)
+    }
+    
+    if (!exists("g")) g <- self$con$plotGraph(...)
+    return(g)
   },
   
   #' Plot the depth in histogram
@@ -486,72 +458,35 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
   plotDepth = function(cutoff_depth = 1e3, per_sample = FALSE){
     #Get depth
-    if (is.null(self$depth)) {
-      self$depth <-
-        lapply(self$con$samples, function(d)
-          d$depth) %>% unlist %>% setNames(., (strsplit(names(.), ".", T) %>%
-                                                 sapply(function(d)
-                                                   d[2])))
-    }
+    depths <- getConosDepth(self$con)
     
     if (per_sample){
       # somehow match names(crm$detailed_metrics) with names(crm$depth) and add crm$detailed_metrics$sample
-      depth_hist <- data_frame(depth=self$depth) %>% 
+      depth_hist <- data_frame(depth=depths) %>% 
         add_column(sample = self$detailed_metrics[match(rownames(filter(self$detailed_metrics, metric=="UMI_count")), 
-                                                        names(self$depth)), "sample"]) %>%
-        add_column(low = self$depth < cutoff_depth) %>%
+                                                        names(depths)), "sample"]) %>%
+        add_column(low = depths < cutoff_depth) %>%
         ggplot(aes(x = depth, fill = low)) +
-        geom_histogram(binwidth = 25) +
-        self$theme + 
-        scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
-        geom_vline(xintercept = cutoff_depth, color = "black") +
-        xlim(0,2500) +
-        theme(legend.position = "none") +
-        facet_wrap(~sample, scales="free_y")
+          geom_histogram(binwidth = 25) +
+          self$theme + 
+          scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
+          geom_vline(xintercept = cutoff_depth, color = "black") +
+          xlim(0, 2.5e4) +
+          theme(legend.position = "none") +
+          facet_wrap(~sample, scales="free_y")
     } else {
     # Plot depth in histogram
-    depth_hist <- data_frame(depth=self$depth) %>% add_column(low = self$depth < cutoff_depth) %>%
+    depth_hist <- data_frame(depth=depths) %>% add_column(low = depths < cutoff_depth) %>%
       ggplot(aes(x = depth, fill = low)) +
-      geom_histogram(binwidth = 25) +
-      self$theme +
-      scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
-      geom_vline(xintercept = cutoff_depth, color = "black") +
-      xlim(0, 25000) +
-      theme(legend.position = "none")
+        geom_histogram(binwidth = 25) +
+        self$theme +
+        scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
+        geom_vline(xintercept = cutoff_depth, color = "black") +
+        xlim(0, 2.5e4) +
+        theme(legend.position = "none")
     }
     
     return(depth_hist)
-  },
-  
-  #' Plot UMAP with coloring for the depth
-  #' @param depth The object which holds the depth (default = self$depth)
-  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
-  #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
-  #' @param ... Additional parameters fed to Conos$plotGraph()
-  plotUMAPDepth = function(depth = self$depth, cutoff_depth = 1e3, per_sample = FALSE, ...){
-    if (per_sample){
-      umap_depth <-
-        self$con$plotPanel(
-          use.common.embedding = FALSE,
-          groups = factor(self$depth<cutoff_depth),
-          palette = c("#BEBEBE","#FF0000"),
-          show.legend = FALSE,
-          mark.groups = FALSE,
-          alpha = 0.2
-        )
-    } else {
-    # Color UMAP by depth
-    umap_depth <-
-      self$con$plotGraph(
-        groups = factor(ifelse(self$depth<cutoff_depth, "Low","High")) %>% setNames(self$depth %>% names()),
-        show.legend = TRUE,
-        mark.groups = FALSE,
-        alpha = 0.2, 
-        size = 0.3,
-        ...
-      )
-    }
-    return(umap_depth)
   },
   
   #' Save summary metrics to text file
@@ -568,5 +503,103 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param sep How the values are separated (default = "\t")
   saveDetailedMetrics = function(file = "Detailed_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
+  },
+  
+  #' Detect doublets
+  #' @param method Which method to use, either `scrublet` or `doubletdetection` (default="scrublet")
+  #' @param cms (default=self$cms)
+  #' @param env (default="r-reticulate")
+  #' @param conda.path (default=system("whereis conda"))
+  #' @return A dataframe with doublet scores and labels, i.e. whether a cell is deemed a putative doublet
+  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda")) {
+    method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
+    if (verbose) message("Loading prerequisites...")
+    requireNamespace("reticulate")
+    use_condaenv(condaenv = env, conda = conda.path, required = T)
+    if (!py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
+    source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
+    
+    if (verbose) message("Identifying doublets using '",method,"'...")
+    tmp <- cms %>% 
+      names() %>% 
+      lapply(\(cm) {
+        if (verbose) message(paste0("Running sample '",cm,"'..."))
+        tmp <- do.call(paste0(method,"_py"), list(Matrix::t(cms[[cm]]))) %>% 
+          setNames(c("labels","scores","output"))
+      }) %>% 
+      setNames(cms %>% names())
+    
+    df <- tmp %>% 
+      names() %>% 
+      lapply(\(name) {
+        tmp[[name]] %>% 
+          .[c("labels","scores")] %>% 
+          bind_rows() %>%
+          as.data.frame() %>% 
+          mutate(sample = name) %>% 
+          `rownames<-`(cms[[name]] %>% colnames())
+      }) %>% 
+      bind_rows()
+    
+    output <- tmp %>% lapply(`[[`, 3) %>% 
+      setNames(tmp %>% names())
+    
+    res <- list(result = df,
+                output = output)
+    if (verbose) message("Detected ",sum(df$labels, na.rm = T)," possible doublets out of ",nrow(df)," cells.")
+    self$doublets[[method]] <- res
+  },
+  
+  doPreprocessing = function(cms = self$cms,
+                              preprocess = c("pagoda2","seurat"),
+                              verbose = self$verbose,
+                              n.cores = self$n.cores) {
+    preprocess %<>% tolower() %>% match.arg(c("pagoda2","seurat"))
+    if (preprocess == "pagoda2") {
+      if (verbose) message('Running preprocessing using pagoda2...')
+      requireNamespace("pagoda2")
+      tmp <- lapply(
+        cms, 
+        pagoda2::basicP2proc,
+        get.largevis = FALSE,
+        get.tsne = FALSE,
+        make.geneknn = FALSE, 
+        n.cores = n.cores
+      )
+    } else if (preprocess == "seurat") {
+      if (verbose) message('Running preprocessing using Seurat...')
+      requireNamespace("conos")
+      tmp <- lapply(
+        cms, 
+        conos::basicSeuratProc, 
+        do.par = (n.cores > 1),
+        tsne = FALSE,
+        cluster = FALSE,
+        verbose = FALSE)
+    } 
+    if (verbose) message('Preprocessing done!\n')
+    
+    self$cms.preprocessed <- tmp
+    invisible(tmp)
+  },
+  
+  createEmbedding = function(cms = self$cms.preprocessed,
+                              verbose = self$verbose, 
+                              n.cores = self$n.cores) {
+    requireNamespace("conos")
+    if (verbose) message('Creating Conos object... ')
+    con <- conos::Conos$new(cms, n.cores = n.cores)
+    
+    if (verbose) message('Building graph... ')
+    con$buildGraph()
+    
+    if (verbose) message('Finding communities... ')
+    con$findCommunities(n.iterations = 1)
+    
+    if (verbose) message('Creating UMAP embedding... ')
+    con$embedGraph(method = 'UMAP')
+    
+    self$con <- con
+    invisible(con)
   }
-))
+ ))

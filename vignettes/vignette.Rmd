@@ -1,0 +1,162 @@
+---
+title: "Analysis of 10x test data"
+output: github_document
+---
+
+# Preparations
+
+## Download test data from 10x
+
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_heart_CNIK_3pv3/5k_mouse_heart_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_liver_CNIK_3pv3/5k_mouse_liver_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_lung_CNIK_3pv3/5k_mouse_lung_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/1k_mouse_kidney_CNIK_3pv3/1k_mouse_kidney_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
+
+Unpack (tar -xf) in format resembling Cellranger output: <sample-ID>/outs/filtered_feature_bc_matrix
+
+## Download metrics summaries from 10x
+
+Place in corresponding /outs/ folders, rename to 'metrics_summary.csv'
+
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/1k_mouse_kidney_CNIK_3pv3/1k_mouse_kidney_CNIK_3pv3_metrics_summary.csv
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_heart_CNIK_3pv3/5k_mouse_heart_CNIK_3pv3_metrics_summary.csv
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_liver_CNIK_3pv3/5k_mouse_liver_CNIK_3pv3_metrics_summary.csv
+wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_lung_CNIK_3pv3/5k_mouse_lung_CNIK_3pv3_metrics_summary.csv
+
+# CRMetrics class
+
+
+## Initializing a CRMetrics class
+
+Load the library
+
+```{r setup}
+library(CRMetrics)
+```
+
+Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file.
+Metadata can be added in the initialization call from a comma-separated file. The metadata file contains a column `sample` with the samples and optionally more columns with factors. Only sample IDs in column `sample` will be included.
+
+```{r}
+crm <- CRMetrics$new(data_path = "/data/ExtData/CRMetrics_testdata/", 
+                     metadata_file = "/data/ExtData/CRMetrics_testdata/metadata.csv", 
+                     n.cores = 50)
+```
+
+We can review our metadata
+
+```{r}
+crm$metadata
+```
+
+## Plot summary statistics
+
+In one plot, we can plot selected metric summary stats. If no comparison group is set, it defaults to `sample`
+
+```{r fig.width=12, fig.height=12}
+metrics.to.plot <- crm$summary_metrics$metric %>% 
+  unique() %>% 
+  .[c(1:4,6,18,19)]
+metrics.to.plot
+crm$plotSummaryStats(metrics = metrics.to.plot)
+```
+
+We can do the same, but set the comparison group to `chemistry`. This will add statistics to the plots
+
+```{r fig.width=12, fig.height=12}
+crm$addComparison("chemistry")
+crm$plotSummaryStats(metrics = metrics.to.plot)
+```
+
+## Add detailed metrics
+
+We can read in count matrices to assess detailed metrics
+
+```{r}
+crm$addDetailedMetrics()
+```
+
+```{r}
+crm$plotGeneCounts()
+crm$plotUmiCounts()
+```
+
+## Embed cells using Conos and UMAP
+
+In order to plot our cells in a UMAP embedding, we need to perform preprocessing of the raw count matrices. To do this, either `pagoda2` (default) or `Seurat` can be used. 
+
+```{r}
+crm$doPreprocessing()
+```
+
+Then, we create the UMAP embedding using `conos`.
+
+```{r}
+crm$createEmbedding()
+```
+
+We can now plot our cells.
+
+```{r}
+crm$plotUmap()
+```
+
+We can also plot cell depth, both in the UMAP embedding or as histograms for all samples or per sample.
+
+```{r}
+crm$plotUmap(depth = TRUE)
+```
+
+```{r}
+crm$plotDepth()
+```
+
+```{r}
+crm$plotDepth(per_sample = TRUE) # Not correct
+```
+
+# Doublet detection
+
+For doublet detection, we included the possibility to do so using the Python modules `scrublet` and `DoubletDetection`. If you work on a server using RStudio Server, there may be some preparational steps needed for getting the doublet detection to work. If you are on your own machine, it should be enough to install `reticulate` and the relevant Python module(s).
+
+## Preparations
+
+Install and load `reticulate`, then create a conda environment. In this example, we're on a server and we load `miniconda` using modules. The `conda` parameter should point to wherever your conda binary is located (in terminal, try `whereis conda`)
+
+```{r}
+install.packages("reticulate")
+library(reticulate)
+conda_create("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/conda", python_version = 3.8)
+conda_install("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/conda", pip = TRUE, packages = c("scrublet","doubletdetection"))
+```
+
+There is a known problem with openBLAS which may be different between R and Python. If this is the case, you will receive the error `floating point exception` and R will crash.
+In Python, the problem lies with numpy. numba requires numpy < 1.23, so force reinstall from scratch with no binaries in the `r-reticulate` conda environment from terminal
+`module load miniconda/4.12.0`
+`conda activate r-reticulate`
+`python -m pip install numpy==1.22.0 --force-reinstall --no-binary numpy`
+
+Finally, restart your R session.
+
+Please note, if at any point you receive an error that you can't change the current Python instance, please remove any Python-dependent object in your environment and restart your R session.
+
+## Analysis
+
+`scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we use `scrublet`.
+
+```{r}
+crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+```
+
+We can plot the estimated doublets in the UMAP embedding.
+
+```{r}
+crm$plotUmap(doublet_method = "scrublet")
+```
+
+And we can plot the scores for the doublet estimations.
+
+```{r}
+crm$plotUmap(doublet_method = "scrublet", doublet_scores = TRUE)
+```
+

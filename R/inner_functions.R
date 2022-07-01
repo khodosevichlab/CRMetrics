@@ -41,22 +41,47 @@ addCountMatrices <- function(version, samples, data_path, n.cores, verbose) {
   requireNamespace("pagoda2")
   
   if (version == "auto") {
-    tmp <- dir(paste0(data_path,samples[[1]],"/outs/filtered_feature_bc_matrix"))
-    if (any(grepl("features", tmp))) version <- "V3" else if (any(grepl("genes", tmp))) version <- "V2" else stop("10x chemistry version could not be inferred, please manually set 'version' to either 'V2' or 'V3'.")
+    vers <- samples %>% 
+      sapply(\(sample) {
+        tmp <- dir(paste(data_path,sample,"/outs/", sep ="/"))
+    if (any(grepl("feature", tmp))) "V3" else if (any(grepl("gene", tmp))) "V2" else stop("10x chemistry version could not be inferred for sample ",sample,".")
+      })
+  } else {
+    vers <- rep(version, length(samples))
   }
-  samples %>%
-    lapply(function(x) {
-      paste0(data_path,x,"/outs/filtered_feature_bc_matrix")
+  
+  vers %<>% setNames(samples)
+
+  path <- samples %>%
+    sapply(function(sample) {
+      tmp <- paste(data_path,sample,"/outs/filtered_feature_bc_matrix", sep = "/")
+      if (!dir.exists(tmp)) tmp <- paste(data_path,sample,"/outs/filtered_gene_bc_matrices", sep = "/")
+      return(tmp)
     }) %>%
-    setNames(samples) %>%
-    pagoda2::read.10x.matrices(n.cores = n.cores, version = version)
+    setNames(samples) 
+  
+  if (verbose) message("Loading count matrices...")
+  tmp <- samples %>% 
+    plapply(\(sample) pagoda2::read10xMatrix(path = path[names(path) == sample], version = vers[names(vers) == sample]), n.cores = n.cores, progress = verbose) %>% 
+    setNames(samples)
+  
+  if(any(duplicated(unlist(lapply(tmp,colnames))))) {
+    tmp <- samples %>% 
+      lapply(\(sample) {
+        cm <- tmp[[sample]]
+        colnames(cm) %<>% {paste0(sample,"!!",.)}
+        return(cm)
+      }) %>% 
+      setNames(samples)
+  }
 }
+
 #' Add detailed metrics
 #' @description Add detailed metrics, requires to load raw count matrices using pagoda2
 #' @keywords internal
-addDetailedMetricsInner <- function(cm.list, verbose = TRUE, n.cores = 1) {
+addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
   if (verbose) message("Filtering... ")
-  metricsDetailed <- cm.list %>% 
+  metricsDetailed <- cms %>% 
     plapply(\(cm) {
       # count UMIs
       totalUMI <- cm %>% 
@@ -77,7 +102,7 @@ addDetailedMetricsInner <- function(cm.list, verbose = TRUE, n.cores = 1) {
       metricsDetailedSample <- rbind(totalUMI, totalGenes)
       return(metricsDetailedSample)
     }, progress = verbose, n.cores = n.cores) %>% 
-    setNames(cm.list %>% names())
+    setNames(cms %>% names())
   
   metricsDetailed %<>%
     names() %>% 
@@ -87,7 +112,6 @@ addDetailedMetricsInner <- function(cm.list, verbose = TRUE, n.cores = 1) {
     }) %>% 
     bind_rows() %>% 
     select(c("sample", "barcode", "metric", "value"))
-  if (verbose) message("done!\n")
   
   return(metricsDetailed)
 }
@@ -115,10 +139,11 @@ addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
   
   if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data_path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
+  if (verbose) message(paste0("Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
   metrics <- samples %>% 
     plapply(\(s) {
-      read_csv(paste0(data_path,s,"/outs/metrics_summary.csv"), col_types = cols()) %>% 
+      read_csv(paste(data_path,s,"/outs/metrics_summary.csv", sep = "/"), col_types = cols()) %>% 
         mutate(sample = s) %>% 
         mutate_at(.vars = vars(`Valid Barcodes`:`Fraction Reads in Cells`),
                   ~ as.numeric(gsub("%", "", .x)) / 100) %>%
@@ -129,4 +154,11 @@ addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
     bind_rows()
   
   return(metrics)
+}
+
+getConosDepth <- function(con) {
+  con$samples %>% 
+    lapply(`[[`, "depth") %>% 
+    unname() %>% 
+    unlist()
 }
