@@ -37,43 +37,58 @@ checkCompMeta <- function(comp_group, metadata) {
 
 #' Load count matrices
 #' @keywords internal
-addCountMatrices <- function(version, samples, data_path, n.cores, verbose) {
+loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL","ENSEMBL"), sep = "!!", n.cores = 1, verbose = TRUE) {
   requireNamespace("pagoda2")
+  requireNamespace("data.table")
+  transcript %<>% match.arg(c("SYMBOL","ENSEMBL"))
+  if (is.null(samples)) samples <- list.dirs(data_path)
   
-  if (version == "auto") {
-    vers <- samples %>% 
-      sapply(\(sample) {
-        tmp <- dir(paste(data_path,sample,"/outs/", sep ="/"))
-    if (any(grepl("feature", tmp))) "V3" else if (any(grepl("gene", tmp))) "V2" else stop("10x chemistry version could not be inferred for sample ",sample,".")
-      })
-  } else {
-    vers <- rep(version, length(samples))
-  }
+  full_path <- samples %>% 
+    sapply(\(sample) {
+      std_path <- paste(data_path,sample,"outs", sep = "/")
+      if (any(grepl("feature", list.dirs(std_path)))) paste(std_path,"filtered_feature_bc_matrix", sep = "/") else if (any(grepl("gene", list.dirs(std_path)))) paste(std_path,"filtered_gene_bc_matrices", sep = "/") else stop("No output directory found for ",sample,".")
+    })
   
-  vers %<>% setNames(samples)
-
-  path <- samples %>%
-    sapply(function(sample) {
-      tmp <- paste(data_path,sample,"/outs/filtered_feature_bc_matrix", sep = "/")
-      if (!dir.exists(tmp)) tmp <- paste(data_path,sample,"/outs/filtered_gene_bc_matrices", sep = "/")
-      return(tmp)
-    }) %>%
-    setNames(samples) 
-  
-  if (verbose) message("Loading count matrices...")
-  tmp <- samples %>% 
-    plapply(\(sample) pagoda2::read10xMatrix(path = path[names(path) == sample], version = vers[names(vers) == sample]), n.cores = n.cores, progress = verbose) %>% 
+  if (verbose) message(paste0("Loading ",length(full_path)," count matrices..."))
+  tmp <- full_path %>% 
+    plapply(\(sample) {
+      tmp_dir <- dir(sample, full.names = TRUE)
+      
+      # Read matrix
+      mat_path <- tmp_dir %>% 
+        .[grepl("mtx", .)]
+      if (grepl("gz", mat_path)) {
+        mat <- as(Matrix::readMM(gzcon(file(mat_path, "rb"))), "dgCMatrix")
+      } else {
+        mat <- as(Matrix::readMM(mat_path), "dgCMatrix")
+      }
+      
+      # Add features
+      feat <- tmp_dir %>% 
+        .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>% 
+        data.table::fread(header = FALSE)
+      if (transcript == "SYMBOL") rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
+      
+      # Add barcodes
+      barcodes <- tmp_dir %>% 
+        .[grepl("barcodes.tsv", .)] %>% 
+        data.table::fread(header = FALSE)
+      colnames(mat) <- barcodes %>% pull(V1)
+      return(mat)
+    }, n.cores = n.cores, progress = verbose) %>% 
     setNames(samples)
   
+  # Check for duplicated cell names
   if(any(duplicated(unlist(lapply(tmp,colnames))))) {
     tmp <- samples %>% 
       lapply(\(sample) {
         cm <- tmp[[sample]]
-        colnames(cm) %<>% {paste0(sample,"!!",.)}
+        colnames(cm) %<>% {paste0(sample,sep,.)}
         return(cm)
       }) %>% 
       setNames(samples)
   }
+  return(tmp)
 }
 
 #' Add detailed metrics
@@ -159,6 +174,15 @@ addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
 getConosDepth <- function(con) {
   con$samples %>% 
     lapply(`[[`, "depth") %>% 
-    unname() %>% 
-    unlist()
+    Reduce(c, .)
 }
+
+getMitoFraction <- function(con, species="human") {
+  if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
+  con$samples %>% 
+    lapply(`[[`, "counts") %>% 
+    lapply(\(cm) Matrix::rowSums(cm[,grep(symb, colnames(cm))]) / Matrix::rowSums(cm)) %>% 
+    Reduce(c, .)
+}
+
+

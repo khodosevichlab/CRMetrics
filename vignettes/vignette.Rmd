@@ -32,6 +32,8 @@ Load the library
 
 ```{r setup}
 library(CRMetrics)
+library(magrittr)
+library(dplyr)
 ```
 
 Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file.
@@ -39,7 +41,7 @@ Metadata can be added in the initialization call from a comma-separated file. Th
 
 ```{r}
 crm <- CRMetrics$new(data_path = "/data/ExtData/CRMetrics_testdata/", 
-                     metadata_file = "/data/ExtData/CRMetrics_testdata/metadata.csv", 
+                     metadata = "/data/ExtData/CRMetrics_testdata/metadata.csv", 
                      n.cores = 50)
 ```
 
@@ -104,7 +106,7 @@ crm$plotUmap()
 We can also plot cell depth, both in the UMAP embedding or as histograms for all samples or per sample.
 
 ```{r}
-crm$plotUmap(depth = TRUE)
+crm$plotUmap(depth = TRUE, depth.cutoff = 1.5e3)
 ```
 
 ```{r}
@@ -158,5 +160,19 @@ And we can plot the scores for the doublet estimations.
 
 ```{r}
 crm$plotUmap(doublet_method = "scrublet", doublet_scores = TRUE)
+```
+
+We can also investigate the mitochondrial fraction in our cells
+
+```{r}
+crm$plotUmap(mito.frac = TRUE)
+```
+
+# Save filtered CMs
+
+Finally, we can filter the CMs and save them for downstream applications.
+
+```{r}
+crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = TRUE)
 ```
 

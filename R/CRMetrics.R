@@ -78,7 +78,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    n.cores = 1,
   
   # # To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
-  initialize = function(data_path, metadata_file=NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1) {
+  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
       for (n in ls(data_path)) {
@@ -88,11 +88,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       return(NULL)
     }
     
-    if (is.null(metadata_file)) {
-      self$metadata <- data.frame(sample = dir(data_path))
+    if (is.null(metadata)) {
+      self$metadata <- data.frame(sample = list.dirs(data_path))
     } else {
-      stopifnot(file.exists(metadata_file))
-      self$metadata <- read.csv(metadata_file, header = TRUE)
+      if (class(metadata) == "data.frame") {
+        self$metadata <- metadata
+      } else {
+        stopifnot(file.exists(metadata))
+        self$metadata <- read.csv(metadata, header = TRUE, colClasses = "character")
+      }
     }
     
     self$data_path <- data_path
@@ -117,10 +121,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param data_path Path to data (default = self$data_path)
   #' @param n.cores Number of cores for the calculations (default = self$n.cores)
   #' @param verbose Print messages or not (default = self$verbose)
-  addDetailedMetrics = function(version = c("auto","V2","V3"), samples = self$metadata$sample, data_path = self$data_path, n.cores = self$n.cores, verbose = self$verbose) {
-    version %<>% match.arg(c("auto","V2","V3"))
-    if (is.null(self$cms)) self$cms <- addCountMatrices(version, samples, data_path, n.cores, verbose)
-    self$detailed_metrics <- addDetailedMetricsInner(self$cms, verbose = verbose, n.cores = n.cores)
+  addDetailedMetrics = function(data_path = self$data_path, samples = self$metadata$sample, transcript = "SYMBOL", sep = "!!", n.cores = self$n.cores, verbose = self$verbose) {
+    if (is.null(self$cms)) self$cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, sep = sep, n.cores = n.cores, verbose = verbose)
+    self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
   },
   
   #' Add comparison group
@@ -173,6 +176,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     detailed_metrics %<>% checkDetailedMetrics(self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
+    if(comp_group == "sample") legend = FALSE else legend = TRUE
+    
     g <- detailed_metrics %>%
       filter(metric == "gene_count") %>%
       merge(metadata, by = "sample") %>%
@@ -181,7 +186,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         y = value,
         fill = !!sym(comp_group)
       )) +
-      geom_violin(show.legend = FALSE) +
+      geom_violin(show.legend = legend) +
       labs(y = "log10 expressed genes", x = element_blank()) +
       self$theme +
       theme(axis.text.x = element_text(
@@ -192,10 +197,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       scale_fill_dutchmasters(palette = self$pal) +
       scale_y_log10()
     
-    # a legend only makes sense if the comparison is not the samples
-    if (comp_group != "sample") {
-      g <- g + theme(legend.position = "right")
-    }
     return(g)
   },
   
@@ -207,6 +208,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     detailed_metrics %<>% checkDetailedMetrics(self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
+    if(comp_group == "sample") legend = FALSE else legend = TRUE
+    
     g <- detailed_metrics %>%
       filter(metric == "UMI_count") %>%
       merge(metadata, by = "sample") %>%
@@ -215,7 +218,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         y = value,
         fill = !!sym(comp_group)
       )) +
-      geom_violin(show.legend = FALSE) +
+      geom_violin(show.legend = legend) +
       labs(y = "log10 UMIs", x = element_blank()) +
       self$theme +
       theme(axis.text.x = element_text(
@@ -225,11 +228,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       )) +
       scale_fill_dutchmasters(palette = self$pal) +
       scale_y_log10()
-    
-    # a legend only makes sense if the comparison is not the samples
-    if (comp_group != "sample") {
-      g <- g + theme(legend.position = "right")
-    }
     
     return(g)
   },
@@ -310,7 +308,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
-      plapply(function (met) {
+      lapply(function (met) {
         g <- summary_metrics %>%
           filter(metric == met) %>%
           merge(metadata, by = "sample") %>%
@@ -419,7 +417,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot cells in a UMAP using Conos and color by depth and doublets
   #' @param ... Plotting parameters passed to `conos::embeddingPlot`
-  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, ...) {
+  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, ...) {
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
       if(is.null(self$cms.preprocessed)) {
@@ -449,6 +447,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       g <- self$con$plotGraph(colors = doublets, title = paste(doublet_method,label, collapse = " "), ...)
     }
     
+    # Mitochondrial fraction
+    if (mito.frac) {
+      mf <- getMitoFraction(self$con)
+      g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"))
+    }
+    
     if (!exists("g")) g <- self$con$plotGraph(...)
     return(g)
   },
@@ -458,21 +462,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
   plotDepth = function(cutoff_depth = 1e3, per_sample = FALSE){
     #Get depth
+    if (is.null(self$con)) stop("No Conos object found, please run createEmbedding.")
     depths <- getConosDepth(self$con)
     
     if (per_sample){
       # somehow match names(crm$detailed_metrics) with names(crm$depth) and add crm$detailed_metrics$sample
-      depth_hist <- data_frame(depth=depths) %>% 
-        add_column(sample = self$detailed_metrics[match(rownames(filter(self$detailed_metrics, metric=="UMI_count")), 
-                                                        names(depths)), "sample"]) %>%
-        add_column(low = depths < cutoff_depth) %>%
+      depth_hist <- self$detailed_metrics %>% 
+        filter(metric == "UMI_count") %>% 
+        mutate(., low = value < cutoff_depth, depth = depths[match(rownames(.), names(depths))]) %>% 
+        select(sample, depth, low) %>%
         ggplot(aes(x = depth, fill = low)) +
           geom_histogram(binwidth = 25) +
           self$theme + 
           scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
           geom_vline(xintercept = cutoff_depth, color = "black") +
           xlim(0, 2.5e4) +
-          theme(legend.position = "none") +
+          theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
           facet_wrap(~sample, scales="free_y")
     } else {
     # Plot depth in histogram
@@ -515,9 +520,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (verbose) message("Loading prerequisites...")
     requireNamespace("reticulate")
-    use_condaenv(condaenv = env, conda = conda.path, required = T)
-    if (!py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
-    source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
+    reticulate::use_condaenv(condaenv = env, conda = conda.path, required = T)
+    if (!reticulate::py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
+    reticulate::source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
     
     if (verbose) message("Identifying doublets using '",method,"'...")
     tmp <- cms %>% 
@@ -555,6 +560,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               verbose = self$verbose,
                               n.cores = self$n.cores) {
     preprocess %<>% tolower() %>% match.arg(c("pagoda2","seurat"))
+    if (is.null(cms)) stop("No count matrices found, please run addDetailedMetrics.")
     if (preprocess == "pagoda2") {
       if (verbose) message('Running preprocessing using pagoda2...')
       requireNamespace("pagoda2")
@@ -587,6 +593,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               verbose = self$verbose, 
                               n.cores = self$n.cores) {
     requireNamespace("conos")
+    if (is.null(cms)) stop("No preprocessed count matrices found, please run doPreprocessing.")
     if (verbose) message('Creating Conos object... ')
     con <- conos::Conos$new(cms, n.cores = n.cores)
     
@@ -601,5 +608,51 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     self$con <- con
     invisible(con)
+  },
+  
+  filterCms = function(file = "cms_filtered.rds", raw = TRUE, depth_cutoff = NULL, mito_cutoff = NULL, doublets = NULL, compress = FALSE, ...) {
+    if (raw) cms <- self$cms else cms <- self$cms.preprocessed
+    
+    # Depth
+    if (!is.null(depth_cutoff)) {
+      if (!is.numeric(depth_cutoff)) stop("'depth_cutoff' must be numeric.")
+      depth <- getConosDepth(self$con) %>% 
+        .[. >= depth_cutoff] %>% 
+        names()
+      
+      cms %<>% lapply(\(cm) {
+        cm[,colnames(cm) %in% depth]
+      }) %>% 
+        setNames(cms)
+    }
+    
+    # Mitochondrial fraction
+    if (!is.null(mito_cutoff)) {
+      if (!is.numeric(mito_cutoff)) stop("'mito_cutoff' must be numeric.")
+      mf <- getMitoFraction(self$con) %>% 
+        .[. >= mito_cutoff] %>% 
+        names()
+      
+      cms %<>% lapply(\(cm) {
+        cm[,colnames(cm) %in% mf]
+      }) %>% 
+        setNames(cms)
+    }
+    
+    # Doublets
+    if (!is.null(doublets)) {
+      if (!doublets %in% names(self$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
+      ds <- self$doublets[[doublets]]$result %>% 
+        filter(labels) %>% 
+        rownames()
+      
+      cms %<>% lapply(\(cm) {
+        cm[,colnames(cm) %in% ds]
+      }) %>% 
+        setNames(cms)
+    }
+    
+    # Save filtered CMs
+    saveRDS(cms, file = file, compress = compress, ...)
   }
  ))

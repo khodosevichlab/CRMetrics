@@ -24,6 +24,7 @@ Imports:
     tidyr
 Suggests:
     conos,
+    data.table,
     pagoda2,
     Seurat
 Remotes: EdwinTh/dutchmasters
