@@ -435,7 +435,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param env (default="r-reticulate")
   #' @param conda.path (default=system("whereis conda"))
   #' @return A dataframe with doublet scores and labels, i.e. whether a cell is deemed a putative doublet
-  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda")) {
+  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda"), verbose = self$verbose) {
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (verbose) message("Loading prerequisites...")
     requireNamespace("reticulate")
