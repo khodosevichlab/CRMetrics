@@ -173,7 +173,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param detailed_metrics
   #' @param metadata
   plotGeneCounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
-    detailed_metrics %<>% checkDetailedMetrics(self$verbose)
+    detailed_metrics %<>% checkDetailedMetrics(data_path = self$data_path, vebose = self$verbose, samples = metadata$samples)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
     if(comp_group == "sample") legend = FALSE else legend = TRUE
@@ -287,12 +287,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' Plot all summary stats or a selected list
-  #' @param comp_group
+  #' @param comp_group Comparison metric (default = self$comp_group)
   #' @param metrics
-  #' @param h.adj
+  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
+  #' @param stat_test Statistical test to perform to compare means (default = kruskal.test
   #' @param exact
+  #' @param metadata Metadata for samples (default = self$metadata)
   #' @param summary_metrics
-  plotSummaryStats = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
+  #' @param plot_geom 
+  plotSummaryMetrics = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, stat_test = "kruskal.test", exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = NULL) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -306,6 +309,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
+    # if no plot type is defined, return a list of options
+    if (is.null(plot_geom)) {
+      stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
+    }
+    
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
       lapply(function (met) {
@@ -313,7 +321,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filter(metric == met) %>%
           merge(metadata, by = "sample") %>%
           ggplot(aes(x = !!sym(comp_group), y = value, col = !!sym(comp_group))) +
-          geom_quasirandom(size = 3, groupOnX = TRUE) +
+          plotGeom(plot_geom) + 
           labs(y = met, x = element_blank()) +
           self$theme +
           scale_color_dutchmasters(palette = self$pal)
@@ -321,10 +329,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         # a legend only makes sense if the comparison is not the samples
         if (comp_group != "sample") {
           g <- g + theme(legend.position = "right")
+        } else {
+          g <- g + theme(legend.position = "none")
         }
         
         if (plot_stats) {
-          g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+          g %<>% addPlotStats(comp_group, metadata, h.adj, stat_test, exact)
         } else {
           # rotate x-axis text if samples are on x-axis
           g <- g + theme(axis.text.x = element_text(
@@ -344,6 +354,67 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
   },
   
+  #' Plot detailed metrics
+  #' @param comp_group Comparison metric (default = self$comp_group)
+  #' @param detailed_metrics Object containing the count matrices (default = self$detailed_metrics)
+  #' @param metadata Metadata for samples (default = self$metadata)
+  #' @param metric the metric to plot (default = NULL)
+  #' @param plot_geom the type of plot to be made (default = NULL)
+  plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path){
+    detailed_metrics %<>% checkDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
+    comp_group %<>% checkCompGroup("sample", self$verbose)
+    
+    # If no metric is selected, return list of options
+    if (is.null(metrics)) {
+      stop("Define a metric to plot, can be one of these: 'depth', 'UMI_count', 'gene_count'.")
+    } else if (length(metrics) > 1){
+      # If more than one metric is selected stop
+      stop("Cannot plot 2 metrics at the same time, please use only one")
+    }
+    
+    # if no plot type is defined, return a list of options
+    if (is.null(plot_geom)) {
+      stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
+    }
+    
+    plotList <- metrics %T>% 
+      {options(warn = -1)} %>% 
+      lapply(function (met) {
+        g <- detailed_metrics %>%
+          filter(metric == met) %>%
+          merge(metadata, by = "sample") %>%
+          ggplot(aes(x = sample, y = value, fill = !!sym(comp_group))) +
+          plotGeom(plot_geom) + 
+          {if (plot_geom == "violin") scale_y_log10()} +
+          labs(y = met, x = element_blank()) +
+          self$theme +
+          scale_fill_dutchmasters(palette = self$pal)
+        
+        # a legend only makes sense if the comparison is not the samples
+        if (comp_group != "sample") {
+          g <- g + theme(legend.position = "right")
+        } else {
+          g <- g + theme(legend.position = "none")
+        }
+        
+        g <- g + theme(axis.text.x = element_text(
+          angle = 45,
+          vjust = 1,
+          hjust = 1
+        ))
+        
+        return(g)
+      }) %T>% 
+      {options(warn=0)}
+    
+    if (length(plotList) == 1) {
+      return(plotList[[1]])
+    } else {
+      return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
+    }
+    
+  },
+  
   #' Summary stat plot for median gene number per cell
   #' @param comp_group
   #' @param h.adj
@@ -355,7 +426,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
     g <- summary_metrics %>%
-      filter(metric == "Median Genes per Cell") %>%
+      filter(metrics == "Median Genes per Cell") %>%
       merge(metadata, by = "sample") %>%
       ggplot(aes(
         x = !!sym(comp_group),
