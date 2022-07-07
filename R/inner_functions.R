@@ -7,11 +7,11 @@ NULL
 #' @param detailed_metrics
 #' @param verbose Print messages (default = TRUE)
 #' @keywords internal
-checkDetailedMetrics <- function(detailed_metrics, verbose = TRUE) {
+checkDetailedMetrics <- function(detailed_metrics, data_path, samples, verbose = TRUE, n.cores = 1, transcript = "SYMBOL") {
   if (is.null(detailed_metrics)) {
     if (verbose) message("Adding detailed metrics... ")
-    detailed_metrics <- addDetailedMetricsInner()
-    self$detailed_metrics <- detailed_metrics
+    cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, n.cores = n.cores, verbose = verbose)
+    detailed_metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
     if (verbose) message("done!\n")
   }
   return(detailed_metrics)
@@ -41,8 +41,9 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
   requireNamespace("pagoda2")
   requireNamespace("data.table")
   transcript %<>% match.arg(c("SYMBOL","ENSEMBL"))
-  if (is.null(samples)) samples <- list.dirs(data_path)
+  if (is.null(samples)) samples <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
   
+  message(paste0("List of samples: ", samples))
   full_path <- samples %>% 
     sapply(\(sample) {
       std_path <- paste(data_path,sample,"outs", sep = "/")
@@ -134,11 +135,11 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
 #' Add statistics to plot
 #' @description Use ggpubr to add statistics to plots
 #' @keywords internal
-addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, exact = FALSE) {
+addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, stat_test, exact = FALSE) {
   checkCompMeta(comp_group, metadata)
   comp <- combn(unique(metadata[[comp_group]]), 2)
   comp <- as.list(as.data.frame(comp))
-  g <- p + stat_compare_means(comparisons = comp, exact = exact)
+  g <- p + stat_compare_means(comparisons = comp, method = stat_test, exact = exact)
   y.upper <- layer_scales(g, 1)$y$range$range[2]
   g <- g + stat_compare_means(label.y = y.upper * (1 + h.adj))
   
@@ -149,7 +150,7 @@ addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, exact = FALSE) {
 #' @description Add summary metrics by reading Cell Ranger metrics summary files
 #' @keywords internal
 addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
-  samples.tmp <- list.dirs(data_path, recursive = F, full.names = F)
+  samples.tmp <- list.dirs(data_path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample %>% unique())
   
   if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data_path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
@@ -183,6 +184,22 @@ getMitoFraction <- function(con, species="human") {
     lapply(`[[`, "counts") %>% 
     lapply(\(cm) Matrix::rowSums(cm[,grep(symb, colnames(cm))]) / Matrix::rowSums(cm)) %>% 
     Reduce(c, .)
+}
+
+#' Plot the data as points, as bars or as a histogram
+#' @param plot_type the type of plot to be made
+#' @keywords internal
+plotGeom = function(plot_geom){
+  if (plot_geom == "point"){
+    geom <- geom_quasirandom(size = 3, groupOnX = TRUE)
+  } else if (plot_geom == "bar"){
+    geom <- geom_bar(stat = "identity", position = "dodge")
+  } else if (plot_geom == "histogram"){
+    geom <- geom_histogram(binwidth = 25)
+  } else if (plot_geom == "violin"){
+    geom <- geom_violin(show.legend = TRUE) 
+  }
+  return(geom)
 }
 
 

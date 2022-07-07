@@ -60,14 +60,14 @@ metrics.to.plot <- crm$summary_metrics$metric %>%
   unique() %>% 
   .[c(1:4,6,18,19)]
 metrics.to.plot
-crm$plotSummaryStats(metrics = metrics.to.plot)
+crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
 ```
 
 We can do the same, but set the comparison group to `chemistry`. This will add statistics to the plots
 
 ```{r fig.width=12, fig.height=12}
 crm$addComparison("chemistry")
-crm$plotSummaryStats(metrics = metrics.to.plot)
+crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
 ```
 
 ## Add detailed metrics
@@ -79,8 +79,9 @@ crm$addDetailedMetrics()
 ```
 
 ```{r}
-crm$plotGeneCounts()
-crm$plotUmiCounts()
+metrics.to.plot <- crm$detailed_metrics$metric %>%
+  unique()
+crm$plotDetailedMetrics(metrics = metrics.to.plot, plot_geom = "violin")
 ```
 
 ## Embed cells using Conos and UMAP

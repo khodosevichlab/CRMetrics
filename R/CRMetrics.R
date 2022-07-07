@@ -89,7 +89,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     if (is.null(metadata)) {
-      self$metadata <- data.frame(sample = list.dirs(data_path))
+      self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
     } else {
       if (class(metadata) == "data.frame") {
         self$metadata <- metadata
@@ -168,131 +168,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' Plot gene counts of raw data
-  #' @param comp_group
-  #' @param detailed_metrics
-  #' @param metadata
-  plotGeneCounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
-    detailed_metrics %<>% checkDetailedMetrics(self$verbose)
-    comp_group %<>% checkCompGroup("sample", self$verbose)
-    
-    if(comp_group == "sample") legend = FALSE else legend = TRUE
-    
-    g <- detailed_metrics %>%
-      filter(metric == "gene_count") %>%
-      merge(metadata, by = "sample") %>%
-      ggplot(aes(
-        x = sample,
-        y = value,
-        fill = !!sym(comp_group)
-      )) +
-      geom_violin(show.legend = legend) +
-      labs(y = "log10 expressed genes", x = element_blank()) +
-      self$theme +
-      theme(axis.text.x = element_text(
-        angle = 45,
-        vjust = 1,
-        hjust = 1
-      )) +
-      scale_fill_dutchmasters(palette = self$pal) +
-      scale_y_log10()
-    
-    return(g)
-  },
-  
-  #' Plot UMI counts of raw data
-  #' @param comp_group
-  #' @param detailed_metrics
-  #' @param metadata
-  plotUmiCounts = function(comp_group = self$comp_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata) {
-    detailed_metrics %<>% checkDetailedMetrics(self$verbose)
-    comp_group %<>% checkCompGroup("sample", self$verbose)
-    
-    if(comp_group == "sample") legend = FALSE else legend = TRUE
-    
-    g <- detailed_metrics %>%
-      filter(metric == "UMI_count") %>%
-      merge(metadata, by = "sample") %>%
-      ggplot(aes(
-        x = sample,
-        y = value,
-        fill = !!sym(comp_group)
-      )) +
-      geom_violin(show.legend = legend) +
-      labs(y = "log10 UMIs", x = element_blank()) +
-      self$theme +
-      theme(axis.text.x = element_text(
-        angle = 45,
-        vjust = 1,
-        hjust = 1
-      )) +
-      scale_fill_dutchmasters(palette = self$pal) +
-      scale_y_log10()
-    
-    return(g)
-  },
-  
-  #' Plot median UMI counts
-  #' @param comp_group
-  #' @param h.adj
-  #' @param exact
-  #' @param metadata
-  #' @param summary_metrics
-  plotMedianUmi = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
-    comp_group %<>% checkCompGroup("sample", self$verbose)
-    plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
-    
-    g <- summary_metrics %>%
-      filter(metric == "Median UMI Counts per Cell") %>%
-      merge(metadata, by = "sample") %>%
-      ggplot(aes(
-        x = !!sym(comp_group),
-        y = value,
-        col = !!sym(comp_group)
-      )) +
-      geom_quasirandom(size = 3, groupOnX = TRUE) +
-      labs(y = "Median UMI Counts per Cell", x = element_blank()) +
-      self$theme +
-      scale_color_dutchmasters(palette = self$pal)
-    
-    # a legend only makes sense if the comparison is not the samples
-    if (comp_group != "sample") {
-      g <- g + theme(legend.position = "right")
-    } else {
-      g <- g + theme(legend.position = "none",
-                     axis.text.x = element_text(
-                       angle = 45,
-                       vjust = 1,
-                       hjust = 1,
-                       colour = metadata$group %>% {
-                         factor(
-                           ., labels = dutchmasters_pal("pearl_earring")(length(unique(.)))
-                         )
-                       }
-                     )
-      )
-    }
-    
-    if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
-    } else {
-      # rotate x-axis text if samples are on x-axis
-      g <- g + theme(axis.text.x = element_text(
-        angle = 45,
-        vjust = 1,
-        hjust = 1
-      ))
-    }
-    return(g)
-  },
-  
   #' Plot all summary stats or a selected list
-  #' @param comp_group
-  #' @param metrics
-  #' @param h.adj
-  #' @param exact
-  #' @param summary_metrics
-  plotSummaryStats = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
+  #' @param comp_group Comparison metric (default = self$comp_group)
+  #' @param metrics Metrics to plot (default = NULL)
+  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
+  #' @param stat_test Statistical test to perform to compare means (default = kruskal.test
+  #' @param exact Whether to calculate exact p values (default = FALSE)
+  #' @param metadata Metadata for samples (default = self$metadata)
+  #' @param summary_metrics Summary metrics (default = self$summary_metrics)
+  #' @param plot_geom How to plot the data (default = NULL)
+  #' @param second_comp_group Second comparison metric only used for the metric "samples per group" (default = NULL)
+  plotSummaryMetrics = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, stat_test = "kruskal.test", exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = NULL, second_comp_group = NULL) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
@@ -303,9 +189,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       # check if selected metrics are available
       difs <- setdiff(metrics, self$summary_metrics$metric %>% unique())
+      if ("samples per group" %in% difs) difs <- difs[difs != "samples per groups"]
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
+    # if no plot type is defined, return a list of options
+    if (is.null(plot_geom)) {
+      stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
+    }
+    
+    # if samples per group is one of the metrics to plot use the plotSamples function to plot
+    if ("samples per group" %in% metrics){
+      sample_plot <- self$plotSamples(comp_group, h.adj, exact, metadata, second_comp_group)
+      metrics <- metrics[metrics != "samples per group"]
+    }
+    
+    # Plot all the other metrics
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
       lapply(function (met) {
@@ -313,7 +212,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filter(metric == met) %>%
           merge(metadata, by = "sample") %>%
           ggplot(aes(x = !!sym(comp_group), y = value, col = !!sym(comp_group))) +
-          geom_quasirandom(size = 3, groupOnX = TRUE) +
+          plotGeom(plot_geom) + 
           labs(y = met, x = element_blank()) +
           self$theme +
           scale_color_dutchmasters(palette = self$pal)
@@ -321,10 +220,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         # a legend only makes sense if the comparison is not the samples
         if (comp_group != "sample") {
           g <- g + theme(legend.position = "right")
+        } else {
+          g <- g + theme(legend.position = "none")
         }
         
         if (plot_stats) {
-          g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+          g %<>% addPlotStats(comp_group, metadata, h.adj, stat_test, exact)
         } else {
           # rotate x-axis text if samples are on x-axis
           g <- g + theme(axis.text.x = element_text(
@@ -337,82 +238,100 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }) %T>% 
       {options(warn=0)}
     
-    if (length(plotList) == 1) {
-      return(plotList[[1]])
+    # To return the plots
+    if (exists("sample_plot")) {
+      if (length("plotList") > 0){
+        return(plot_grid(plotlist = plotList, sample_plot, ncol = min(length(plotList)+1, 3)))
+      } else {
+        return(sample_plot)
+      }
     } else {
-      return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
+      if (length(plotList) == 1) {
+        return(plotList[[1]])
+      } else {
+        return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
+      }
     }
+    
   },
   
-  #' Summary stat plot for median gene number per cell
-  #' @param comp_group
-  #' @param h.adj
-  #' @param exact
-  #' @param metadata
-  #' @param summary_metrics
-  plotMedianGene = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
+  #' Plot detailed metrics
+  #' @param comp_group Comparison metric (default = self$comp_group)
+  #' @param detailed_metrics Object containing the count matrices (default = self$detailed_metrics)
+  #' @param metadata Metadata for samples (default = self$metadata)
+  #' @param metrics the metric to plot (default = NULL)
+  #' @param plot_geom How to plot the data (default = NULL)
+  plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path){
+    detailed_metrics %<>% checkDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
-    plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
-    g <- summary_metrics %>%
-      filter(metric == "Median Genes per Cell") %>%
-      merge(metadata, by = "sample") %>%
-      ggplot(aes(
-        x = !!sym(comp_group),
-        y = value,
-        col = !!sym(comp_group)
-      )) +
-      geom_quasirandom(size = 3, groupOnX = TRUE) +
-      labs(y = "Median Genes per Cell", x = element_blank()) +
-      self$theme +
-      scale_color_dutchmasters(palette = self$pal)
-    
-    # a legend only makes sense if the comparison is not the samples
-    if (comp_group != "sample") {
-      g <- g + theme(legend.position = "right")
-    }
-    
-    if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+    # If no metric is selected, return list of options
+    if (is.null(metrics)) {
+      stop("Define a metric to plot, can be one of these: 'depth', 'UMI_count', 'gene_count'.")
     } else {
-      # rotate x-axis text if samples are on x-axis
-      g <- g + theme(axis.text.x = element_text(
-        angle = 45,
-        vjust = 1,
-        hjust = 1
-      ))
+      # check if selected metrics are available
+      difs <- setdiff(metrics, self$detailed_metrics$metric %>% unique())
+      if ("depth" %in% difs) difs <- difs[difs != "depth"]
+      if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
-    return(g)
-  },
-  
-  #' Plot cells
-  #' @param comp_group
-  #' @param h.adj
-  #' @param exact
-  #' @param summary_metrics
-  plotCells = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics) {
-    comp_group %<>% checkCompGroup("sample", self$verbose)
-    plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
     
-    g <- left_join(summary_metrics, metadata, by="sample") %>%
-      filter(metric == "Estimated Number of Cells") %>%
-      ggplot(aes(!!sym(comp_group), value, col=!!sym(comp_group))) +
-      geom_quasirandom(size=3, groupOnX = TRUE) +
-      self$theme +
-      labs(x = element_blank(), y="Cells") +
-      scale_color_dutchmasters(palette = self$pal)
+    # if no plot type is defined, return a list of options
+    if (is.null(plot_geom)) {
+      stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
+    }
     
-    if (plot_stats) {
-      g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
+    # if depth is one of the metrics to plot use the plotDepth function to plot
+    if ("depth" %in% metrics){
+      depth_plot <- self$plotDepth()
+      metrics <- metrics[metrics != "depth"]
+    }
+    
+    # Plot all the other metrics
+    plotList <- metrics %T>% 
+      {options(warn = -1)} %>% 
+      lapply(function (met) {
+        g <- detailed_metrics %>%
+          filter(metric == met) %>%
+          merge(metadata, by = "sample") %>%
+          ggplot(aes(x = sample, y = value, fill = !!sym(comp_group))) +
+          plotGeom(plot_geom) + 
+          {if (plot_geom == "violin") scale_y_log10()} +
+          labs(y = met, x = element_blank()) +
+          self$theme +
+          scale_fill_dutchmasters(palette = self$pal)
+        
+        # a legend only makes sense if the comparison is not the samples
+        if (comp_group != "sample") {
+          g <- g + theme(legend.position = "right")
+        } else {
+          g <- g + theme(legend.position = "none")
+        }
+        
+        g <- g + theme(axis.text.x = element_text(
+          angle = 45,
+          vjust = 1,
+          hjust = 1
+        ))
+        
+        return(g)
+      }) %T>% 
+      {options(warn=0)}
+    
+    # To return the plots
+    if (exists("depth_plot")) {
+      if (length(plotList) > 0) {
+        return(plot_grid(plotlist = plotList, depth_plot, ncol = min(length(plotList)+1, 3)))
+      } else {
+        return(depth_plot)
+      }
     } else {
-      # rotate x-axis text if samples are on x-axis
-      g <- g + theme(axis.text.x = element_text(
-        angle = 45,
-        vjust = 1,
-        hjust = 1
-      ))
+      if (length(plotList) == 1) {
+        return(plotList[[1]])
+      } else {
+        return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
+      }
     }
-    return(g)
+    
   },
   
   #' Plot cells in a UMAP using Conos and color by depth and doublets
@@ -484,7 +403,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' Plot the depth in histogram
-  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e4)
+  #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e3)
   #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
   plotDepth = function(cutoff_depth = 1e3, per_sample = FALSE){
     #Get depth
