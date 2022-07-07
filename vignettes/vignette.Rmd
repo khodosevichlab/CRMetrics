@@ -114,7 +114,7 @@ crm$plotDepth()
 ```
 
 ```{r}
-crm$plotDepth(per_sample = TRUE) # Not correct
+crm$plotDepth(per_sample = TRUE)
 ```
 
 # Doublet detection
@@ -125,7 +125,7 @@ For doublet detection, we included the possibility to do so using the Python mod
 
 Install and load `reticulate`, then create a conda environment. In this example, we're on a server and we load `miniconda` using modules. The `conda` parameter should point to wherever your conda binary is located (in terminal, try `whereis conda`)
 
-```{r}
+```{r eval = FALSE}
 install.packages("reticulate")
 library(reticulate)
 conda_create("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/conda", python_version = 3.8)
@@ -162,17 +162,28 @@ And we can plot the scores for the doublet estimations.
 crm$plotUmap(doublet_method = "scrublet", doublet_scores = TRUE)
 ```
 
+# Mitochondrial fraction
+
 We can also investigate the mitochondrial fraction in our cells
 
 ```{r}
 crm$plotUmap(mito.frac = TRUE)
 ```
 
+# Plot filtered cells
+
+We can plot all the cells to be filtered
+
+```{r}
+crm$plotUmap(filtered.cells = TRUE)
+```
+
+
 # Save filtered CMs
 
 Finally, we can filter the CMs and save them for downstream applications.
 
-```{r}
+```{r eval = FALSE}
 crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = TRUE)
 ```
 

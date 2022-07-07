@@ -4,7 +4,7 @@
 #' @importFrom Matrix colSums t
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom cowplot plot_grid
-#' @importFrom stats setNames
+#' @importFrom stats setNames relevel
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
@@ -417,23 +417,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot cells in a UMAP using Conos and color by depth and doublets
   #' @param ... Plotting parameters passed to `conos::embeddingPlot`
-  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, ...) {
+  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, filtered.cells = FALSE, ...) {
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
-      if(is.null(self$cms.preprocessed)) {
-        self$doPreprocessing()
-      }
+      if (verbose) message("No embedding found, running createEmbedding.")
       self$createEmbedding()
     }
     
     # Depth
-    if (depth) {
+    if (depth & !filtered.cells) {
       depths <- getConosDepth(self$con)
       g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
     }
     
     # Doublets
-    if (!is.null(doublet_method)) {
+    if (!is.null(doublet_method) & !filtered.cells) {
       dres <- self$doublets[[doublet_method]]$result
       if (is.null(dres)) stop("No results found for doublet_method '",doublet_method,"'. Please run doubletDetection(method = '",doublet_method,"'.")
       if (doublet_scores) {
@@ -448,9 +446,37 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Mitochondrial fraction
-    if (mito.frac) {
+    if (mito.frac & !filtered.cells) {
       mf <- getMitoFraction(self$con)
       g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"))
+    }
+    
+    if (filtered.cells) {
+      tmp <- list(mito = ifelse(getMitoFraction(self$con) > mito.cutoff, "mito",""),
+                  if (is.null(doublet_method)) doublet = NULL else doublet = self$doublets[[doublet_method]]$result,
+                  depth = ifelse(getConosDepth(self$con) < depth.cutoff, "depth",""))
+      
+      if (!is.null(tmp$doublet)) tmp$doublet %<>% 
+        .$labels %>% 
+        ifelse("doublet","") %>% 
+        setNames(tmp$doublet %>% rownames())
+      
+      tmp %<>% 
+        .[!sapply(., is.null)] %>% 
+        data.frame() %>% 
+        mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
+        mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
+                 gsub("  ", " ", ., fixed = T) %>% 
+                 gsub(" ", "+", .))
+      
+      tmp$filter[tmp$filter == ""] <- "kept"
+      tmp$filter %<>% 
+        factor() %>% 
+        relevel(ref = "kept")
+      
+      
+      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
+        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     }
     
     if (!exists("g")) g <- self$con$plotGraph(...)
@@ -516,7 +542,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param env (default="r-reticulate")
   #' @param conda.path (default=system("whereis conda"))
   #' @return A dataframe with doublet scores and labels, i.e. whether a cell is deemed a putative doublet
-  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda")) {
+  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda"), verbose = self$verbose) {
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (verbose) message("Loading prerequisites...")
     requireNamespace("reticulate")
@@ -560,7 +586,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               verbose = self$verbose,
                               n.cores = self$n.cores) {
     preprocess %<>% tolower() %>% match.arg(c("pagoda2","seurat"))
-    if (is.null(cms)) stop("No count matrices found, please run addDetailedMetrics.")
+    if (is.null(cms)) message("No count matrices found, running addDetailedMetrics.")
+    self$addDetailedMetrics()
+    
     if (preprocess == "pagoda2") {
       if (verbose) message('Running preprocessing using pagoda2...')
       requireNamespace("pagoda2")
@@ -593,7 +621,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               verbose = self$verbose, 
                               n.cores = self$n.cores) {
     requireNamespace("conos")
-    if (is.null(cms)) stop("No preprocessed count matrices found, please run doPreprocessing.")
+    if (is.null(cms.preprocessed)) message("No preprocessed count matrices found, running doPreprocessing.")
+    self$doPreprocessing()
     if (verbose) message('Creating Conos object... ')
     con <- conos::Conos$new(cms, n.cores = n.cores)
     
