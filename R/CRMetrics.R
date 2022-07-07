@@ -89,7 +89,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     if (is.null(metadata)) {
-      self$metadata <- data.frame(sample = list.dirs(data_path))
+      self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
     } else {
       if (class(metadata) == "data.frame") {
         self$metadata <- metadata

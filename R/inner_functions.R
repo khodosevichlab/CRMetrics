@@ -150,7 +150,7 @@ addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, stat_test, exact
 #' @description Add summary metrics by reading Cell Ranger metrics summary files
 #' @keywords internal
 addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
-  samples.tmp <- list.dirs(data_path, recursive = F, full.names = F)
+  samples.tmp <- list.dirs(data_path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample %>% unique())
   
   if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data_path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
