@@ -115,12 +115,28 @@ crm$plotUmap(depth = TRUE, depth.cutoff = 1.5e3)
 ```
 
 ```{r}
+crm$plotDetailedMetrics(metrics = c("depth"), plot_geom = "point")
 crm$plotDepth()
 ```
 
 ```{r}
 crm$plotDepth(per_sample = TRUE)
 ```
+
+We can see that the depth distribution varies between samples. We can create a cutoff vector specifying the depth cutoff per sample. It should be a named vector containing sample names.
+
+```{r}
+depth_cutoff_vec <- c(1e3,1e3,1e3,1e3,3e3,3.5e3) %>% 
+  setNames(crm$detailed_metrics$sample %>% unique())
+
+depth_cutoff_vec
+```
+
+Let's plot the updated cutoffs:
+```{r}
+crm$plotDepth(cutoff = depth_cutoff_vec, per_sample = TRUE)
+```
+
 
 # Doublet detection
 
@@ -137,8 +153,8 @@ conda_create("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/co
 conda_install("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/conda", pip = TRUE, packages = c("scrublet","doubletdetection"))
 ```
 
-There is a known problem with openBLAS which may be different between R and Python. If this is the case, you will receive the error `floating point exception` and R will crash.
-In Python, the problem lies with numpy. numba requires numpy < 1.23, so force reinstall from scratch with no binaries in the `r-reticulate` conda environment from terminal
+There is a known problem with openBLAS which may be different between R and Python. If this is the case, you will receive the error `floating point exception` and R will crash when you try to run a Python script using `reticulate`.
+In Python, the problem lies within numpy. numba requires numpy < 1.23, so force reinstall from scratch with no binaries in the `r-reticulate` conda environment from terminal
 `module load miniconda/4.12.0`
 `conda activate r-reticulate`
 `python -m pip install numpy==1.22.0 --force-reinstall --no-binary numpy`
@@ -177,12 +193,11 @@ crm$plotUmap(mito.frac = TRUE)
 
 # Plot filtered cells
 
-We can plot all the cells to be filtered
+We can plot all the cells to be filtered in the UMAP embedding
 
 ```{r}
 crm$plotUmap(filtered.cells = TRUE)
 ```
-
 
 # Save filtered CMs
 

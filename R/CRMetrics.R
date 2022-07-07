@@ -405,38 +405,57 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Plot the depth in histogram
   #' @param cutoff_depth The depth cutoff to color the UMAP (default = 1e3)
   #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
-  plotDepth = function(cutoff_depth = 1e3, per_sample = FALSE){
+  plotDepth = function(cutoff = 1e3, per_sample = FALSE){
     #Get depth
     if (is.null(self$con)) stop("No Conos object found, please run createEmbedding.")
+    if (!per_sample & (length(cutoff) > 1)) stop("Only one 'cutoff' value allowed.")
     depths <- getConosDepth(self$con)
     
     if (per_sample){
       # somehow match names(crm$detailed_metrics) with names(crm$depth) and add crm$detailed_metrics$sample
-      depth_hist <- self$detailed_metrics %>% 
-        filter(metric == "UMI_count") %>% 
-        mutate(., low = value < cutoff_depth, depth = depths[match(rownames(.), names(depths))]) %>% 
-        select(sample, depth, low) %>%
-        ggplot(aes(x = depth, fill = low)) +
-          geom_histogram(binwidth = 25) +
-          self$theme + 
-          scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
-          geom_vline(xintercept = cutoff_depth, color = "black") +
-          xlim(0, 2.5e4) +
-          theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-          facet_wrap(~sample, scales="free_y")
+      tmp <- self$detailed_metrics %>% 
+        filter(metric == "UMI_count") %>%
+        select(sample, value) %>%
+        split(., .$sample) %>% 
+        lapply(\(z) with(density(z$value, adjust = 1/10), data.frame(x,y))) %>% 
+        {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
+        bind_rows()
+      
+      depth_plot <- tmp %>% 
+        pull(sample) %>% 
+        unique() %>% 
+        lapply(\(id) {
+          ggplot(tmp %>% filter(sample == id), aes(x,y)) +
+            self$theme +
+            geom_line() +
+            geom_area(fill = "red") +
+            geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "blue") + 
+            xlim(0,2e4) +
+            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
+            labs(title = id, y = "Density [AU]", x = "")
+        }) %>% 
+        plot_grid(plotlist = ., ncol = 3)
+        # ggplot(aes(x,y)) +
+        # self$theme +
+        # geom_line() +
+        # geom_area(fill = "red") +
+        # geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "blue") + 
+        # xlim(0,2e4) +
+        # theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
+        # facet_wrap(facets = "sample", scales = "free_y")
     } else {
     # Plot depth in histogram
-    depth_hist <- data_frame(depth=depths) %>% add_column(low = depths < cutoff_depth) %>%
-      ggplot(aes(x = depth, fill = low)) +
-        geom_histogram(binwidth = 25) +
+    depth_plot <- with(density(depths, adjust = 1/10), data.frame(x,y)) %>% 
+      ggplot(aes(x,y)) +
         self$theme +
-        scale_fill_manual(values = c("#A65141", "#E7CDC2")) +
-        geom_vline(xintercept = cutoff_depth, color = "black") +
-        xlim(0, 2.5e4) +
-        theme(legend.position = "none")
+        geom_line() +
+        geom_area(fill = "red") +
+        geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "blue") + 
+        xlim(0,2e4) +
+        theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
     }
     
-    return(depth_hist)
+    return(depth_plot)
   },
   
   #' Save summary metrics to text file
