@@ -196,12 +196,25 @@ crm$plotUmap(mito.frac = TRUE)
 We can plot all the cells to be filtered in the UMAP embedding
 
 ```{r}
-crm$plotUmap(filtered.cells = TRUE)
+crm$plotFilteredCells(type = "umap")
+```
+
+And we can plot the cells to be filtered per sample
+
+```{r}
+crm$plotFilteredCells(type = "bar", doublet_method = "scrublet")
+```
+
+We can also extract the raw numbers for plotting in other ways than those included here
+
+```{r}
+filter.data <- crm$plotFilteredCells(type = "export")
+filter.data %>% head()
 ```
 
 # Save filtered CMs
 
-Finally, we can filter the CMs and save them for downstream applications.
+Finally, we can filter the count matrices and save them for downstream applications.
 
 ```{r eval = FALSE}
 crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = TRUE)

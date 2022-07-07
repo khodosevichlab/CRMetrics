@@ -336,7 +336,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot cells in a UMAP using Conos and color by depth and doublets
   #' @param ... Plotting parameters passed to `conos::embeddingPlot`
-  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, filtered.cells = FALSE, ...) {
+  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, ...) {
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
       if (verbose) message("No embedding found, running createEmbedding.")
@@ -344,13 +344,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Depth
-    if (depth & !filtered.cells) {
+    if (depth) {
       depths <- getConosDepth(self$con)
       g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
     }
     
     # Doublets
-    if (!is.null(doublet_method) & !filtered.cells) {
+    if (!is.null(doublet_method)) {
       dres <- self$doublets[[doublet_method]]$result
       if (is.null(dres)) stop("No results found for doublet_method '",doublet_method,"'. Please run doubletDetection(method = '",doublet_method,"'.")
       if (doublet_scores) {
@@ -365,37 +365,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Mitochondrial fraction
-    if (mito.frac & !filtered.cells) {
+    if (mito.frac) {
       mf <- getMitoFraction(self$con)
       g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"))
-    }
-    
-    if (filtered.cells) {
-      tmp <- list(mito = ifelse(getMitoFraction(self$con) > mito.cutoff, "mito",""),
-                  if (is.null(doublet_method)) doublet = NULL else doublet = self$doublets[[doublet_method]]$result,
-                  depth = ifelse(getConosDepth(self$con) < depth.cutoff, "depth",""))
-      
-      if (!is.null(tmp$doublet)) tmp$doublet %<>% 
-        .$labels %>% 
-        ifelse("doublet","") %>% 
-        setNames(tmp$doublet %>% rownames())
-      
-      tmp %<>% 
-        .[!sapply(., is.null)] %>% 
-        data.frame() %>% 
-        mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
-        mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
-                 gsub("  ", " ", ., fixed = T) %>% 
-                 gsub(" ", "+", .))
-      
-      tmp$filter[tmp$filter == ""] <- "kept"
-      tmp$filter %<>% 
-        factor() %>% 
-        relevel(ref = "kept")
-      
-      
-      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
-        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     }
     
     if (!exists("g")) g <- self$con$plotGraph(...)
@@ -630,5 +602,79 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if(is.null(ids)) tmp <- data.frame(no = 1:length(metrics),metrics = metrics) else tmp <- metrics[ids]
     
     return(tmp)
+  },
+  
+  plotFilteredCells = function(type = c("umap","bar","export"), depth = TRUE, depth.cutoff = 1e3, doublet_method = NULL, mito.frac = TRUE, mito.cutoff = 0.05) {
+    type %<>% tolower()
+    type %<>% match.arg(c("umap","bar","export"))
+    
+    # Prepare data
+    tmp <- list(ifelse(getMitoFraction(self$con) > mito.cutoff, "mito",""),
+                ifelse(getConosDepth(self$con) < depth.cutoff, "depth",""))
+    
+    if (!is.null(doublet_method)) {
+      tmp.doublets <- self$doublets[[doublet_method]]$result
+      doublets <- tmp.doublets$labels %>% 
+        ifelse("doublet","") %>% 
+        setNames(rownames(tmp.doublets))
+      
+      tmp$doublets <- doublets
+      tmp %<>%
+        setNames(c("mito","depth","doublets"))
+    } else {
+      tmp %<>%
+        setNames(c("mito","depth"))
+    }
+    
+    ## Match names
+    idx <- tmp$mito %>% 
+      names()
+    
+    tmp %<>%
+      lapply(\(x) {
+        x[match(idx, names(x))]
+      })
+    
+    # Finalize
+    tmp %<>%
+      data.frame()
+    
+    # UMAP
+    if (type == "umap") {
+      tmp %<>% 
+        mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
+        mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
+                 gsub("  ", " ", ., fixed = T) %>% 
+                 gsub(" ", "+", .))
+      
+      tmp$filter[tmp$filter == ""] <- "kept"
+      tmp$filter %<>% 
+        factor() %>% 
+        relevel(ref = "kept")
+      
+      
+      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
+        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
+    } else {
+      tmp %<>%
+        apply(2, \(x) x != "") %>% 
+        {data.frame(. * 1)} %>% 
+        mutate(., sample = rownames(.) %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1),
+               cell = rownames(.)) %>% 
+        reshape2::melt(., id.vars = c("sample","cell"), measure.vars = colnames(.)[!colnames(.) == "sample"])
+    }
+    if (type == "bar") {
+      g <- tmp %>% 
+        ggplot(aes(variable, value, fill = variable)) +
+        geom_bar(stat = "identity") +
+        self$theme +
+        theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
+        labs(x = "", y = "Cells filtered") +
+        scale_fill_dutchmasters(palette = self$pal) +
+        facet_wrap("sample", scales = "free_y")
+    } else {
+      g <- tmp
+    }
+    return(g)
   }
  ))
