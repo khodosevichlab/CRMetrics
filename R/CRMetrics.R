@@ -602,5 +602,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Save filtered CMs
     saveRDS(cms, file = file, compress = compress, ...)
+  },
+  
+  selectMetrics = function(ids = NULL) {
+    metrics <- self$summary_metrics$metric %>% 
+      unique()
+    
+    if(is.null(ids)) tmp <- data.frame(no = 1:length(metrics),metrics = metrics) else tmp <- metrics[ids]
+    
+    return(tmp)
   }
  ))

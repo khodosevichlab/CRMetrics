@@ -53,13 +53,17 @@ crm$metadata
 
 ## Plot summary statistics
 
-In one plot, we can plot selected metric summary stats. If no comparison group is set, it defaults to `sample`
+We can investigate which metrics are available and choose the ones we would like to plot
+
+```{r}
+crm$selectMetrics()
+```
+
+
+In one plot, we can plot selected metric summary stats. If no comparison group is set, it defaults to `sample`.
 
 ```{r fig.width=12, fig.height=12}
-metrics.to.plot <- crm$summary_metrics$metric %>% 
-  unique() %>% 
-  .[c(1:4,6,18,19)]
-metrics.to.plot
+metrics.to.plot <- crm$selectMetrics(ids = c(1:4,6,18,19))
 crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
 ```
 
