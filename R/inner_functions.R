@@ -43,7 +43,6 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
   transcript %<>% match.arg(c("SYMBOL","ENSEMBL"))
   if (is.null(samples)) samples <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
   
-  message(paste0("List of samples: ", samples))
   full_path <- samples %>% 
     sapply(\(sample) {
       std_path <- paste(data_path,sample,"outs", sep = "/")
