@@ -88,6 +88,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       return(NULL)
     }
     
+    self$n.cores <- n.cores
+    self$data_path <- data_path
+    self$verbose <- verbose
+    self$pal <- pal
+    self$theme <- theme
+    
     if (is.null(metadata)) {
       self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
     } else {
@@ -99,19 +105,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }
     }
     
-    self$data_path <- data_path
-    
     checkCompMeta(comp_group, self$metadata)
-    
-    self$verbose <- verbose
-    self$pal <- pal
-    self$theme <- theme
     self$summary_metrics <- addSummaryMetrics(data_path, self$metadata, verbose)
     
     if (detailed_metrics) {
       self$detailed_metrics <- self$addDetailedMetrics()
     }
-    self$n.cores <- n.cores
   },
   
   #' Inner function to add detailed metrics
@@ -336,7 +335,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot cells in a UMAP using Conos and color by depth and doublets
   #' @param ... Plotting parameters passed to `conos::embeddingPlot`
-  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, ...) {
+  plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, species = c("human","mouse"), ...) {
+    species %<>% 
+      tolower() %>% 
+      match.arg(c("human","mouse"))
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
       if (verbose) message("No embedding found, running createEmbedding.")
@@ -345,7 +347,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Depth
     if (depth) {
-      depths <- getConosDepth(self$con)
+      depths <- self$getConosDepth()
       g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
     }
     
@@ -366,7 +368,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Mitochondrial fraction
     if (mito.frac) {
-      mf <- getMitoFraction(self$con)
+      mf <- self$getMitoFraction(species = species)
       g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"))
     }
     
@@ -379,17 +381,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
   plotDepth = function(cutoff = 1e3, per_sample = FALSE){
     #Get depth
-    if (is.null(self$con)) stop("No Conos object found, please run createEmbedding.")
+    if (is.null(self$con)) {
+      message("No Conos object found, running createEmbedding.")
+      self$createEmbedding()
+    }
+    
     if (!per_sample & (length(cutoff) > 1)) stop("Only one 'cutoff' value allowed.")
-    depths <- getConosDepth(self$con)
+    depths <- self$getConosDepth()
     
     if (per_sample){
       # somehow match names(crm$detailed_metrics) with names(crm$depth) and add crm$detailed_metrics$sample
-      tmp <- self$detailed_metrics %>% 
-        filter(metric == "UMI_count") %>%
-        select(sample, value) %>%
+      tmp <- depths %>% 
+        {data.frame(depth = unname(.), sample = names(.))} %>% 
+        mutate(sample = sample %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1)) %>%
         split(., .$sample) %>% 
-        lapply(\(z) with(density(z$value, adjust = 1/10), data.frame(x,y))) %>% 
+        lapply(\(z) with(density(z$depth, adjust = 1/10), data.frame(x,y))) %>% 
         {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
         bind_rows()
       
@@ -397,14 +403,28 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         pull(sample) %>% 
         unique() %>% 
         lapply(\(id) {
-          ggplot(tmp %>% filter(sample == id), aes(x,y)) +
-            self$theme +
-            geom_line() +
-            geom_area(fill = "red") +
-            geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "blue") + 
-            xlim(0,2e4) +
-            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-            labs(title = id, y = "Density [AU]", x = "")
+          if (length(cutoff) == 1) {
+            g <- tmp %>% filter(sample == id) %>%  
+              ggplot(aes(x,y)) +
+              self$theme +
+              geom_line() +
+              geom_area(fill = "red") +
+              geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "blue") +
+              xlim(0,2e4) +
+              theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
+              labs(title = id, y = "Density [AU]", x = "")
+          } else {
+            g <- tmp %>% filter(sample == id) %>%  
+              ggplot(aes(x,y)) +
+              self$theme +
+              geom_line() +
+              geom_area(fill = "red") +
+              geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "blue") +
+              xlim(0,2e4) +
+              theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
+              labs(title = id, y = "Density [AU]", x = "")
+          }
+          return(g)
         }) %>% 
         plot_grid(plotlist = ., ncol = 3)
         # ggplot(aes(x,y)) +
@@ -443,7 +463,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param dec How the decimals are defined (default = ".")
   #' @param sep How the values are separated (default = "\t")
   saveDetailedMetrics = function(file = "Detailed_metrics.txt", dec = ".", sep = "\t") {
-    write.table(self$summary_metrics, file, sep = sep, dec = dec)
+    write.table(self$detailed_metrics, file, sep = sep, dec = dec)
   },
   
   #' Detect doublets
@@ -496,8 +516,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               verbose = self$verbose,
                               n.cores = self$n.cores) {
     preprocess %<>% tolower() %>% match.arg(c("pagoda2","seurat"))
-    if (is.null(cms)) message("No count matrices found, running addDetailedMetrics.")
-    self$addDetailedMetrics()
+    if (is.null(cms)) {
+      message("No count matrices found, running addDetailedMetrics.")
+      self$addDetailedMetrics()
+    }
     
     if (preprocess == "pagoda2") {
       if (verbose) message('Running preprocessing using pagoda2...')
@@ -531,8 +553,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               verbose = self$verbose, 
                               n.cores = self$n.cores) {
     requireNamespace("conos")
-    if (is.null(cms.preprocessed)) message("No preprocessed count matrices found, running doPreprocessing.")
-    self$doPreprocessing()
+    if (is.null(cms)) {
+      message("No preprocessed count matrices found, running doPreprocessing.")
+      self$doPreprocessing()
+    }
+    
     if (verbose) message('Creating Conos object... ')
     con <- conos::Conos$new(cms, n.cores = n.cores)
     
@@ -549,13 +574,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     invisible(con)
   },
   
-  filterCms = function(file = "cms_filtered.rds", raw = TRUE, depth_cutoff = NULL, mito_cutoff = NULL, doublets = NULL, compress = FALSE, ...) {
-    if (raw) cms <- self$cms else cms <- self$cms.preprocessed
+  filterCms = function(file = "cms_filtered.rds", raw = TRUE, depth_cutoff = NULL, mito_cutoff = NULL, doublets = NULL, compress = FALSE, species = c("human","mouse"), ...) {
+    species %<>%
+      tolower() %>% 
+      match.arg(c("human","mouse"))
+    
+    if (raw) cms <- self$cms else cms <- self$cms.preprocessed %>% lapply(\(x) x$counts) %>% setNames(self$cms.preprocessed %>% names())
     
     # Depth
     if (!is.null(depth_cutoff)) {
       if (!is.numeric(depth_cutoff)) stop("'depth_cutoff' must be numeric.")
-      depth <- getConosDepth(self$con) %>% 
+      depth <- self$getConosDepth() %>% 
         .[. >= depth_cutoff] %>% 
         names()
       
@@ -568,7 +597,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Mitochondrial fraction
     if (!is.null(mito_cutoff)) {
       if (!is.numeric(mito_cutoff)) stop("'mito_cutoff' must be numeric.")
-      mf <- getMitoFraction(self$con) %>% 
+      mf <- self$getMitoFraction(species = species) %>% 
         .[. >= mito_cutoff] %>% 
         names()
       
@@ -604,13 +633,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  plotFilteredCells = function(type = c("umap","bar","export"), depth = TRUE, depth.cutoff = 1e3, doublet_method = NULL, mito.frac = TRUE, mito.cutoff = 0.05) {
-    type %<>% tolower()
-    type %<>% match.arg(c("umap","bar","export"))
+  plotFilteredCells = function(type = c("umap","bar","export"), depth = TRUE, depth.cutoff = 1e3, doublet_method = NULL, mito.frac = TRUE, mito.cutoff = 0.05, species = c("human","mouse")) {
+    type %<>% 
+      tolower() %>% 
+      match.arg(c("umap","bar","export"))
+    species %<>%
+      tolower() %>% 
+      match.arg(c("human","mouse"))
     
     # Prepare data
-    tmp <- list(ifelse(getMitoFraction(self$con) > mito.cutoff, "mito",""),
-                ifelse(getConosDepth(self$con) < depth.cutoff, "depth",""))
+    tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito",""),
+                ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
     
     if (!is.null(doublet_method)) {
       tmp.doublets <- self$doublets[[doublet_method]]$result
@@ -633,13 +666,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     tmp %<>%
       lapply(\(x) {
         x[match(idx, names(x))]
-      })
-    
-    # Finalize
-    tmp %<>%
+      }) %>% 
       data.frame()
     
-    # UMAP
     if (type == "umap") {
       tmp %<>% 
         mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
@@ -652,7 +681,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         factor() %>% 
         relevel(ref = "kept")
       
-      
       g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
         scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     } else {
@@ -661,7 +689,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         {data.frame(. * 1)} %>% 
         mutate(., sample = rownames(.) %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1),
                cell = rownames(.)) %>% 
-        reshape2::melt(., id.vars = c("sample","cell"), measure.vars = colnames(.)[!colnames(.) == "sample"])
+        reshape2::melt(., id.vars = c("sample","cell"), measure.vars = colnames(.)[!colnames(.) %in% c("sample","cell")])
     }
     if (type == "bar") {
       g <- tmp %>% 
@@ -672,9 +700,35 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         labs(x = "", y = "Cells filtered") +
         scale_fill_dutchmasters(palette = self$pal) +
         facet_wrap("sample", scales = "free_y")
-    } else {
+    } else if (type == "export") {
       g <- tmp
     }
     return(g)
+  },
+  
+  getConosDepth = function() {
+    if (is.null(self$depth)) {
+      tmp <- self$con$samples %>% 
+        lapply(`[[`, "depth") %>% 
+        Reduce(c, .)
+      self$depth <- tmp
+    } else {
+      tmp <- self$depth
+    }
+    return(tmp)
+  },
+  
+  getMitoFraction = function(species="human") {
+    if (is.null(self$mito.frac)) {
+      if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
+      tmp <- self$con$samples %>% 
+        lapply(`[[`, "counts") %>% 
+        lapply(\(cm) Matrix::rowSums(cm[,grep(symb, colnames(cm))]) / Matrix::rowSums(cm)) %>% 
+        Reduce(c, .)
+      self$mito.frac <- tmp
+    } else {
+      tmp <- self$mito.frac
+    }
+    return(tmp)
   }
  ))

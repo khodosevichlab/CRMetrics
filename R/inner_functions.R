@@ -9,10 +9,10 @@ NULL
 #' @keywords internal
 checkDetailedMetrics <- function(detailed_metrics, data_path, samples, verbose = TRUE, n.cores = 1, transcript = "SYMBOL") {
   if (is.null(detailed_metrics)) {
-    if (verbose) message("Adding detailed metrics... ")
+    if (verbose) cat("Adding detailed metrics... ")
     cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, n.cores = n.cores, verbose = verbose)
     detailed_metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
-    if (verbose) message("done!\n")
+    if (verbose) cat(" done!\n")
   }
   return(detailed_metrics)
 }
@@ -38,7 +38,6 @@ checkCompMeta <- function(comp_group, metadata) {
 #' Load count matrices
 #' @keywords internal
 loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL","ENSEMBL"), sep = "!!", n.cores = 1, verbose = TRUE) {
-  requireNamespace("pagoda2")
   requireNamespace("data.table")
   transcript %<>% match.arg(c("SYMBOL","ENSEMBL"))
   if (is.null(samples)) samples <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
@@ -49,45 +48,46 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
       if (any(grepl("feature", list.dirs(std_path)))) paste(std_path,"filtered_feature_bc_matrix", sep = "/") else if (any(grepl("gene", list.dirs(std_path)))) paste(std_path,"filtered_gene_bc_matrices", sep = "/") else stop("No output directory found for ",sample,".")
     })
   
-  if (verbose) message(paste0("Loading ",length(full_path)," count matrices..."))
-  tmp <- full_path %>% 
+  if (verbose) cat(paste0("Loading ",length(full_path)," count matrices..."))
+  tmp <- full_path %>%
     plapply(\(sample) {
       tmp_dir <- dir(sample, full.names = TRUE)
-      
+
       # Read matrix
-      mat_path <- tmp_dir %>% 
+      mat_path <- tmp_dir %>%
         .[grepl("mtx", .)]
       if (grepl("gz", mat_path)) {
         mat <- as(Matrix::readMM(gzcon(file(mat_path, "rb"))), "dgCMatrix")
       } else {
         mat <- as(Matrix::readMM(mat_path), "dgCMatrix")
       }
-      
+
       # Add features
-      feat <- tmp_dir %>% 
-        .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>% 
+      feat <- tmp_dir %>%
+        .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>%
         data.table::fread(header = FALSE)
       if (transcript == "SYMBOL") rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
-      
+
       # Add barcodes
-      barcodes <- tmp_dir %>% 
-        .[grepl("barcodes.tsv", .)] %>% 
+      barcodes <- tmp_dir %>%
+        .[grepl("barcodes.tsv", .)] %>%
         data.table::fread(header = FALSE)
       colnames(mat) <- barcodes %>% pull(V1)
       return(mat)
-    }, n.cores = n.cores, progress = verbose) %>% 
+    }, n.cores = n.cores, progress = FALSE) %>%
     setNames(samples)
   
-  # Check for duplicated cell names
-  if(any(duplicated(unlist(lapply(tmp,colnames))))) {
-    tmp <- samples %>% 
-      lapply(\(sample) {
-        cm <- tmp[[sample]]
-        colnames(cm) %<>% {paste0(sample,sep,.)}
-        return(cm)
-      }) %>% 
-      setNames(samples)
-  }
+  # Create unique cell names
+  tmp <- samples %>%
+    lapply(\(sample) {
+      cm <- tmp[[sample]]
+      colnames(cm) %<>% {paste0(sample,sep,.)}
+      return(cm)
+    }) %>%
+    setNames(samples)
+  
+  if (verbose) cat(" done!\n")
+  
   return(tmp)
 }
 
@@ -95,7 +95,7 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
 #' @description Add detailed metrics, requires to load raw count matrices using pagoda2
 #' @keywords internal
 addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
-  if (verbose) message("Filtering... ")
+  if (verbose) cat("Counting...")
   metricsDetailed <- cms %>% 
     plapply(\(cm) {
       # count UMIs
@@ -116,17 +116,20 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
       
       metricsDetailedSample <- rbind(totalUMI, totalGenes)
       return(metricsDetailedSample)
-    }, progress = verbose, n.cores = n.cores) %>% 
+    }, n.cores = n.cores, progress = FALSE) %>% 
     setNames(cms %>% names())
   
   metricsDetailed %<>%
     names() %>% 
     plapply(\(sample.name) {
-      metricsDetailed[[sample.name]] %>% 
+      tmp <- metricsDetailed[[sample.name]] %>% 
         mutate(sample = sample.name)
+      return(tmp)
     }) %>% 
     bind_rows() %>% 
     select(c("sample", "barcode", "metric", "value"))
+  
+  if (verbose) cat(" done!\n")
   
   return(metricsDetailed)
 }
@@ -148,13 +151,13 @@ addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, stat_test, exact
 #' Add summary metrics
 #' @description Add summary metrics by reading Cell Ranger metrics summary files
 #' @keywords internal
-addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
+addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) {
   samples.tmp <- list.dirs(data_path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample %>% unique())
   
   if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data_path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
-  if (verbose) message(paste0("Adding ",length(samples)," samples"))
+  if (verbose) cat(paste0("Adding ",length(samples)," samples..."))
   # extract and combine metrics summary for all samples 
   metrics <- samples %>% 
     plapply(\(s) {
@@ -165,24 +168,10 @@ addSummaryMetrics <- function(data_path, metadata, verbose = TRUE) {
         pivot_longer(cols = -c(sample),
                      names_to = "metric",
                      values_to = "value")
-    }, progress = verbose) %>% 
+    }, n.cores = n.cores, progress = FALSE) %>% 
     bind_rows()
-  
+  if (verbose) cat(" done!\n")
   return(metrics)
-}
-
-getConosDepth <- function(con) {
-  con$samples %>% 
-    lapply(`[[`, "depth") %>% 
-    Reduce(c, .)
-}
-
-getMitoFraction <- function(con, species="human") {
-  if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
-  con$samples %>% 
-    lapply(`[[`, "counts") %>% 
-    lapply(\(cm) Matrix::rowSums(cm[,grep(symb, colnames(cm))]) / Matrix::rowSums(cm)) %>% 
-    Reduce(c, .)
 }
 
 #' Plot the data as points, as bars or as a histogram
@@ -200,5 +189,3 @@ plotGeom = function(plot_geom){
   }
   return(geom)
 }
-
-
