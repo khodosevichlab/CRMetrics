@@ -93,7 +93,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$verbose <- verbose
     self$pal <- pal
     self$theme <- theme
-    
     if (is.null(metadata)) {
       self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
     } else {
@@ -266,7 +265,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # If no metric is selected, return list of options
     if (is.null(metrics)) {
-      stop("Define a metric to plot, can be one of these: 'depth', 'UMI_count', 'gene_count'.")
+      stop("Define a metric to plot, can be one of these: 'UMI_count', 'gene_count'.")
     } else {
       # check if selected metrics are available
       difs <- setdiff(metrics, self$detailed_metrics$metric %>% unique())
@@ -277,12 +276,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # if no plot type is defined, return a list of options
     if (is.null(plot_geom)) {
       stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
-    }
-    
-    # if depth is one of the metrics to plot use the plotDepth function to plot
-    if ("depth" %in% metrics){
-      depth_plot <- self$plotDepth()
-      metrics <- metrics[metrics != "depth"]
     }
     
     # Plot all the other metrics
@@ -317,19 +310,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       {options(warn=0)}
     
     # To return the plots
-    if (exists("depth_plot")) {
-      if (length(plotList) > 0) {
-        return(plot_grid(plotlist = plotList, depth_plot, ncol = min(length(plotList)+1, 3)))
-      } else {
-        return(depth_plot)
-      }
+    if (length(plotList) == 1) {
+      return(plotList[[1]])
     } else {
-      if (length(plotList) == 1) {
-        return(plotList[[1]])
-      } else {
-        return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
+      return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
       }
-    }
     
   },
   
@@ -408,8 +393,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
               ggplot(aes(x,y)) +
               self$theme +
               geom_line() +
-              geom_area(fill = "red") +
-              geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "blue") +
+              geom_area(fill = "#A65141") +
+              geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "#E7CDC2") +
               xlim(0,2e4) +
               theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
               labs(title = id, y = "Density [AU]", x = "")
@@ -418,8 +403,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
               ggplot(aes(x,y)) +
               self$theme +
               geom_line() +
-              geom_area(fill = "red") +
-              geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "blue") +
+              geom_area(fill = "#A65141") +
+              geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "#E7CDC2") +
               xlim(0,2e4) +
               theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
               labs(title = id, y = "Density [AU]", x = "")
@@ -441,8 +426,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       ggplot(aes(x,y)) +
         self$theme +
         geom_line() +
-        geom_area(fill = "red") +
-        geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "blue") + 
+        geom_area(fill = "#A65141") +
+        geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "#E7CDC2") + 
         xlim(0,2e4) +
         theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
     }
@@ -633,10 +618,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  plotFilteredCells = function(type = c("umap","bar","export"), depth = TRUE, depth.cutoff = 1e3, doublet_method = NULL, mito.frac = TRUE, mito.cutoff = 0.05, species = c("human","mouse")) {
+  plotFilteredCells = function(type = c("umap","bar","tile","export"), depth = TRUE, depth.cutoff = 1e3, doublet_method = NULL, mito.frac = TRUE, mito.cutoff = 0.05, species = c("human","mouse")) {
     type %<>% 
       tolower() %>% 
-      match.arg(c("umap","bar","export"))
+      match.arg(c("umap","bar","tile","export"))
     species %<>%
       tolower() %>% 
       match.arg(c("human","mouse"))
@@ -692,14 +677,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         reshape2::melt(., id.vars = c("sample","cell"), measure.vars = colnames(.)[!colnames(.) %in% c("sample","cell")])
     }
     if (type == "bar") {
-      g <- tmp %>% 
-        ggplot(aes(variable, value, fill = variable)) +
+      g <- tmp %>% group_by(sample, variable) %>% count(value) %>% mutate(pct=n/sum(n)*100) %>%
+        ungroup() %>% filter(value == 1) %>%
+        ggplot(aes(sample, pct, fill = variable)) +
         geom_bar(stat = "identity") +
+        geom_text_repel(aes(label = sprintf("%0.2f", round(pct, digits = 2))), 
+                        position = position_stack(vjust = 0.5), direction = "y", size = 2.5) +
         self$theme +
-        theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-        labs(x = "", y = "Cells filtered") +
-        scale_fill_dutchmasters(palette = self$pal) +
-        facet_wrap("sample", scales = "free_y")
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        labs(x = "", y = "Percentage cells filtered") +
+        scale_fill_dutchmasters(palette = self$pal)
+    } else if (type == "tile") {
+      g <- labelsFilter(tmp) %>%
+        ggplot(aes(fraction, sample, fill = value)) +
+        geom_tile(aes(width = 0.7, height = 0.7), color = "black", size = 0.5) +
+        scale_fill_manual(values = c("green", "orange", "red")) +
+        self$theme
     } else if (type == "export") {
       g <- tmp
     }

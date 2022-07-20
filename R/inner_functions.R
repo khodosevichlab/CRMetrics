@@ -189,3 +189,52 @@ plotGeom = function(plot_geom){
   }
   return(geom)
 }
+
+#' Calculate percentage of filtered cells
+#' @param filter.data data frame to 
+#' @param filter the variable to filter (default = "mito")
+#' @keywords internal
+percFilter <- function(filter.data, filter = "mito") {
+  cells.per.sample <- filter.data$sample %>% table() %>% c()
+  variable.count <- filter.data %>% 
+    filter(variable == filter) %$% 
+    split(value, sample) %>% 
+    lapply(sum)
+  
+  perc <- 1:length(cells.per.sample) %>% 
+    sapply(\(x) {
+      variable.count[[x]] / cells.per.sample[x]
+    }) %>% 
+    setNames(names(cells.per.sample))
+  
+  return(perc)
+}
+
+#' Get labels for percentage of filtered cells
+#' @param filter.data data frame
+#' @keywords internal
+labelsFilter <- function(filter.data) {
+  mito <- percFilter(filter.data, "mito") %>% 
+    sapply(\(x) {if (x < 0.01) "Low" else if(x > 0.05) "High" else "Medium"}) %>% 
+    {data.frame(sample = names(.), value = .)}
+  
+  depth <- percFilter(filter.data, "depth") %>% 
+    sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>% 
+    {data.frame(sample = names(.), value = .)}
+  
+  doublets <- percFilter(filter.data, "doublets") %>% 
+    sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>%
+    {data.frame(sample = names(.), value = .)}
+  
+  tmp <- list(mito = mito,
+              depth = depth,
+              doublets = doublets)
+  
+  tmp %<>% 
+    names() %>% 
+    lapply(\(x) tmp[[x]] %>% mutate(fraction = x)) %>% 
+    bind_rows() %>% 
+    mutate(value = value %>% factor(levels = c("Low","Medium","High")))
+  
+  return(tmp)
+}
