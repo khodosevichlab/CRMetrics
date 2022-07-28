@@ -4,7 +4,20 @@
 \alias{addPlotStats}
 \title{Add statistics to plot}
 \usage{
-addPlotStats(p, comp_group, metadata, h.adj = 0.05, exact = FALSE)
+addPlotStats(p, comp_group, metadata, h.adj = 0.05, stat_test, exact = FALSE)
+}
+\arguments{
+\item{p}{Plot to add statistics to}
+
+\item{comp_group}{Comparison metric}
+
+\item{metadata}{Metadata for samples}
+
+\item{h.adj}{Position of statistics test p value as \% of max(y) (default = 0.05)}
+
+\item{stat_test}{Statistical test to perform to compare means (default = kruskal.test)}
+
+\item{exact}{Whether to calculate exact p values (default = FALSE)}
 }
 \description{
 Use ggpubr to add statistics to plots

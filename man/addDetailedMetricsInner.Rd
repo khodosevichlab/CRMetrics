@@ -4,7 +4,14 @@
 \alias{addDetailedMetricsInner}
 \title{Add detailed metrics}
 \usage{
-addDetailedMetricsInner(cm.list, verbose = TRUE, n.cores = 1)
+addDetailedMetricsInner(cms, verbose = TRUE, n.cores = 1)
+}
+\arguments{
+\item{cms}{List containing the count matrices}
+
+\item{verbose}{Print messages (default = TRUE)}
+
+\item{n.cores}{Number of cores for the calculations (default = 1)}
 }
 \description{
 Add detailed metrics, requires to load raw count matrices using pagoda2

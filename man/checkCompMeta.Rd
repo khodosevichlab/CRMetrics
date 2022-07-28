@@ -6,6 +6,11 @@
 \usage{
 checkCompMeta(comp_group, metadata)
 }
+\arguments{
+\item{comp_group}{Comparison metric}
+
+\item{metadata}{Metadata for samples}
+}
 \description{
 Checks whether 'comp_group' is any of the column names in metadata
 }

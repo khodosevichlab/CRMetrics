@@ -4,8 +4,12 @@ NULL
 
 #' Add detailed metrics if they don't exist
 #' @description Internal function for adding detailed metrics
-#' @param detailed_metrics
+#' @param detailed_metrics Object containing a data frame with the detailed metrics
+#' @param data_path Path to cellranger count data
+#' @param samples Vector of samples
 #' @param verbose Print messages (default = TRUE)
+#' @param n.cores Number of cores for the calculations (default = 1)
+#' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")
 #' @keywords internal
 checkDetailedMetrics <- function(detailed_metrics, data_path, samples, verbose = TRUE, n.cores = 1, transcript = "SYMBOL") {
   if (is.null(detailed_metrics)) {
@@ -19,6 +23,9 @@ checkDetailedMetrics <- function(detailed_metrics, data_path, samples, verbose =
 
 #' Set correct 'comp_group' parameter
 #' @description Set comp_group to 'category' if null
+#' @param comp_group Comparison metric
+#' @param category Comparison metric to use if comp_group is not provided
+#' @param verbose Print messages (default = TRUE)
 #' @keywords internal
 checkCompGroup <- function(comp_group, category, verbose = TRUE) {
   if (is.null(comp_group)) {
@@ -30,12 +37,20 @@ checkCompGroup <- function(comp_group, category, verbose = TRUE) {
 
 #' Check whether 'comp_group' is in metadata
 #' @description Checks whether 'comp_group' is any of the column names in metadata
+#' @param comp_group Comparison metric
+#' @param metadata Metadata for samples
 #' @keywords internal
 checkCompMeta <- function(comp_group, metadata) {
   if (!is.null(comp_group) && (!comp_group %in% colnames(metadata))) stop("'comp_group' doesn't match any column name in metadata.")
 }
 
 #' Load count matrices
+#' @param data_path Path to cellranger count data
+#' @param samples Vector of samples
+#' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")
+#' @param sep Separator for cell names (default = "!!")
+#' @param n.cores Number of cores for the calculations (default = 1)
+#' @param verbose Print messages (default = TRUE)
 #' @keywords internal
 loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL","ENSEMBL"), sep = "!!", n.cores = 1, verbose = TRUE) {
   requireNamespace("data.table")
@@ -93,6 +108,9 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
 
 #' Add detailed metrics
 #' @description Add detailed metrics, requires to load raw count matrices using pagoda2
+#' @param cms List containing the count matrices 
+#' @param verbose Print messages (default = TRUE)
+#' @param n.cores Number of cores for the calculations (default = 1)
 #' @keywords internal
 addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
   if (verbose) cat("Counting...")
@@ -136,6 +154,12 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
 
 #' Add statistics to plot
 #' @description Use ggpubr to add statistics to plots
+#' @param p Plot to add statistics to 
+#' @param comp_group Comparison metric
+#' @param metadata Metadata for samples
+#' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
+#' @param stat_test Statistical test to perform to compare means (default = kruskal.test)
+#' @param exact Whether to calculate exact p values (default = FALSE)
 #' @keywords internal
 addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, stat_test, exact = FALSE) {
   checkCompMeta(comp_group, metadata)
@@ -150,6 +174,10 @@ addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, stat_test, exact
 
 #' Add summary metrics
 #' @description Add summary metrics by reading Cell Ranger metrics summary files
+#' @param data_path Path to cellranger count data
+#' @param metadata Metadata for samples
+#' @param n.cores Number of cores for the calculations (default = 1)
+#' @param verbose Print messages (default = TRUE)
 #' @keywords internal
 addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) {
   samples.tmp <- list.dirs(data_path, recursive = FALSE, full.names = FALSE)
@@ -175,7 +203,7 @@ addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) 
 }
 
 #' Plot the data as points, as bars or as a histogram
-#' @param plot_type the type of plot to be made
+#' @param plot_geom The plot_geom to use, "point", "bar", "histogram", or "violin"
 #' @keywords internal
 plotGeom = function(plot_geom){
   if (plot_geom == "point"){
@@ -191,8 +219,8 @@ plotGeom = function(plot_geom){
 }
 
 #' Calculate percentage of filtered cells
-#' @param filter.data data frame to 
-#' @param filter the variable to filter (default = "mito")
+#' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample
+#' @param filter The variable to filter (default = "mito")
 #' @keywords internal
 percFilter <- function(filter.data, filter = "mito") {
   cells.per.sample <- filter.data$sample %>% table() %>% c()
@@ -211,7 +239,7 @@ percFilter <- function(filter.data, filter = "mito") {
 }
 
 #' Get labels for percentage of filtered cells
-#' @param filter.data data frame
+#' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample
 #' @keywords internal
 labelsFilter <- function(filter.data) {
   mito <- percFilter(filter.data, "mito") %>% 

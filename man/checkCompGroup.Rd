@@ -6,6 +6,13 @@
 \usage{
 checkCompGroup(comp_group, category, verbose = TRUE)
 }
+\arguments{
+\item{comp_group}{Comparison metric}
+
+\item{category}{Comparison metric to use if comp_group is not provided}
+
+\item{verbose}{Print messages (default = TRUE)}
+}
 \description{
 Set comp_group to 'category' if null
 }

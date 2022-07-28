@@ -4,10 +4,27 @@
 \alias{checkDetailedMetrics}
 \title{Add detailed metrics if they don't exist}
 \usage{
-checkDetailedMetrics(detailed_metrics, verbose = TRUE)
+checkDetailedMetrics(
+  detailed_metrics,
+  data_path,
+  samples,
+  verbose = TRUE,
+  n.cores = 1,
+  transcript = "SYMBOL"
+)
 }
 \arguments{
+\item{detailed_metrics}{Object containing a data frame with the detailed metrics}
+
+\item{data_path}{Path to cellranger count data}
+
+\item{samples}{Vector of samples}
+
 \item{verbose}{Print messages (default = TRUE)}
+
+\item{n.cores}{Number of cores for the calculations (default = 1)}
+
+\item{transcript}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")}
 }
 \description{
 Internal function for adding detailed metrics

@@ -4,7 +4,16 @@
 \alias{addSummaryMetrics}
 \title{Add summary metrics}
 \usage{
-addSummaryMetrics(data_path, metadata, verbose = TRUE)
+addSummaryMetrics(data_path, metadata, n.cores = 1, verbose = TRUE)
+}
+\arguments{
+\item{data_path}{Path to cellranger count data}
+
+\item{metadata}{Metadata for samples}
+
+\item{n.cores}{Number of cores for the calculations (default = 1)}
+
+\item{verbose}{Print messages (default = TRUE)}
 }
 \description{
 Add summary metrics by reading Cell Ranger metrics summary files

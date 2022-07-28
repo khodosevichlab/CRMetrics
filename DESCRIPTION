@@ -15,6 +15,7 @@ Imports:
     dutchmasters,
     ggbeeswarm,
     ggpubr,
+    ggrepel,
     magrittr,
     Matrix,
     readr,
