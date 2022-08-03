@@ -7,11 +7,17 @@
 percFilter(filter.data, filter = "mito")
 }
 \arguments{
-\item{filter.data}{Data frame containing the mitochondrial fraction, depth and doublets per sample}
+\item{filter.data}{Data frame containing the mitochondrial fraction, depth and doublets per sample.}
 
-\item{filter}{The variable to filter (default = "mito")}
+\item{filter}{The variable to filter (default = "mito").}
+}
+\value{
+vector
 }
 \description{
-Calculate percentage of filtered cells
+Calculate percentage of filtered cells based on the filter
+}
+\examples{
+perc <- percFilter(filter.data, filter = "depth")
 }
 \keyword{internal}

@@ -7,13 +7,19 @@
 checkCompGroup(comp_group, category, verbose = TRUE)
 }
 \arguments{
-\item{comp_group}{Comparison metric}
+\item{comp_group}{Comparison metric.}
 
-\item{category}{Comparison metric to use if comp_group is not provided}
+\item{category}{Comparison metric to use if comp_group is not provided.}
 
-\item{verbose}{Print messages (default = TRUE)}
+\item{verbose}{Print messages (default = TRUE).}
+}
+\value{
+vector
 }
 \description{
-Set comp_group to 'category' if null
+Set comp_group to 'category' if null.
+}
+\examples{
+comp_group <- checkCompGroup(comp_group = "sex")
 }
 \keyword{internal}

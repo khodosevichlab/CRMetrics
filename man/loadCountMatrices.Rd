@@ -14,19 +14,25 @@ loadCountMatrices(
 )
 }
 \arguments{
-\item{data_path}{Path to cellranger count data}
+\item{data_path}{Path to cellranger count data.}
 
-\item{samples}{Vector of samples}
+\item{samples}{Vector of samples.}
 
-\item{transcript}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")}
+\item{transcript}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").}
 
-\item{sep}{Separator for cell names (default = "!!")}
+\item{sep}{Separator for cell names (default = "!!").}
 
-\item{n.cores}{Number of cores for the calculations (default = 1)}
+\item{n.cores}{Number of cores for the calculations (default = 1).}
 
-\item{verbose}{Print messages (default = TRUE)}
+\item{verbose}{Print messages (default = TRUE).}
+}
+\value{
+data frame
 }
 \description{
-Load count matrices
+Load gene expression count data
+}
+\examples{
+cms <- loadCountMatrices(data_path = crm$data_path, samples = crm$metadata$samples, transcript = "SYMBOL", n.cores = crm$n.cores)
 }
 \keyword{internal}

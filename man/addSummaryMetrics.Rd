@@ -7,15 +7,21 @@
 addSummaryMetrics(data_path, metadata, n.cores = 1, verbose = TRUE)
 }
 \arguments{
-\item{data_path}{Path to cellranger count data}
+\item{data_path}{Path to cellranger count data.}
 
-\item{metadata}{Metadata for samples}
+\item{metadata}{Metadata for samples.}
 
-\item{n.cores}{Number of cores for the calculations (default = 1)}
+\item{n.cores}{Number of cores for the calculations (default = 1).}
 
-\item{verbose}{Print messages (default = TRUE)}
+\item{verbose}{Print messages (default = TRUE).}
+}
+\value{
+data frame
 }
 \description{
-Add summary metrics by reading Cell Ranger metrics summary files
+Add summary metrics by reading Cell Ranger metrics summary files.
+}
+\examples{
+summary.metrics <- addSummaryMetrics(data_path = crm$data_path, metadata = crm$metadata, n.cores = crm$n.cores)
 }
 \keyword{internal}

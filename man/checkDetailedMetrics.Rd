@@ -14,19 +14,25 @@ checkDetailedMetrics(
 )
 }
 \arguments{
-\item{detailed_metrics}{Object containing a data frame with the detailed metrics}
+\item{detailed_metrics}{Object containing a data frame with the detailed metrics.}
 
-\item{data_path}{Path to cellranger count data}
+\item{data_path}{Path to cellranger count data.}
 
-\item{samples}{Vector of samples}
+\item{samples}{Vector of samples.}
 
-\item{verbose}{Print messages (default = TRUE)}
+\item{verbose}{Print messages (default = TRUE).}
 
-\item{n.cores}{Number of cores for the calculations (default = 1)}
+\item{n.cores}{Number of cores for the calculations (default = 1).}
 
-\item{transcript}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")}
+\item{transcript}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").}
+}
+\value{
+data frame
 }
 \description{
-Internal function for adding detailed metrics
+Internal function for adding detailed metrics.
+}
+\examples{
+detailed.metrics <- checkDetailedMetrics(detailed_metrics = crm$detailed_metrics, data_path = crm$data_path, samples = crm$metadata$samples)
 }
 \keyword{internal}

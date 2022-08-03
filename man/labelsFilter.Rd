@@ -7,9 +7,15 @@
 labelsFilter(filter.data)
 }
 \arguments{
-\item{filter.data}{Data frame containing the mitochondrial fraction, depth and doublets per sample}
+\item{filter.data}{Data frame containing the mitochondrial fraction, depth and doublets per sample.}
+}
+\value{
+data frame
 }
 \description{
-Get labels for percentage of filtered cells
+Labels the percentage of filtered cells based on mitochondrial fraction, sequencing depth and doublets as low, medium or high
+}
+\examples{
+filtered <- labelsFilter(filter.data)
 }
 \keyword{internal}

@@ -4,7 +4,142 @@
 \alias{CRMetrics}
 \title{CRMetrics class object}
 \description{
-Functions to analyse cellranger count data
+Functions to analyse cellranger count data.
+}
+\examples{
+
+## ------------------------------------------------
+## Method `CRMetrics$new`
+## ------------------------------------------------
+
+crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
+Add detailed metrics
+
+## ------------------------------------------------
+## Method `CRMetrics$addDetailedMetrics`
+## ------------------------------------------------
+
+crm$addDetailedMetrics()
+Add comparison group
+
+## ------------------------------------------------
+## Method `CRMetrics$addComparison`
+## ------------------------------------------------
+
+crm$addComparison(comp_group = "sex")
+Plot samples
+
+## ------------------------------------------------
+## Method `CRMetrics$plotSamples`
+## ------------------------------------------------
+
+crm$plotSamples(comp_group = "sex", second_comp_group = "condition")
+Plot summary metrics
+
+## ------------------------------------------------
+## Method `CRMetrics$plotSummaryMetrics`
+## ------------------------------------------------
+
+metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
+crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
+Plot detailed metrics
+
+## ------------------------------------------------
+## Method `CRMetrics$plotDetailedMetrics`
+## ------------------------------------------------
+
+metrics.to.plot <- crm$detailed_metrics$metric \%>\% unique()
+crm$plotDetailedMetrics()
+Plot UMAP
+
+## ------------------------------------------------
+## Method `CRMetrics$plotUmap`
+## ------------------------------------------------
+
+crm$doPreprocessing()
+crm$createEmbedding() 
+crm$plotUMAP()
+# Color cells for low depth
+crm$plotUMAP(depth = TRUE, depth.cutoff = 1e3)
+Plot depth
+
+## ------------------------------------------------
+## Method `CRMetrics$plotDepth`
+## ------------------------------------------------
+
+crm$plotDepth()
+Save summary metrics
+
+## ------------------------------------------------
+## Method `CRMetrics$saveSummaryMetrics`
+## ------------------------------------------------
+
+crm$saveSummaryMetrics(file = "Summary_metrics.txt")
+Save detailed metrics
+
+## ------------------------------------------------
+## Method `CRMetrics$saveDetailedMetrics`
+## ------------------------------------------------
+
+crm$saveDetailedMetrics(file = "Detailed_metrics.txt")
+Detect doublets
+
+## ------------------------------------------------
+## Method `CRMetrics$detectDoublets`
+## ------------------------------------------------
+
+crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+Conos preprocessing
+
+## ------------------------------------------------
+## Method `CRMetrics$doPreprocessing`
+## ------------------------------------------------
+
+crm$doPreprocessing(preprocess = "pagoda2")
+Create Conos embedding
+
+## ------------------------------------------------
+## Method `CRMetrics$createEmbedding`
+## ------------------------------------------------
+
+crm$createEmbedding()
+Filter count matrices
+
+## ------------------------------------------------
+## Method `CRMetrics$filterCms`
+## ------------------------------------------------
+
+crm$filterCMS(file = "cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = "scrublet")
+Select summary metrics.
+
+## ------------------------------------------------
+## Method `CRMetrics$selectMetrics`
+## ------------------------------------------------
+
+crm$selectMetrics()
+selection.metrics <- crm$selectMetrics(c(1:4))
+Plot filtered cells
+
+## ------------------------------------------------
+## Method `CRMetrics$plotFilteredCells`
+## ------------------------------------------------
+
+crm$plotFilteredCells(type = "umap", doublet_method = "scrublet")
+filtered.cells <- crm$plotFilteredCells(type = "export", doublet_method = "scrublet")
+Get Conos sequencing depth
+
+## ------------------------------------------------
+## Method `CRMetrics$getConosDepth`
+## ------------------------------------------------
+
+crm$getConosDepth()
+Get fraction of mitochondrial genes
+
+## ------------------------------------------------
+## Method `CRMetrics$getMitoFraction`
+## ------------------------------------------------
+
+crm$getMitoFraction(species = c("human", "mouse"))
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -25,7 +160,8 @@ Functions to analyse cellranger count data
 
 \item{\code{theme}}{(default = NULL)}
 
-\item{\code{n.cores}}{(default = 1)}
+\item{\code{n.cores}}{(default = 1)
+Initialize a CRMetrics object}
 }
 \if{html}{\out{</div>}}
 }
@@ -74,30 +210,42 @@ To initialize new object, data_path is needed. metadata_file is also recommended
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{data_path}}{Path to cellranger count data (default = NULL)}
+\item{\code{data_path}}{Path to cellranger count data (default = NULL).}
 
-\item{\code{metadata}}{Path to metadata file or name of metadata object (default = NULL)}
+\item{\code{metadata}}{Path to metadata file or name of metadata object (default = NULL).}
 
-\item{\code{comp_group}}{A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
+\item{\code{comp_group}}{A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).}
 
-\item{\code{detailed_metrics}}{Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL)}
+\item{\code{detailed_metrics}}{Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL).}
 
-\item{\code{verbose}}{Print messages or not (default = TRUE)}
+\item{\code{verbose}}{Print messages or not (default = TRUE).}
 
-\item{\code{pal}}{Palette from package 'dutchmasters' for plotting (default: "pearl_earring")}
+\item{\code{pal}}{Palette from package 'dutchmasters' for plotting (default: "pearl_earring").}
 
-\item{\code{theme}}{Ggplot2 theme (default: theme_bw())}
+\item{\code{theme}}{Ggplot2 theme (default: theme_bw()).}
 
-\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores)}
+\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+CRMetrics object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
+Add detailed metrics
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addDetailedMetrics}{}}}
 \subsection{Method \code{addDetailedMetrics()}}{
-Function to read in detailed metrics. This is not done upon initialization for speed
+Function to read in detailed metrics. This is not done upon initialization for speed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
   data_path = self$data_path,
@@ -112,26 +260,38 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{data_path}}{Path to cellranger count data (default = self$data_path)}
+\item{\code{data_path}}{Path to cellranger count data (default = self$data_path).}
 
-\item{\code{samples}}{Vector containing samples (default = self$metadata$sample)}
+\item{\code{samples}}{Vector containing samples (default = self$metadata$sample).}
 
-\item{\code{transcript}}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")}
+\item{\code{transcript}}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").}
 
-\item{\code{sep}}{Separator for cell names (default = "!!")}
+\item{\code{sep}}{Separator for cell names (default = "!!").}
 
-\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores)}
+\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores).}
 
-\item{\code{verbose}}{Print messages or not (default = self$verbose)}
+\item{\code{verbose}}{Print messages or not (default = self$verbose).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+Count matrices
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$addDetailedMetrics()
+Add comparison group
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addComparison"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addComparison}{}}}
 \subsection{Method \code{addComparison()}}{
-Add comparison group
+Add comparison group for statistical testing.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addComparison(comp_group, metadata = self$metadata)}\if{html}{\out{</div>}}
 }
@@ -139,21 +299,30 @@ Add comparison group
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{comp_group}}{Comparison metric (default = self$comp_group)}
+\item{\code{comp_group}}{Comparison metric (default = self$comp_group).}
 
-\item{\code{metadata}}{Metadata for samples (default = self$metadata)}
+\item{\code{metadata}}{Metadata for samples (default = self$metadata).}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 Vector
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$addComparison(comp_group = "sex")
+Plot samples
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotSamples"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotSamples}{}}}
 \subsection{Method \code{plotSamples()}}{
-Plot samples
+Plot the number of samples.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSamples(
   comp_group = self$comp_group,
@@ -167,27 +336,36 @@ Plot samples
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{comp_group}}{Comparison metric (default = self$comp_group)}
+\item{\code{comp_group}}{Comparison metric (default = self$comp_group).}
 
-\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05)}
+\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05).}
 
-\item{\code{exact}}{Whether to calculate exact p values (default = FALSE)}
+\item{\code{exact}}{Whether to calculate exact p values (default = FALSE).}
 
-\item{\code{metadata}}{Metadata for samples (default = self$metadata)}
+\item{\code{metadata}}{Metadata for samples (default = self$metadata).}
 
-\item{\code{second_comp_group}}{Second comparison metric (default = NULL)}
+\item{\code{second_comp_group}}{Second comparison metric (default = NULL).}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 ggplot2 object
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$plotSamples(comp_group = "sex", second_comp_group = "condition")
+Plot summary metrics
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotSummaryMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotSummaryMetrics}{}}}
 \subsection{Method \code{plotSummaryMetrics()}}{
-Plot all summary stats or a selected list
+Plot all summary stats or a selected list.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSummaryMetrics(
   comp_group = self$comp_group,
@@ -205,32 +383,45 @@ Plot all summary stats or a selected list
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{comp_group}}{Comparison metric (default = self$comp_group)}
+\item{\code{comp_group}}{Comparison metric (default = self$comp_group).}
 
-\item{\code{metrics}}{Metrics to plot (default = NULL)}
+\item{\code{metrics}}{Metrics to plot (default = NULL).}
 
-\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05)}
+\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05).}
 
-\item{\code{stat_test}}{Statistical test to perform to compare means (default = kruskal.test)}
+\item{\code{stat_test}}{Statistical test to perform to compare means (default = kruskal.test).}
 
-\item{\code{exact}}{Whether to calculate exact p values (default = FALSE)}
+\item{\code{exact}}{Whether to calculate exact p values (default = FALSE).}
 
-\item{\code{metadata}}{Metadata for samples (default = self$metadata)}
+\item{\code{metadata}}{Metadata for samples (default = self$metadata).}
 
-\item{\code{summary_metrics}}{Summary metrics (default = self$summary_metrics)}
+\item{\code{summary_metrics}}{Summary metrics (default = self$summary_metrics).}
 
-\item{\code{plot_geom}}{How to plot the data (default = NULL)}
+\item{\code{plot_geom}}{How to plot the data (default = NULL).}
 
-\item{\code{second_comp_group}}{Second comparison metric only used for the metric "samples per group" (default = NULL)}
+\item{\code{second_comp_group}}{Second comparison metric only used for the metric "samples per group" (default = NULL).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+ggplot2 object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
+crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
+Plot detailed metrics
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotDetailedMetrics}{}}}
 \subsection{Method \code{plotDetailedMetrics()}}{
-Plot detailed metrics
+Plot detailed metrics from the detailed_metrics object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDetailedMetrics(
   comp_group = self$com_group,
@@ -245,26 +436,39 @@ Plot detailed metrics
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{comp_group}}{Comparison metric (default = self$comp_group)}
+\item{\code{comp_group}}{Comparison metric (default = self$comp_group).}
 
-\item{\code{detailed_metrics}}{Object containing the count matrices (default = self$detailed_metrics)}
+\item{\code{detailed_metrics}}{Object containing the count matrices (default = self$detailed_metrics).}
 
-\item{\code{metadata}}{Metadata for samples (default = self$metadata)}
+\item{\code{metadata}}{Metadata for samples (default = self$metadata).}
 
-\item{\code{metrics}}{Metrics to plot (default = NULL)}
+\item{\code{metrics}}{Metrics to plot (default = NULL).}
 
-\item{\code{plot_geom}}{How to plot the data (default = NULL)}
+\item{\code{plot_geom}}{How to plot the data (default = NULL).}
 
-\item{\code{data_path}}{Path to cellranger count data (default = self$data_path)}
+\item{\code{data_path}}{Path to cellranger count data (default = self$data_path).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+ggplot2 object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{metrics.to.plot <- crm$detailed_metrics$metric \%>\% unique()
+crm$plotDetailedMetrics()
+Plot UMAP
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotUmap"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotUmap}{}}}
 \subsection{Method \code{plotUmap()}}{
-Plot cells in a UMAP using Conos and color by depth and doublets
+Plot cells in a UMAP using Conos and color by depth and doublets.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotUmap(
   depth = FALSE,
@@ -281,30 +485,46 @@ Plot cells in a UMAP using Conos and color by depth and doublets
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{depth}}{Plot depth or not (default = FALSE)}
+\item{\code{depth}}{Plot depth or not (default = FALSE).}
 
-\item{\code{doublet_method}}{Doublet detection method (default = NULL)}
+\item{\code{doublet_method}}{Doublet detection method (default = NULL).}
 
-\item{\code{doublet_scores}}{Plot doublet scores or not (default = FALSE)}
+\item{\code{doublet_scores}}{Plot doublet scores or not (default = FALSE).}
 
-\item{\code{depth.cutoff}}{Depth cutoff (default = 1e33)}
+\item{\code{depth.cutoff}}{Depth cutoff (default = 1e33).}
 
-\item{\code{mito.frac}}{Plot mitochondrial fraction or not (default = FALSE)}
+\item{\code{mito.frac}}{Plot mitochondrial fraction or not (default = FALSE).}
 
-\item{\code{mito.cutoff}}{Mitochondrial fraction cutoff (default = 0.05)}
+\item{\code{mito.cutoff}}{Mitochondrial fraction cutoff (default = 0.05).}
 
-\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = c("human","mouse"))}
+\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
 
-\item{\code{...}}{Plotting parameters passed to \code{conos::embeddingPlot}}
+\item{\code{...}}{Plotting parameters passed to \code{conos::embeddingPlot}.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+ggplot2 object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$doPreprocessing()
+crm$createEmbedding() 
+crm$plotUMAP()
+# Color cells for low depth
+crm$plotUMAP(depth = TRUE, depth.cutoff = 1e3)
+Plot depth
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotDepth}{}}}
 \subsection{Method \code{plotDepth()}}{
-Plot the depth in histogram
+Plot the sequencing depth in histogram.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(cutoff = 1000, per_sample = FALSE)}\if{html}{\out{</div>}}
 }
@@ -312,18 +532,30 @@ Plot the depth in histogram
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cutoff}}{The depth cutoff to color the UMAP (default = 1e3)}
+\item{\code{cutoff}}{The depth cutoff to color the UMAP (default = 1e3).}
 
-\item{\code{per_sample}}{Whether to plot the depth per sample or for all the samples (default = FALSE)}
+\item{\code{per_sample}}{Whether to plot the depth per sample or for all the samples (default = FALSE).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+ggplot2 object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$plotDepth()
+Save summary metrics
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-saveSummaryMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-saveSummaryMetrics}{}}}
 \subsection{Method \code{saveSummaryMetrics()}}{
-Save summary metrics to text file
+Save summary metrics to text file.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveSummaryMetrics(
   file = "Summary_metrics.txt",
@@ -335,20 +567,32 @@ Save summary metrics to text file
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{file}}{Output file (default = "Summary_metrics.txt")}
+\item{\code{file}}{Output file (default = "Summary_metrics.txt").}
 
-\item{\code{dec}}{How the decimals are defined (default = ".")}
+\item{\code{dec}}{How the decimals are defined (default = ".").}
 
-\item{\code{sep}}{What separator to use (default = "\t")}
+\item{\code{sep}}{What separator to use (default = "\t").}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+file
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$saveSummaryMetrics(file = "Summary_metrics.txt")
+Save detailed metrics
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-saveDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-saveDetailedMetrics}{}}}
 \subsection{Method \code{saveDetailedMetrics()}}{
-Save detailed metrics to text file
+Save detailed metrics to text file.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveDetailedMetrics(
   file = "Detailed_metrics.txt",
@@ -360,20 +604,32 @@ Save detailed metrics to text file
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{file}}{Output file (default = "Summary_metrics.txt")}
+\item{\code{file}}{Output file (default = "Summary_metrics.txt").}
 
-\item{\code{dec}}{How the decimals are defined (default = ".")}
+\item{\code{dec}}{How the decimals are defined (default = ".").}
 
-\item{\code{sep}}{What separator to use (default = "\t")}
+\item{\code{sep}}{What separator to use (default = "\t").}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+file
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$saveDetailedMetrics(file = "Detailed_metrics.txt")
+Detect doublets
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-detectDoublets"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-detectDoublets}{}}}
 \subsection{Method \code{detectDoublets()}}{
-Detect doublets
+Detect doublet cells.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
   method = c("scrublet", "doubletdetection"),
@@ -387,27 +643,36 @@ Detect doublets
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{method}}{Which method to use, either \code{scrublet} or \code{doubletdetection} (default="scrublet")}
+\item{\code{method}}{Which method to use, either \code{scrublet} or \code{doubletdetection} (default="scrublet").}
 
-\item{\code{cms}}{List containing the count matrices (default=self$cms)}
+\item{\code{cms}}{List containing the count matrices (default=self$cms).}
 
-\item{\code{env}}{Environment to run python in (default="r-reticulate")}
+\item{\code{env}}{Environment to run python in (default="r-reticulate").}
 
-\item{\code{conda.path}}{Path to conda environment (default=system("whereis conda"))}
+\item{\code{conda.path}}{Path to conda environment (default=system("whereis conda")).}
 
-\item{\code{verbose}}{Print messages or not (defeults = self$verbose)}
+\item{\code{verbose}}{Print messages or not (defeults = self$verbose).}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A dataframe with doublet scores and labels, i.e. whether a cell is deemed a putative doublet
+data frame
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+Conos preprocessing
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-doPreprocessing"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-doPreprocessing}{}}}
 \subsection{Method \code{doPreprocessing()}}{
-Perform conos preprocessing
+Perform conos preprocessing.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$doPreprocessing(
   cms = self$cms,
@@ -420,22 +685,34 @@ Perform conos preprocessing
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{List containing the count matrices (default = self$cms)}
+\item{\code{cms}}{List containing the count matrices (default = self$cms).}
 
-\item{\code{preprocess}}{Method to use for preprocessing (default = c("pagoda2","seurat"))}
+\item{\code{preprocess}}{Method to use for preprocessing (default = c("pagoda2","seurat")).}
 
-\item{\code{verbose}}{Print messages or not (default = self$verbose)}
+\item{\code{verbose}}{Print messages or not (default = self$verbose).}
 
-\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores)}
+\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+Conos object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$doPreprocessing(preprocess = "pagoda2")
+Create Conos embedding
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-createEmbedding"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-createEmbedding}{}}}
 \subsection{Method \code{createEmbedding()}}{
-Create conos UMAP embedding
+Create conos UMAP embedding.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$createEmbedding(
   cms = self$cms.preprocessed,
@@ -447,20 +724,32 @@ Create conos UMAP embedding
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{List containing the count matrices (default = self$cms)}
+\item{\code{cms}}{List containing the count matrices (default = self$cms).}
 
-\item{\code{verbose}}{Print messages or not (default = self$verbose)}
+\item{\code{verbose}}{Print messages or not (default = self$verbose).}
 
-\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores)}
+\item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+Conos object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$createEmbedding()
+Filter count matrices
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-filterCms"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-filterCms}{}}}
 \subsection{Method \code{filterCms()}}{
-Filter cells based on depth, mitochondrial fraction and doublets from the count matrix
+Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
   file = "cms_filtered.rds",
@@ -477,30 +766,42 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{file}}{File to save filtered count matrices to (default = "cms_filtered.rds")}
+\item{\code{file}}{File to save filtered count matrices to (default = "cms_filtered.rds").}
 
-\item{\code{raw}}{To take raw count matrices or not (default = TRUE)}
+\item{\code{raw}}{To take raw count matrices or not (default = TRUE).}
 
-\item{\code{depth_cutoff}}{Depth cutoff (default = NULL)}
+\item{\code{depth_cutoff}}{Depth cutoff (default = NULL).}
 
-\item{\code{mito_cutoff}}{Mitochondrial fraction cutoff (default = NULL)}
+\item{\code{mito_cutoff}}{Mitochondrial fraction cutoff (default = NULL).}
 
-\item{\code{doublets}}{Doublet detection method to use (default = NULL)}
+\item{\code{doublets}}{Doublet detection method to use (default = NULL).}
 
-\item{\code{compress}}{Compress the file or not (default = FALSE)}
+\item{\code{compress}}{Compress the file or not (default = FALSE).}
 
-\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = c("human","mouse"))}
+\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
 
-\item{\code{...}}{Parameters for saving R object passed to \code{saveRDS}
-Select a summary metric}
+\item{\code{...}}{Parameters for saving R object passed to \code{saveRDS}.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+file
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$filterCMS(file = "cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = "scrublet")
+Select summary metrics.
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-selectMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-selectMetrics}{}}}
 \subsection{Method \code{selectMetrics()}}{
+Select metrics from summary_metrics
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$selectMetrics(ids = NULL)}\if{html}{\out{</div>}}
 }
@@ -508,16 +809,29 @@ Select a summary metric}
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{ids}}{Metric id to select (default = NULL)}
+\item{\code{ids}}{Metric id to select (default = NULL).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+vector
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$selectMetrics()
+selection.metrics <- crm$selectMetrics(c(1:4))
+Plot filtered cells
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotFilteredCells"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotFilteredCells}{}}}
 \subsection{Method \code{plotFilteredCells()}}{
-Plot the filtered cells
+Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotFilteredCells(
   type = c("umap", "bar", "tile", "export"),
@@ -533,30 +847,55 @@ Plot the filtered cells
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{type}}{The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export"))}
+\item{\code{type}}{The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export")).}
 
-\item{\code{depth}}{Plot the depth or not (default = TRUE)}
+\item{\code{depth}}{Plot the depth or not (default = TRUE).}
 
-\item{\code{depth.cutoff}}{Depth cutoff (default = 1e3)}
+\item{\code{depth.cutoff}}{Depth cutoff (default = 1e3).}
 
-\item{\code{doublet_method}}{Method to detect doublets (default = NULL)}
+\item{\code{doublet_method}}{Method to detect doublets (default = NULL).}
 
-\item{\code{mito.frac}}{Plot the mitochondrial fraction or not (default = TRUE)}
+\item{\code{mito.frac}}{Plot the mitochondrial fraction or not (default = TRUE).}
 
-\item{\code{mito.cutoff}}{Mitochondrial fraction cutoff (default = 0.05)}
+\item{\code{mito.cutoff}}{Mitochondrial fraction cutoff (default = 0.05).}
 
-\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = c("human","mouse"))}
+\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+ggplot2 object or data frame
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$plotFilteredCells(type = "umap", doublet_method = "scrublet")
+filtered.cells <- crm$plotFilteredCells(type = "export", doublet_method = "scrublet")
+Get Conos sequencing depth
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-getConosDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-getConosDepth}{}}}
 \subsection{Method \code{getConosDepth()}}{
-Extract sequencing depth from Conos object
+Extract sequencing depth from Conos object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+data frame
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$getConosDepth()
+Get fraction of mitochondrial genes
+}
+\if{html}{\out{</div>}}
+
 }
 
 }
@@ -564,7 +903,7 @@ Extract sequencing depth from Conos object
 \if{html}{\out{<a id="method-CRMetrics-getMitoFraction"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-getMitoFraction}{}}}
 \subsection{Method \code{getMitoFraction()}}{
-Calculate the fraction of mitochondrial genes
+Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = "human")}\if{html}{\out{</div>}}
 }
@@ -572,10 +911,21 @@ Calculate the fraction of mitochondrial genes
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = "human")}
+\item{\code{species}}{Species to calculate the mitochondrial fraction for (default = "human").}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+data frame
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$getMitoFraction(species = c("human", "mouse"))
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-clone"></a>}}

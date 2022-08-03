@@ -7,13 +7,19 @@
 addDetailedMetricsInner(cms, verbose = TRUE, n.cores = 1)
 }
 \arguments{
-\item{cms}{List containing the count matrices}
+\item{cms}{List containing the count matrices.}
 
-\item{verbose}{Print messages (default = TRUE)}
+\item{verbose}{Print messages (default = TRUE).}
 
-\item{n.cores}{Number of cores for the calculations (default = 1)}
+\item{n.cores}{Number of cores for the calculations (default = 1).}
+}
+\value{
+data frame
 }
 \description{
-Add detailed metrics, requires to load raw count matrices using pagoda2
+Add detailed metrics, requires to load raw count matrices using pagoda2.
+}
+\examples{
+detailed.metrics <- addDetailedMetricsInner(cms = crm$cms, n.cores = crm$n.cores)
 }
 \keyword{internal}

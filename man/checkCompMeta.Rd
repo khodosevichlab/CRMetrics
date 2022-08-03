@@ -7,11 +7,17 @@
 checkCompMeta(comp_group, metadata)
 }
 \arguments{
-\item{comp_group}{Comparison metric}
+\item{comp_group}{Comparison metric.}
 
-\item{metadata}{Metadata for samples}
+\item{metadata}{Metadata for samples.}
+}
+\value{
+nothing or stop
 }
 \description{
-Checks whether 'comp_group' is any of the column names in metadata
+Checks whether 'comp_group' is any of the column names in metadata.
+}
+\examples{
+checkCompMeta(comp_group = "sex", metadata = crm$metadata)
 }
 \keyword{internal}

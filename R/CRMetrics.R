@@ -39,7 +39,8 @@ NULL
 
 #' CRMetrics class object
 #' 
-#' @description Functions to analyse cellranger count data
+#' @description Functions to analyse cellranger count data.
+#' @export
 CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE, 
  public = list(
    #' @field metadata (default = NULL)
@@ -69,15 +70,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field n.cores (default = 1)
    n.cores = 1,
   
+  #' Initialize a CRMetrics object
   #' @description To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
-  #' @param data_path Path to cellranger count data (default = NULL)
-  #' @param metadata Path to metadata file or name of metadata object (default = NULL)
-  #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)
-  #' @param detailed_metrics Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL)
-  #' @param verbose Print messages or not (default = TRUE)
-  #' @param pal Palette from package 'dutchmasters' for plotting (default: "pearl_earring")
-  #' @param theme Ggplot2 theme (default: theme_bw())
-  #' @param n.cores Number of cores for the calculations (default = self$n.cores)
+  #' @param data_path Path to cellranger count data (default = NULL).
+  #' @param metadata Path to metadata file or name of metadata object (default = NULL).
+  #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
+  #' @param detailed_metrics Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL).
+  #' @param verbose Print messages or not (default = TRUE).
+  #' @param pal Palette from package 'dutchmasters' for plotting (default: "pearl_earring").
+  #' @param theme Ggplot2 theme (default: theme_bw()).
+  #' @param n.cores Number of cores for the calculations (default = self$n.cores).
+  #' @return CRMetrics object
+  #' @examples 
+  #' crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
   initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
@@ -112,34 +117,44 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
   },
   
-  #' @description Function to read in detailed metrics. This is not done upon initialization for speed
-  #' @param data_path Path to cellranger count data (default = self$data_path)
-  #' @param samples Vector containing samples (default = self$metadata$sample)
-  #' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL")
-  #' @param sep Separator for cell names (default = "!!")
-  #' @param n.cores Number of cores for the calculations (default = self$n.cores)
-  #' @param verbose Print messages or not (default = self$verbose)
+  #' Add detailed metrics
+  #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
+  #' @param data_path Path to cellranger count data (default = self$data_path).
+  #' @param samples Vector containing samples (default = self$metadata$sample).
+  #' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").
+  #' @param sep Separator for cell names (default = "!!").
+  #' @param n.cores Number of cores for the calculations (default = self$n.cores).
+  #' @param verbose Print messages or not (default = self$verbose).
+  #' @return Count matrices
+  #' @examples 
+  #' crm$addDetailedMetrics()
   addDetailedMetrics = function(data_path = self$data_path, samples = self$metadata$sample, transcript = "SYMBOL", sep = "!!", n.cores = self$n.cores, verbose = self$verbose) {
     if (is.null(self$cms)) self$cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, sep = sep, n.cores = n.cores, verbose = verbose)
     self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
   },
   
-  #' @description Add comparison group
-  #' @param comp_group Comparison metric (default = self$comp_group)
-  #' @param metadata Metadata for samples (default = self$metadata)
+  #' Add comparison group
+  #' @description Add comparison group for statistical testing.
+  #' @param comp_group Comparison metric (default = self$comp_group).
+  #' @param metadata Metadata for samples (default = self$metadata).
   #' @return Vector
+  #' @examples 
+  #' crm$addComparison(comp_group = "sex")
   addComparison = function(comp_group, metadata = self$metadata) {
     checkCompMeta(comp_group, metadata)
     self$comp_group <- comp_group
   },
   
-  #' @description Plot samples
-  #' @param comp_group Comparison metric (default = self$comp_group)
-  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
-  #' @param exact Whether to calculate exact p values (default = FALSE)
-  #' @param metadata Metadata for samples (default = self$metadata)
-  #' @param second_comp_group Second comparison metric (default = NULL)
+  #' Plot samples
+  #' @description Plot the number of samples.
+  #' @param comp_group Comparison metric (default = self$comp_group).
+  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
+  #' @param exact Whether to calculate exact p values (default = FALSE).
+  #' @param metadata Metadata for samples (default = self$metadata).
+  #' @param second_comp_group Second comparison metric (default = NULL).
   #' @return ggplot2 object
+  #' @examples 
+  #' crm$plotSamples(comp_group = "sex", second_comp_group = "condition")
   plotSamples = function(comp_group = self$comp_group, h.adj = 0.05, exact = FALSE, metadata = self$metadata, second_comp_group = NULL) {
     comp_group %<>% checkCompGroup(comp_group, self$verbose)
     if (!is.null(second_comp_group)) {
@@ -160,23 +175,29 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       theme(legend.position = "right") +
       scale_fill_dutchmasters(palette = self$pal)
     
-    # if (plot_stats) {
-    #   g %<>% addPlotStats(comp_group, metadata, h.adj, exact)
-    # }
+    
+    if (plot_stats) {
+     g %<>% addPlotStatsSamples(comp_group, metadata, h.adj, exact, second_comp_group)
+    }
     
     return(g)
   },
   
-  #' @description Plot all summary stats or a selected list
-  #' @param comp_group Comparison metric (default = self$comp_group)
-  #' @param metrics Metrics to plot (default = NULL)
-  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
-  #' @param stat_test Statistical test to perform to compare means (default = kruskal.test)
-  #' @param exact Whether to calculate exact p values (default = FALSE)
-  #' @param metadata Metadata for samples (default = self$metadata)
-  #' @param summary_metrics Summary metrics (default = self$summary_metrics)
-  #' @param plot_geom How to plot the data (default = NULL)
-  #' @param second_comp_group Second comparison metric only used for the metric "samples per group" (default = NULL)
+  #' Plot summary metrics
+  #' @description Plot all summary stats or a selected list.
+  #' @param comp_group Comparison metric (default = self$comp_group).
+  #' @param metrics Metrics to plot (default = NULL).
+  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
+  #' @param stat_test Statistical test to perform to compare means (default = kruskal.test).
+  #' @param exact Whether to calculate exact p values (default = FALSE).
+  #' @param metadata Metadata for samples (default = self$metadata).
+  #' @param summary_metrics Summary metrics (default = self$summary_metrics).
+  #' @param plot_geom How to plot the data (default = NULL).
+  #' @param second_comp_group Second comparison metric only used for the metric "samples per group" (default = NULL).
+  #' @return ggplot2 object
+  #' @examples
+  #' metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
+  #' crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
   plotSummaryMetrics = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, stat_test = "kruskal.test", exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = NULL, second_comp_group = NULL) {
     comp_group %<>% checkCompGroup("sample", self$verbose)
     plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
@@ -254,13 +275,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
   },
   
-  #' @description Plot detailed metrics
-  #' @param comp_group Comparison metric (default = self$comp_group)
-  #' @param detailed_metrics Object containing the count matrices (default = self$detailed_metrics)
-  #' @param metadata Metadata for samples (default = self$metadata)
-  #' @param metrics Metrics to plot (default = NULL)
-  #' @param plot_geom How to plot the data (default = NULL)
-  #' @param data_path Path to cellranger count data (default = self$data_path)
+  #' Plot detailed metrics
+  #' @description Plot detailed metrics from the detailed_metrics object
+  #' @param comp_group Comparison metric (default = self$comp_group).
+  #' @param detailed_metrics Object containing the count matrices (default = self$detailed_metrics).
+  #' @param metadata Metadata for samples (default = self$metadata).
+  #' @param metrics Metrics to plot (default = NULL).
+  #' @param plot_geom How to plot the data (default = NULL).
+  #' @param data_path Path to cellranger count data (default = self$data_path).
+  #' @return ggplot2 object
+  #' @examples 
+  #' metrics.to.plot <- crm$detailed_metrics$metric %>% unique()
+  #' crm$plotDetailedMetrics()
   plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path){
     detailed_metrics %<>% checkDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
@@ -288,7 +314,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filter(metric == met) %>%
           merge(metadata, by = "sample") %>%
           ggplot(aes(x = sample, y = value, fill = !!sym(comp_group))) +
-          plotGeom(plot_geom) + 
+          plotGeom(plot_geom) +  
           {if (plot_geom == "violin") scale_y_log10()} +
           labs(y = met, x = element_blank()) +
           self$theme +
@@ -320,15 +346,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
   },
   
-  #' @description Plot cells in a UMAP using Conos and color by depth and doublets
-  #' @param depth Plot depth or not (default = FALSE)
-  #' @param doublet_method Doublet detection method (default = NULL)
-  #' @param doublet_scores Plot doublet scores or not (default = FALSE)
-  #' @param depth.cutoff Depth cutoff (default = 1e33)
-  #' @param mito.frac Plot mitochondrial fraction or not (default = FALSE)
-  #' @param mito.cutoff Mitochondrial fraction cutoff (default = 0.05)
-  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse"))
-  #' @param ... Plotting parameters passed to `conos::embeddingPlot`
+  #' Plot UMAP
+  #' @description Plot cells in a UMAP using Conos and color by depth and doublets.
+  #' @param depth Plot depth or not (default = FALSE).
+  #' @param doublet_method Doublet detection method (default = NULL).
+  #' @param doublet_scores Plot doublet scores or not (default = FALSE).
+  #' @param depth.cutoff Depth cutoff (default = 1e33).
+  #' @param mito.frac Plot mitochondrial fraction or not (default = FALSE).
+  #' @param mito.cutoff Mitochondrial fraction cutoff (default = 0.05).
+  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
+  #' @param ... Plotting parameters passed to `conos::embeddingPlot`.
+  #' @return ggplot2 object
+  #' @examples
+  #' crm$doPreprocessing()
+  #' crm$createEmbedding() 
+  #' crm$plotUMAP()
+  #' # Color cells for low depth
+  #' crm$plotUMAP(depth = TRUE, depth.cutoff = 1e3)
   plotUmap = function(depth = FALSE, doublet_method = NULL, doublet_scores = FALSE, depth.cutoff = 1e3, mito.frac = FALSE, mito.cutoff = 0.05, species = c("human","mouse"), ...) {
     species %<>% 
       tolower() %>% 
@@ -370,9 +404,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' @description Plot the depth in histogram
-  #' @param cutoff The depth cutoff to color the UMAP (default = 1e3)
-  #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE)
+  #' Plot depth
+  #' @description Plot the sequencing depth in histogram.
+  #' @param cutoff The depth cutoff to color the UMAP (default = 1e3).
+  #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE).
+  #' @return ggplot2 object
+  #' @examples 
+  #' crm$plotDepth()
   plotDepth = function(cutoff = 1e3, per_sample = FALSE){
     #Get depth
     if (is.null(self$con)) {
@@ -436,29 +474,40 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(depth_plot)
   },
   
-  #' @description Save summary metrics to text file
-  #' @param file Output file (default = "Summary_metrics.txt")
-  #' @param dec How the decimals are defined (default = ".")
-  #' @param sep What separator to use (default = "\t")
+  #' Save summary metrics
+  #' @description Save summary metrics to text file.
+  #' @param file Output file (default = "Summary_metrics.txt").
+  #' @param dec How the decimals are defined (default = ".").
+  #' @param sep What separator to use (default = "\t").
+  #' @return file
+  #' @examples 
+  #' crm$saveSummaryMetrics(file = "Summary_metrics.txt")
   saveSummaryMetrics = function(file = "Summary_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
   },
   
-  #' @description Save detailed metrics to text file
-  #' @param file Output file (default = "Summary_metrics.txt")
-  #' @param dec How the decimals are defined (default = ".")
-  #' @param sep What separator to use (default = "\t")
+  #' Save detailed metrics
+  #' @description Save detailed metrics to text file.
+  #' @param file Output file (default = "Summary_metrics.txt").
+  #' @param dec How the decimals are defined (default = ".").
+  #' @param sep What separator to use (default = "\t").
+  #' @return file
+  #' @examples 
+  #' crm$saveDetailedMetrics(file = "Detailed_metrics.txt")
   saveDetailedMetrics = function(file = "Detailed_metrics.txt", dec = ".", sep = "\t") {
     write.table(self$detailed_metrics, file, sep = sep, dec = dec)
   },
   
-  #' @description Detect doublets
-  #' @param method Which method to use, either `scrublet` or `doubletdetection` (default="scrublet")
-  #' @param cms List containing the count matrices (default=self$cms)
-  #' @param env Environment to run python in (default="r-reticulate")
-  #' @param conda.path Path to conda environment (default=system("whereis conda"))
-  #' @param verbose Print messages or not (defeults = self$verbose)
-  #' @return A dataframe with doublet scores and labels, i.e. whether a cell is deemed a putative doublet
+  #' Detect doublets
+  #' @description Detect doublet cells.
+  #' @param method Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
+  #' @param cms List containing the count matrices (default=self$cms).
+  #' @param env Environment to run python in (default="r-reticulate").
+  #' @param conda.path Path to conda environment (default=system("whereis conda")).
+  #' @param verbose Print messages or not (defeults = self$verbose).
+  #' @return data frame
+  #' @examples 
+  #' crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
   detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda"), verbose = self$verbose) {
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (verbose) message("Loading prerequisites...")
@@ -498,11 +547,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$doublets[[method]] <- res
   },
   
-  #' @description Perform conos preprocessing
-  #' @param cms List containing the count matrices (default = self$cms)
-  #' @param preprocess Method to use for preprocessing (default = c("pagoda2","seurat"))
-  #' @param verbose Print messages or not (default = self$verbose)
-  #' @param n.cores Number of cores for the calculations (default = self$n.cores)
+  #' Conos preprocessing
+  #' @description Perform conos preprocessing.
+  #' @param cms List containing the count matrices (default = self$cms).
+  #' @param preprocess Method to use for preprocessing (default = c("pagoda2","seurat")).
+  #' @param verbose Print messages or not (default = self$verbose).
+  #' @param n.cores Number of cores for the calculations (default = self$n.cores).
+  #' @return Conos object
+  #' @examples 
+  #' crm$doPreprocessing(preprocess = "pagoda2")
   doPreprocessing = function(cms = self$cms,
                               preprocess = c("pagoda2","seurat"),
                               verbose = self$verbose,
@@ -541,10 +594,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     invisible(tmp)
   },
   
-  #' @description Create conos UMAP embedding
-  #' @param cms List containing the count matrices (default = self$cms)
-  #' @param verbose Print messages or not (default = self$verbose)
-  #' @param n.cores Number of cores for the calculations (default = self$n.cores)
+  #' Create Conos embedding
+  #' @description Create conos UMAP embedding.
+  #' @param cms List containing the count matrices (default = self$cms).
+  #' @param verbose Print messages or not (default = self$verbose).
+  #' @param n.cores Number of cores for the calculations (default = self$n.cores).
+  #' @return Conos object
+  #' @examples 
+  #' crm$createEmbedding()
   createEmbedding = function(cms = self$cms.preprocessed,
                               verbose = self$verbose, 
                               n.cores = self$n.cores) {
@@ -570,15 +627,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     invisible(con)
   },
   
-  #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix
-  #' @param file File to save filtered count matrices to (default = "cms_filtered.rds")
-  #' @param raw To take raw count matrices or not (default = TRUE)
-  #' @param depth_cutoff Depth cutoff (default = NULL)
-  #' @param mito_cutoff Mitochondrial fraction cutoff (default = NULL)
-  #' @param doublets Doublet detection method to use (default = NULL)
-  #' @param compress Compress the file or not (default = FALSE)
-  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse"))
-  #' @param ... Parameters for saving R object passed to `saveRDS`
+  #' Filter count matrices
+  #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
+  #' @param file File to save filtered count matrices to (default = "cms_filtered.rds").
+  #' @param raw To take raw count matrices or not (default = TRUE).
+  #' @param depth_cutoff Depth cutoff (default = NULL).
+  #' @param mito_cutoff Mitochondrial fraction cutoff (default = NULL).
+  #' @param doublets Doublet detection method to use (default = NULL).
+  #' @param compress Compress the file or not (default = FALSE).
+  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
+  #' @param ... Parameters for saving R object passed to `saveRDS`.
+  #' @return file
+  #' @examples 
+  #' crm$filterCMS(file = "cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = "scrublet")
   filterCms = function(file = "cms_filtered.rds", raw = TRUE, depth_cutoff = NULL, mito_cutoff = NULL, doublets = NULL, compress = FALSE, species = c("human","mouse"), ...) {
     species %<>%
       tolower() %>% 
@@ -589,7 +650,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Depth
     if (!is.null(depth_cutoff)) {
       if (!is.numeric(depth_cutoff)) stop("'depth_cutoff' must be numeric.")
-      depth <- self$getConosDepth() %>% 
+      depth <- self$getConosDepth() %>%
         .[. >= depth_cutoff] %>% 
         names()
       
@@ -629,8 +690,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     saveRDS(cms, file = file, compress = compress, ...)
   },
   
-  #' Select a summary metric
-  #' @param ids Metric id to select (default = NULL)
+  #' Select summary metrics.
+  #' @description Select metrics from summary_metrics
+  #' @param ids Metric id to select (default = NULL).
+  #' @return vector
+  #' @examples
+  #' crm$selectMetrics()
+  #' selection.metrics <- crm$selectMetrics(c(1:4))
   selectMetrics = function(ids = NULL) {
     metrics <- self$summary_metrics$metric %>% 
       unique()
@@ -640,14 +706,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' @description Plot the filtered cells
-  #' @param type The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export"))
-  #' @param depth Plot the depth or not (default = TRUE)
-  #' @param depth.cutoff Depth cutoff (default = 1e3)
-  #' @param doublet_method Method to detect doublets (default = NULL)
-  #' @param mito.frac Plot the mitochondrial fraction or not (default = TRUE)
-  #' @param mito.cutoff Mitochondrial fraction cutoff (default = 0.05)
-  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse"))
+  #' Plot filtered cells
+  #' @description Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
+  #' @param type The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export")).
+  #' @param depth Plot the depth or not (default = TRUE).
+  #' @param depth.cutoff Depth cutoff (default = 1e3).
+  #' @param doublet_method Method to detect doublets (default = NULL).
+  #' @param mito.frac Plot the mitochondrial fraction or not (default = TRUE).
+  #' @param mito.cutoff Mitochondrial fraction cutoff (default = 0.05).
+  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
+  #' @return ggplot2 object or data frame
+  #' @examples 
+  #' crm$plotFilteredCells(type = "umap", doublet_method = "scrublet")
+  #' filtered.cells <- crm$plotFilteredCells(type = "export", doublet_method = "scrublet")
   plotFilteredCells = function(type = c("umap","bar","tile","export"), depth = TRUE, depth.cutoff = 1e3, doublet_method = NULL, mito.frac = TRUE, mito.cutoff = 0.05, species = c("human","mouse")) {
     type %<>% 
       tolower() %>% 
@@ -730,7 +801,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   
-  #' @description Extract sequencing depth from Conos object 
+  #' Get Conos sequencing depth
+  #' @description Extract sequencing depth from Conos object.
+  #' @return data frame
+  #' @examples 
+  #' crm$getConosDepth()
   getConosDepth = function() {
     if (is.null(self$depth)) {
       tmp <- self$con$samples %>% 
@@ -743,8 +818,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' @description Calculate the fraction of mitochondrial genes
-  #' @param species Species to calculate the mitochondrial fraction for (default = "human")
+  #' Get fraction of mitochondrial genes
+  #' @description Calculate the fraction of mitochondrial genes.
+  #' @param species Species to calculate the mitochondrial fraction for (default = "human").
+  #' @return data frame
+  #' @examples 
+  #' crm$getMitoFraction(species = c("human", "mouse"))
   getMitoFraction = function(species="human") {
     if (is.null(self$mito.frac)) {
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")

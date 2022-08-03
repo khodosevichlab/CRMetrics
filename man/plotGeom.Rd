@@ -2,14 +2,20 @@
 % Please edit documentation in R/inner_functions.R
 \name{plotGeom}
 \alias{plotGeom}
-\title{Plot the data as points, as bars or as a histogram}
+\title{Plot the data as points, as bars as a histogram, or as a violin}
 \usage{
 plotGeom(plot_geom)
 }
 \arguments{
-\item{plot_geom}{The plot_geom to use, "point", "bar", "histogram", or "violin"}
+\item{plot_geom}{The plot_geom to use, "point", "bar", "histogram", or "violin".}
+}
+\value{
+geom
 }
 \description{
-Plot the data as points, as bars or as a histogram
+Plot the data as points, barplot, histogram or violin
+}
+\examples{
+plot.geom <- plotGeom(plot_geom = "point")
 }
 \keyword{internal}
