@@ -689,44 +689,44 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (raw) cms <- self$cms else cms <- self$cms.preprocessed %>% lapply(\(x) x$counts) %>% setNames(self$cms.preprocessed %>% names())
     
-    # Depth
-    if (!is.null(depth_cutoff)) {
-      if (!is.numeric(depth_cutoff)) stop("'depth_cutoff' must be numeric.")
-      depth <- self$getConosDepth() %>%
-        .[. >= depth_cutoff] %>% 
-        names()
-      
-      cms %<>% lapply(\(cm) {
-        cm[,colnames(cm) %in% depth]
-      }) %>% 
-        setNames(cms)
-    }
+    # Create list of cutoff values and doublets method and create empty list for filtered cells
+    cutoff_list = list(depth=depth_cutoff, mito=mito_cutoff, doublets=doublets)
+    filters_list = list()
     
-    # Mitochondrial fraction
-    if (!is.null(mito_cutoff)) {
-      if (!is.numeric(mito_cutoff)) stop("'mito_cutoff' must be numeric.")
-      mf <- self$getMitoFraction(species = species) %>% 
-        .[. >= mito_cutoff] %>% 
-        names()
-      
-      cms %<>% lapply(\(cm) {
-        cm[,colnames(cm) %in% mf]
-      }) %>% 
-        setNames(cms)
+    # Write logical data frame to list for each filter type
+    for (i in 1:length(cutoff_list)) {
+      if (!is.null(cutoff_list[[i]])) {
+        if (names(cutoff_list)[i] == "depth") {
+          if (!is.numeric(cutoff_list[[i]])) stop("'depth_cutoff' must be numeric.")
+          depth <- crm$getConosDepth() %>% as.data.frame() %>% setNames("depth")
+          if (length(cutoff_list[[i]] > 1)) {
+            split_vec <- strsplit(rownames(depth), "!!") %>% sapply('[[', 1)
+            depth_list <- split(depth, split_vec)
+            test <- mapply(function(x, y) x >= y, x = depth_list, y = cutoff_list[[i]])
+            filters_list[[length(filters_list)+1]] <- data.frame(do.call(rbind, test))
+          } else {
+            filters_list[[length(filters_list)+1]] <- data.frame(depth >= cutoff_list[[i]])
+          }
+        } else if (names(cutoff_list)[i] == "mito") {
+          if (!is.numeric(cutoff_list[[i]])) stop("'mito_cutoff' must be numeric.")
+          mf <- crm$mito.frac %>% as.data.frame() %>% setNames("mf")
+          filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
+        } else if (names(cutoff_list)[i] == "doublets"){
+          if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
+          if (cutoff_list[[i]] == "scrublet") {
+            doub <- crm$doublets$scrublet$result["labels"]
+          } else if (cutoff_list[[i]] == "doubletdetection") {
+            doub <- crm$doublets$doubletdetection$results["labels"]
+          }
+          filters_list[[length(filters_list)+1]] <- data.frame(doub == FALSE)
+        }
+      }
     }
-    
-    # Doublets
-    if (!is.null(doublets)) {
-      if (!doublets %in% names(self$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
-      ds <- self$doublets[[doublets]]$result %>% 
-        filter(labels) %>% 
-        rownames()
-      
-      cms %<>% lapply(\(cm) {
-        cm[,colnames(cm) %in% ds]
-      }) %>% 
-        setNames(cms)
-    }
+    test <- do.call(cbind, filters_list)
+    length(apply(test, 1, all)) 
+    log <- apply(test,1,all)
+    log_list <- split(log, split_vec)
+    cms <- mapply(function(x,y) x[,y], x = cms, y = log_list)
     
     # Save filtered CMs
     saveRDS(cms, file = file, compress = compress, ...)
