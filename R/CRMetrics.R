@@ -8,6 +8,7 @@
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
+#' @importFrom ggpmisc stat_poly_eq
 NULL
 
 # R6 class
@@ -80,10 +81,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param pal Palette from package 'dutchmasters' for plotting (default: "pearl_earring").
   #' @param theme Ggplot2 theme (default: theme_bw()).
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
+  #' @param raw.meta Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
   #' @return CRMetrics object
   #' @examples 
   #' crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
-  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1) {
+  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
       for (n in ls(data_path)) {
@@ -108,6 +110,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         self$metadata <- read.csv(metadata, header = TRUE, colClasses = "character")
       }
     }
+    
+    if (!raw.meta) self$metadata %<>% lapply(type.convert, as.is = FALSE) %>% bind_cols()
     
     checkCompMeta(comp_group, self$metadata)
     self$summary_metrics <- addSummaryMetrics(data_path, self$metadata, verbose)
@@ -167,7 +171,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     g <- metadata %>%
       select(comp_group, second_comp_group) %>%
       table(dnn = comp_group) %>%
-      data.frame %>%
+      data.frame() %>%
       ggplot(aes(!!sym(comp_group), Freq, fill = !!sym(second_comp_group))) +
       geom_bar(stat = "identity", position = "dodge") +
       self$theme +
@@ -187,20 +191,27 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot all summary stats or a selected list.
   #' @param comp_group Comparison metric (default = self$comp_group).
   #' @param metrics Metrics to plot (default = NULL).
-  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
-  #' @param stat_test Statistical test to perform to compare means (default = kruskal.test).
+  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
+  #' @param plot_stat Show statistics in plot. Will be FALSE if "comp_group" = "sample" or if "comp_group" is a numeric or an integer (default = TRUE)
+  #' @param stat_test Statistical test to perform to compare means. Can either be "non_parametric" or "parametric" (default = "non_parametric").
   #' @param exact Whether to calculate exact p values (default = FALSE).
   #' @param metadata Metadata for samples (default = self$metadata).
   #' @param summary_metrics Summary metrics (default = self$summary_metrics).
   #' @param plot_geom How to plot the data (default = NULL).
-  #' @param second_comp_group Second comparison metric only used for the metric "samples per group" (default = NULL).
+  #' @param second_comp_group Second comparison metric, used for the metric "samples per group" or when "comp_group" is a numeric or an integer (default = NULL).
+  #' @param se For regression lines, show SE (default = FALSE)
+  #' @param group_reg_lines For regression lines, if FALSE show one line, if TRUE show line per group defined by second_comp_group (default = FALSE)
   #' @return ggplot2 object
   #' @examples
   #' metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
   #' crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
-  plotSummaryMetrics = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, stat_test = "kruskal.test", exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = NULL, second_comp_group = NULL) {
+  plotSummaryMetrics = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, plot_stat = TRUE, stat_test = c("non_parametric","parametric"), exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = NULL, second_comp_group = NULL, se = FALSE, group_reg_lines = FALSE, secondary_testing = TRUE) {
+    # Checks
     comp_group %<>% checkCompGroup("sample", self$verbose)
-    plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
+    if (is.null(plot_geom)) {
+      stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
+    }
+    stat_test %<>% match.arg(c("non_parametric","parametric"))
     
     # if no metrics selected, plot all
     if (is.null(metrics)) {
@@ -213,11 +224,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
-    # if no plot type is defined, return a list of options
-    if (is.null(plot_geom)) {
-      stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
-    }
-    
     # if samples per group is one of the metrics to plot use the plotSamples function to plot
     if ("samples per group" %in% metrics){
       sample_plot <- self$plotSamples(comp_group, h.adj, exact, metadata, second_comp_group)
@@ -228,32 +234,68 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
       lapply(function (met) {
-        g <- summary_metrics %>%
+        tmp <- summary_metrics %>%
           filter(metric == met) %>%
-          merge(metadata, by = "sample") %>%
-          ggplot(aes(x = !!sym(comp_group), y = value, col = !!sym(comp_group))) +
-          plotGeom(plot_geom) + 
-          labs(y = met, x = element_blank()) +
-          self$theme +
-          scale_color_dutchmasters(palette = self$pal)
+          merge(metadata, by = "sample")
+        
+        if (is.null(second_comp_group)) {
+          g <- tmp %>%
+            ggplot(aes(x = !!sym(comp_group), y = value, col = !!sym(comp_group))) +
+            plotGeom(plot_geom) + 
+            labs(y = met, x = element_blank()) +
+            self$theme +
+            scale_color_dutchmasters(palette = self$pal)
+        } else {
+          g <- tmp %>% 
+            ggplot(aes(!!sym(comp_group), value, col = !!sym(second_comp_group))) +
+            plotGeom(plot_geom) + 
+            labs(y = met, x = comp_group) +
+            self$theme +
+            scale_color_dutchmasters(palette = self$pal)
+        }
+        
+        if (is.numeric(metadata[[comp_group]]) | is.integer(metadata[[comp_group]])) {
+          line.aes = aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))
+          
+          if (!group_reg_lines) {
+            g <- g + 
+              ggpmisc::stat_poly_eq(color = "black", line.aes) +
+              ggpmisc::stat_poly_line(color = "black", se = se)
+          } else {
+            g <- g + 
+              ggpmisc::stat_poly_eq(line.aes) +
+              ggpmisc::stat_poly_line(se = se)
+          }
+        }
         
         # a legend only makes sense if the comparison is not the samples
         if (comp_group != "sample") {
           g <- g + theme(legend.position = "right")
         } else {
+          plot_stat <- FALSE
           g <- g + theme(legend.position = "none")
         }
         
-        if (plot_stats) {
-          g %<>% addPlotStats(comp_group, metadata, h.adj, stat_test, exact)
-        } else {
-          # rotate x-axis text if samples are on x-axis
-          g <- g + theme(axis.text.x = element_text(
-            angle = 45,
-            vjust = 1,
-            hjust = 1
-          ))
+        # Statistical testing
+        if (plot_stat & (!is.numeric(metadata[[comp_group]]) | !is.integer(metadata[[comp_group]]))) {
+          if (stat_test == "non_parametric") {
+            primary_test <- "kruskal.test"
+            secondary_test <- "wilcox.test"
+          } else {
+            primary_test <- "anova"
+            secondary_test <- "t.test"
+          }
+          
+          if (length(unique(metadata[[comp_group]])) < 3) {
+            primary_test <- secondary_test
+            secondary_test <- NULL
+          }
+          if (!secondary_testing) secondary_test <- NULL
+          g %<>% addPlotStats(comp_group, metadata, h.adj, primary_test, secondary_test, exact)
         }
+        
+        g <- g + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+        
         return(g)
       }) %T>% 
       {options(warn=0)}

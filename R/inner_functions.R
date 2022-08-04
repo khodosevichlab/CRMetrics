@@ -180,13 +180,23 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
 #' @return ggplot2 object
 #' @examples 
 #' addPlotStats(p, comp_group = "sex", metadata = crm$metadata, stat_test = "kurskal.test")
-addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, stat_test, exact = FALSE) {
+addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, primary_test, secondary_test, exact = FALSE) {
   checkCompMeta(comp_group, metadata)
-  comp <- combn(unique(metadata[[comp_group]]), 2)
-  comp <- as.list(as.data.frame(comp))
-  g <- p + stat_compare_means(comparisons = comp, method = stat_test, exact = exact)
+  g <- p
+  
+  if (!is.null(secondary_test)) {
+    comp <- metadata[[comp_group]] %>% 
+      unique() %>% 
+      as.character() %>% 
+      combn(2) %>%
+      data.frame() %>% 
+      as.list()
+    
+    g <- g + stat_compare_means(comparisons = comp, method = secondary_test, exact = exact)
+  } 
   y.upper <- layer_scales(g, 1)$y$range$range[2]
-  g <- g + stat_compare_means(label.y = y.upper * (1 + h.adj))
+  
+  g <- g + stat_compare_means(method = primary_test, label.y = y.upper * (1 + h.adj))
   
   return(g)
 }
