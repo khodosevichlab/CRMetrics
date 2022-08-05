@@ -781,8 +781,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       match.arg(c("human","mouse"))
     
     # Prepare data
-    tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito",""),
-                ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
+    if (length(depth.cutoff) > 1){
+      depth <- self$getConosDepth()
+      split_vec <- strsplit(names(depth), "!!") %>% sapply('[[',1)
+      depth_list <- split(depth, split_vec)
+      depth <- mapply(function(x,y) x >= y, x = depth_list, y = depth.cutoff) %>% unlist() %>% setNames(names(depth))
+      tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito", ""),
+                  ifelse(!depth, "depth", ""))
+    } else {
+      tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito",""),
+                  ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
+    }
+    
     
     if (!is.null(doublet_method)) {
       tmp.doublets <- self$doublets[[doublet_method]]$result
