@@ -698,7 +698,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (!is.null(cutoff_list[[i]])) {
         if (names(cutoff_list)[i] == "depth") {
           if (!is.numeric(cutoff_list[[i]])) stop("'depth_cutoff' must be numeric.")
-          depth <- crm$getConosDepth() %>% as.data.frame() %>% setNames("depth")
+          depth <- self$getConosDepth() %>% as.data.frame() %>% setNames("depth")
           if (length(cutoff_list[[i]] > 1)) {
             split_vec <- strsplit(rownames(depth), "!!") %>% sapply('[[', 1)
             depth_list <- split(depth, split_vec)
@@ -709,14 +709,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           }
         } else if (names(cutoff_list)[i] == "mito") {
           if (!is.numeric(cutoff_list[[i]])) stop("'mito_cutoff' must be numeric.")
-          mf <- crm$mito.frac %>% as.data.frame() %>% setNames("mf")
+          mf <- self$getMitoFraction() %>% as.data.frame() %>% setNames("mf")
           filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
         } else if (names(cutoff_list)[i] == "doublets"){
           if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
           if (cutoff_list[[i]] == "scrublet") {
-            doub <- crm$doublets$scrublet$result["labels"]
+            doub <- self$doublets$scrublet$result["labels"]
           } else if (cutoff_list[[i]] == "doubletdetection") {
-            doub <- crm$doublets$doubletdetection$results["labels"]
+            doub <- self$doublets$doubletdetection$results["labels"]
           }
           filters_list[[length(filters_list)+1]] <- data.frame(doub == FALSE)
         }
