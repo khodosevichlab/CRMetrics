@@ -422,7 +422,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Depth
     if (depth) {
       depths <- self$getConosDepth()
-      g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
+      if (length(depth.cutoff) > 1) {
+        split_vec <- strsplit(names(depths), "!!") %>% sapply('[[',1)
+        depths_list <- split(depths, split_vec)
+        depths <- mapply(function(x,y) x >= y, x=depths_list, y=depth.cutoff) %>% unlist() %>% setNames(names(depths))
+        g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = paste0("Cells with low depth with sample specific cutoff, < ",depth.cutoff), ...)
+      } else {
+        g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
+      }
     }
     
     # Doublets
