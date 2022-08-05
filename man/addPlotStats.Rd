@@ -4,7 +4,15 @@
 \alias{addPlotStats}
 \title{Add statistics to plot}
 \usage{
-addPlotStats(p, comp_group, metadata, h.adj = 0.05, stat_test, exact = FALSE)
+addPlotStats(
+  p,
+  comp_group,
+  metadata,
+  h.adj = 0.05,
+  primary_test,
+  secondary_test,
+  exact = FALSE
+)
 }
 \arguments{
 \item{p}{Plot to add statistics to.}
@@ -15,9 +23,9 @@ addPlotStats(p, comp_group, metadata, h.adj = 0.05, stat_test, exact = FALSE)
 
 \item{h.adj}{Position of statistics test p value as \% of max(y) (default = 0.05).}
 
-\item{stat_test}{Statistical test to perform to compare means.}
-
 \item{exact}{Whether to calculate exact p values (default = FALSE).}
+
+\item{stat_test}{Statistical test to perform to compare means.}
 }
 \value{
 ggplot2 object

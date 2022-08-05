@@ -65,6 +65,7 @@ checkCompMeta <- function(comp_group, metadata) {
 #' @return data frame
 #' @examples 
 #' cms <- loadCountMatrices(data_path = crm$data_path, samples = crm$metadata$samples, transcript = "SYMBOL", n.cores = crm$n.cores)
+#' @export
 loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL","ENSEMBL"), sep = "!!", n.cores = 1, verbose = TRUE) {
   requireNamespace("data.table")
   transcript %<>% match.arg(c("SYMBOL","ENSEMBL"))
@@ -272,15 +273,15 @@ addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) 
 #' @return geom
 #' @examples 
 #' plot.geom <- plotGeom(plot_geom = "point")
-plotGeom = function(plot_geom){
+plotGeom = function(plot_geom, col){
   if (plot_geom == "point"){
-    geom <- geom_quasirandom(size = 3, groupOnX = TRUE)
+    geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
   } else if (plot_geom == "bar"){
-    geom <- geom_bar(stat = "identity", position = "dodge")
+    geom <- geom_bar(stat = "identity", position = "dodge", aes(fill = !!sym(col)))
   } else if (plot_geom == "histogram"){
-    geom <- geom_histogram(binwidth = 25)
+    geom <- geom_histogram(binwidth = 25, aes(fill = !!sym(col)))
   } else if (plot_geom == "violin"){
-    geom <- geom_violin(show.legend = TRUE) 
+    geom <- geom_violin(show.legend = TRUE, aes(fill = !!sym(col)))
   }
   return(geom)
 }

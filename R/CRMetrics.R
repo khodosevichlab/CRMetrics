@@ -190,6 +190,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Plot summary metrics
   #' @description Plot all summary stats or a selected list.
   #' @param comp_group Comparison metric (default = self$comp_group).
+  #' @param second_comp_group Second comparison metric, used for the metric "samples per group" or when "comp_group" is a numeric or an integer (default = NULL).
   #' @param metrics Metrics to plot (default = NULL).
   #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
   #' @param plot_stat Show statistics in plot. Will be FALSE if "comp_group" = "sample" or if "comp_group" is a numeric or an integer (default = TRUE)
@@ -197,15 +198,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param exact Whether to calculate exact p values (default = FALSE).
   #' @param metadata Metadata for samples (default = self$metadata).
   #' @param summary_metrics Summary metrics (default = self$summary_metrics).
-  #' @param plot_geom How to plot the data (default = NULL).
-  #' @param second_comp_group Second comparison metric, used for the metric "samples per group" or when "comp_group" is a numeric or an integer (default = NULL).
+  #' @param plot_geom Which geometric is used to plot the data (default = "point").
   #' @param se For regression lines, show SE (default = FALSE)
   #' @param group_reg_lines For regression lines, if FALSE show one line, if TRUE show line per group defined by second_comp_group (default = FALSE)
+  #' @param secondary_testing Whether to show post hoc testing (default = TRUE)
   #' @return ggplot2 object
   #' @examples
   #' metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
   #' crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
-  plotSummaryMetrics = function(comp_group = self$comp_group, metrics = NULL, h.adj = 0.05, plot_stat = TRUE, stat_test = c("non_parametric","parametric"), exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = NULL, second_comp_group = NULL, se = FALSE, group_reg_lines = FALSE, secondary_testing = TRUE) {
+  plotSummaryMetrics = function(comp_group = self$comp_group, second_comp_group = NULL, metrics = NULL, h.adj = 0.05, plot_stat = TRUE, stat_test = c("non_parametric","parametric"), exact = FALSE, metadata = self$metadata, summary_metrics = self$summary_metrics, plot_geom = "point", se = FALSE, group_reg_lines = FALSE, secondary_testing = TRUE) {
     # Checks
     comp_group %<>% checkCompGroup("sample", self$verbose)
     if (is.null(plot_geom)) {
@@ -240,21 +241,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         
         if (is.null(second_comp_group)) {
           g <- tmp %>%
-            ggplot(aes(x = !!sym(comp_group), y = value, col = !!sym(comp_group))) +
-            plotGeom(plot_geom) + 
+            ggplot(aes(x = !!sym(comp_group), y = value)) +
+            plotGeom(plot_geom, col = comp_group) + 
             labs(y = met, x = element_blank()) +
             self$theme +
             scale_color_dutchmasters(palette = self$pal)
         } else {
           g <- tmp %>% 
-            ggplot(aes(!!sym(comp_group), value, col = !!sym(second_comp_group))) +
-            plotGeom(plot_geom) + 
+            ggplot(aes(!!sym(comp_group), value)) +
+            plotGeom(plot_geom, col = second_comp_group) + 
             labs(y = met, x = comp_group) +
             self$theme +
             scale_color_dutchmasters(palette = self$pal)
         }
         
-        if (is.numeric(metadata[[comp_group]]) | is.integer(metadata[[comp_group]])) {
+        if (is.numeric(metadata[[comp_group]])) {
           line.aes = aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))
           
           if (!group_reg_lines) {
@@ -277,7 +278,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         }
         
         # Statistical testing
-        if (plot_stat & (!is.numeric(metadata[[comp_group]]) | !is.integer(metadata[[comp_group]]))) {
+        if (plot_stat & !is.numeric(metadata[[comp_group]])) {
           if (stat_test == "non_parametric") {
             primary_test <- "kruskal.test"
             secondary_test <- "wilcox.test"
@@ -325,11 +326,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param metrics Metrics to plot (default = NULL).
   #' @param plot_geom How to plot the data (default = NULL).
   #' @param data_path Path to cellranger count data (default = self$data_path).
+  #' @param hline Whether to show median as horizontal line (default = TRUE)
   #' @return ggplot2 object
   #' @examples 
   #' metrics.to.plot <- crm$detailed_metrics$metric %>% unique()
   #' crm$plotDetailedMetrics()
-  plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path){
+  plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path, hline = TRUE){
     detailed_metrics %<>% checkDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
@@ -352,12 +354,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
       lapply(function (met) {
-        g <- detailed_metrics %>%
+        tmp <- detailed_metrics %>%
           filter(metric == met) %>%
-          merge(metadata, by = "sample") %>%
-          ggplot(aes(x = sample, y = value, fill = !!sym(comp_group))) +
-          plotGeom(plot_geom) +  
+          merge(metadata, by = "sample")
+        
+        g <- ggplot(tmp, aes(x = sample, y = value)) +
+          plotGeom(plot_geom, col = comp_group) +  
           {if (plot_geom == "violin") scale_y_log10()} +
+          {if (hline) geom_hline(yintercept = median(tmp$value))} +
           labs(y = met, x = element_blank()) +
           self$theme +
           scale_fill_dutchmasters(palette = self$pal)

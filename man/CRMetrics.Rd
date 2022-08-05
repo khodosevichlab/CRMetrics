@@ -168,30 +168,30 @@ Initialize a CRMetrics object}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-CRMetrics-new}{\code{CRMetrics$new()}}
-\item \href{#method-CRMetrics-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
-\item \href{#method-CRMetrics-addComparison}{\code{CRMetrics$addComparison()}}
-\item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
-\item \href{#method-CRMetrics-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
-\item \href{#method-CRMetrics-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
-\item \href{#method-CRMetrics-plotUmap}{\code{CRMetrics$plotUmap()}}
-\item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
-\item \href{#method-CRMetrics-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
-\item \href{#method-CRMetrics-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
-\item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
-\item \href{#method-CRMetrics-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
-\item \href{#method-CRMetrics-createEmbedding}{\code{CRMetrics$createEmbedding()}}
-\item \href{#method-CRMetrics-filterCms}{\code{CRMetrics$filterCms()}}
-\item \href{#method-CRMetrics-selectMetrics}{\code{CRMetrics$selectMetrics()}}
-\item \href{#method-CRMetrics-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
-\item \href{#method-CRMetrics-getConosDepth}{\code{CRMetrics$getConosDepth()}}
-\item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
-\item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
+\item \href{#method-new}{\code{CRMetrics$new()}}
+\item \href{#method-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
+\item \href{#method-addComparison}{\code{CRMetrics$addComparison()}}
+\item \href{#method-plotSamples}{\code{CRMetrics$plotSamples()}}
+\item \href{#method-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
+\item \href{#method-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
+\item \href{#method-plotUmap}{\code{CRMetrics$plotUmap()}}
+\item \href{#method-plotDepth}{\code{CRMetrics$plotDepth()}}
+\item \href{#method-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
+\item \href{#method-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
+\item \href{#method-detectDoublets}{\code{CRMetrics$detectDoublets()}}
+\item \href{#method-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
+\item \href{#method-createEmbedding}{\code{CRMetrics$createEmbedding()}}
+\item \href{#method-filterCms}{\code{CRMetrics$filterCms()}}
+\item \href{#method-selectMetrics}{\code{CRMetrics$selectMetrics()}}
+\item \href{#method-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
+\item \href{#method-getConosDepth}{\code{CRMetrics$getConosDepth()}}
+\item \href{#method-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
+\item \href{#method-clone}{\code{CRMetrics$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-new"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-new}{}}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
 \subsection{Usage}{
@@ -203,7 +203,8 @@ To initialize new object, data_path is needed. metadata_file is also recommended
   verbose = TRUE,
   pal = "pearl_earring",
   theme = theme_bw(),
-  n.cores = 1
+  n.cores = 1,
+  raw.meta = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -225,6 +226,8 @@ To initialize new object, data_path is needed. metadata_file is also recommended
 \item{\code{theme}}{Ggplot2 theme (default: theme_bw()).}
 
 \item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores).}
+
+\item{\code{raw.meta}}{Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)}
 }
 \if{html}{\out{</div>}}
 }
@@ -242,8 +245,8 @@ Add detailed metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-addDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-addDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-addDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-addDetailedMetrics}{}}}
 \subsection{Method \code{addDetailedMetrics()}}{
 Function to read in detailed metrics. This is not done upon initialization for speed.
 \subsection{Usage}{
@@ -288,8 +291,8 @@ Add comparison group
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-addComparison"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-addComparison}{}}}
+\if{html}{\out{<a id="method-addComparison"></a>}}
+\if{latex}{\out{\hypertarget{method-addComparison}{}}}
 \subsection{Method \code{addComparison()}}{
 Add comparison group for statistical testing.
 \subsection{Usage}{
@@ -319,8 +322,8 @@ Plot samples
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotSamples"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotSamples}{}}}
+\if{html}{\out{<a id="method-plotSamples"></a>}}
+\if{latex}{\out{\hypertarget{method-plotSamples}{}}}
 \subsection{Method \code{plotSamples()}}{
 Plot the number of samples.
 \subsection{Usage}{
@@ -362,21 +365,25 @@ Plot summary metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotSummaryMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotSummaryMetrics}{}}}
+\if{html}{\out{<a id="method-plotSummaryMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-plotSummaryMetrics}{}}}
 \subsection{Method \code{plotSummaryMetrics()}}{
 Plot all summary stats or a selected list.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSummaryMetrics(
   comp_group = self$comp_group,
+  second_comp_group = NULL,
   metrics = NULL,
   h.adj = 0.05,
-  stat_test = "kruskal.test",
+  plot_stat = TRUE,
+  stat_test = c("non_parametric", "parametric"),
   exact = FALSE,
   metadata = self$metadata,
   summary_metrics = self$summary_metrics,
-  plot_geom = NULL,
-  second_comp_group = NULL
+  plot_geom = "point",
+  se = FALSE,
+  group_reg_lines = FALSE,
+  secondary_testing = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -385,11 +392,15 @@ Plot all summary stats or a selected list.
 \describe{
 \item{\code{comp_group}}{Comparison metric (default = self$comp_group).}
 
+\item{\code{second_comp_group}}{Second comparison metric, used for the metric "samples per group" or when "comp_group" is a numeric or an integer (default = NULL).}
+
 \item{\code{metrics}}{Metrics to plot (default = NULL).}
 
-\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05).}
+\item{\code{h.adj}}{Position of statistics test p value as \% of max(y) (default = 0.05)}
 
-\item{\code{stat_test}}{Statistical test to perform to compare means (default = kruskal.test).}
+\item{\code{plot_stat}}{Show statistics in plot. Will be FALSE if "comp_group" = "sample" or if "comp_group" is a numeric or an integer (default = TRUE)}
+
+\item{\code{stat_test}}{Statistical test to perform to compare means. Can either be "non_parametric" or "parametric" (default = "non_parametric").}
 
 \item{\code{exact}}{Whether to calculate exact p values (default = FALSE).}
 
@@ -397,9 +408,13 @@ Plot all summary stats or a selected list.
 
 \item{\code{summary_metrics}}{Summary metrics (default = self$summary_metrics).}
 
-\item{\code{plot_geom}}{How to plot the data (default = NULL).}
+\item{\code{plot_geom}}{Which geometric is used to plot the data (default = "point").}
 
-\item{\code{second_comp_group}}{Second comparison metric only used for the metric "samples per group" (default = NULL).}
+\item{\code{se}}{For regression lines, show SE (default = FALSE)}
+
+\item{\code{group_reg_lines}}{For regression lines, if FALSE show one line, if TRUE show line per group defined by second_comp_group (default = FALSE)}
+
+\item{\code{secondary_testing}}{Whether to show post hoc testing (default = TRUE)}
 }
 \if{html}{\out{</div>}}
 }
@@ -418,8 +433,8 @@ Plot detailed metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-plotDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-plotDetailedMetrics}{}}}
 \subsection{Method \code{plotDetailedMetrics()}}{
 Plot detailed metrics from the detailed_metrics object
 \subsection{Usage}{
@@ -429,7 +444,8 @@ Plot detailed metrics from the detailed_metrics object
   metadata = self$metadata,
   metrics = NULL,
   plot_geom = NULL,
-  data_path = self$data_path
+  data_path = self$data_path,
+  hline = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -447,6 +463,8 @@ Plot detailed metrics from the detailed_metrics object
 \item{\code{plot_geom}}{How to plot the data (default = NULL).}
 
 \item{\code{data_path}}{Path to cellranger count data (default = self$data_path).}
+
+\item{\code{hline}}{Whether to show median as horizontal line (default = TRUE)}
 }
 \if{html}{\out{</div>}}
 }
@@ -465,8 +483,8 @@ Plot UMAP
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotUmap"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotUmap}{}}}
+\if{html}{\out{<a id="method-plotUmap"></a>}}
+\if{latex}{\out{\hypertarget{method-plotUmap}{}}}
 \subsection{Method \code{plotUmap()}}{
 Plot cells in a UMAP using Conos and color by depth and doublets.
 \subsection{Usage}{
@@ -521,8 +539,8 @@ Plot depth
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotDepth"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotDepth}{}}}
+\if{html}{\out{<a id="method-plotDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-plotDepth}{}}}
 \subsection{Method \code{plotDepth()}}{
 Plot the sequencing depth in histogram.
 \subsection{Usage}{
@@ -552,8 +570,8 @@ Save summary metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-saveSummaryMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-saveSummaryMetrics}{}}}
+\if{html}{\out{<a id="method-saveSummaryMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-saveSummaryMetrics}{}}}
 \subsection{Method \code{saveSummaryMetrics()}}{
 Save summary metrics to text file.
 \subsection{Usage}{
@@ -589,8 +607,8 @@ Save detailed metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-saveDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-saveDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-saveDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-saveDetailedMetrics}{}}}
 \subsection{Method \code{saveDetailedMetrics()}}{
 Save detailed metrics to text file.
 \subsection{Usage}{
@@ -626,8 +644,8 @@ Detect doublets
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-detectDoublets"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-detectDoublets}{}}}
+\if{html}{\out{<a id="method-detectDoublets"></a>}}
+\if{latex}{\out{\hypertarget{method-detectDoublets}{}}}
 \subsection{Method \code{detectDoublets()}}{
 Detect doublet cells.
 \subsection{Usage}{
@@ -669,8 +687,8 @@ Conos preprocessing
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-doPreprocessing"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-doPreprocessing}{}}}
+\if{html}{\out{<a id="method-doPreprocessing"></a>}}
+\if{latex}{\out{\hypertarget{method-doPreprocessing}{}}}
 \subsection{Method \code{doPreprocessing()}}{
 Perform conos preprocessing.
 \subsection{Usage}{
@@ -709,8 +727,8 @@ Create Conos embedding
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-createEmbedding"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-createEmbedding}{}}}
+\if{html}{\out{<a id="method-createEmbedding"></a>}}
+\if{latex}{\out{\hypertarget{method-createEmbedding}{}}}
 \subsection{Method \code{createEmbedding()}}{
 Create conos UMAP embedding.
 \subsection{Usage}{
@@ -746,8 +764,8 @@ Filter count matrices
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-filterCms"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-filterCms}{}}}
+\if{html}{\out{<a id="method-filterCms"></a>}}
+\if{latex}{\out{\hypertarget{method-filterCms}{}}}
 \subsection{Method \code{filterCms()}}{
 Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
 \subsection{Usage}{
@@ -798,8 +816,8 @@ Select summary metrics.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-selectMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-selectMetrics}{}}}
+\if{html}{\out{<a id="method-selectMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-selectMetrics}{}}}
 \subsection{Method \code{selectMetrics()}}{
 Select metrics from summary_metrics
 \subsection{Usage}{
@@ -828,8 +846,8 @@ Plot filtered cells
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotFilteredCells"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotFilteredCells}{}}}
+\if{html}{\out{<a id="method-plotFilteredCells"></a>}}
+\if{latex}{\out{\hypertarget{method-plotFilteredCells}{}}}
 \subsection{Method \code{plotFilteredCells()}}{
 Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
 \subsection{Usage}{
@@ -878,8 +896,8 @@ Get Conos sequencing depth
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-getConosDepth"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-getConosDepth}{}}}
+\if{html}{\out{<a id="method-getConosDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-getConosDepth}{}}}
 \subsection{Method \code{getConosDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
@@ -900,8 +918,8 @@ Get fraction of mitochondrial genes
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-getMitoFraction"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-getMitoFraction}{}}}
+\if{html}{\out{<a id="method-getMitoFraction"></a>}}
+\if{latex}{\out{\hypertarget{method-getMitoFraction}{}}}
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
@@ -928,8 +946,8 @@ data frame
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-clone}{}}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
