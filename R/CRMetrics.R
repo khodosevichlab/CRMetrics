@@ -9,6 +9,7 @@
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
+#' @importFrom plyr count
 NULL
 
 # R6 class
@@ -705,7 +706,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     filters_list = list()
     
     # Write logical data frame to list for each filter type
-    for (i in 1:length(cutoff_list)) {
+    for (i in 1:3) {
       if (!is.null(cutoff_list[[i]])) {
         if (names(cutoff_list)[i] == "depth") {
           if (!is.numeric(cutoff_list[[i]])) stop("'depth_cutoff' must be numeric.")
@@ -724,20 +725,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
         } else if (names(cutoff_list)[i] == "doublets"){
           if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
-          if (cutoff_list[[i]] == "scrublet") {
-            doub <- self$doublets$scrublet$result["labels"]
-          } else if (cutoff_list[[i]] == "doubletdetection") {
-            doub <- self$doublets$doubletdetection$results["labels"]
-          }
+          doub <- self$doublets[[cutoff_list[[i]]]]$result["labels"]
           filters_list[[length(filters_list)+1]] <- data.frame(doub == FALSE)
         }
       }
     }
-    test <- do.call(cbind, filters_list)
-    length(apply(test, 1, all)) 
-    log <- apply(test,1,all)
+    filters <- do.call(cbind, filters_list)
+    log <- apply(filters,1,all) #Logical of which cell to keep
     log_list <- split(log, split_vec)
-    cms <- mapply(function(x,y) x[,y], x = cms, y = log_list)
+    cms <- mapply(function(x,y) x[,y], x = cms, y = log_list) #Filter count matrices
     
     # Save filtered CMs
     saveRDS(cms, file = file, compress = compress, ...)
@@ -818,7 +814,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }) %>% 
       data.frame()
     
-    if (type == "umap") {
+    if (type == "umap" || type == "bar") {
       tmp %<>% 
         mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
         mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
@@ -829,9 +825,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tmp$filter %<>% 
         factor() %>% 
         relevel(ref = "kept")
-      
-      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
-        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     } else {
       tmp %<>%
         apply(2, \(x) x != "") %>% 
@@ -840,12 +833,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                cell = rownames(.)) %>% 
         reshape2::melt(., id.vars = c("sample","cell"), measure.vars = colnames(.)[!colnames(.) %in% c("sample","cell")])
     }
+    
+    if (type == "umap"){
+      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
+        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
+    }
+    
     if (type == "bar") {
-      g <- tmp %>% group_by(sample, variable) %>% count(value) %>% mutate(pct=n/sum(n)*100) %>%
-        ungroup() %>% filter(value == 1) %>%
-        ggplot(aes(sample, pct, fill = variable)) +
+      g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1)) %>%
+        group_by(sample) %>% count() %>% mutate(pct = freq/sum(freq)*100) %>% 
+        ungroup() %>% filter(filter != "kept") %>%
+        ggplot(aes(sample, pct, fill = filter)) +
         geom_bar(stat = "identity") +
-        geom_text_repel(aes(label = sprintf("%0.2f", round(pct, digits = 2))), 
+        geom_text_repel(aes(label = sprintf("%0.2f", round(pct, digits = 2))),
                         position = position_stack(vjust = 0.5), direction = "y", size = 2.5) +
         self$theme +
         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
