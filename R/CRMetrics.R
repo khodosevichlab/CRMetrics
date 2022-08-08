@@ -840,7 +840,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     if (type == "bar") {
-      g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1)) %>%
+      g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1), 
+                          filter = ifelse(grepl("+", filter, fixed = TRUE), "combined", as.character(filter))) %>%
         group_by(sample) %>% count() %>% mutate(pct = freq/sum(freq)*100) %>% 
         ungroup() %>% filter(filter != "kept") %>%
         ggplot(aes(sample, pct, fill = filter)) +
