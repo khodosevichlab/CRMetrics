@@ -9,7 +9,6 @@
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
-#' @importFrom plyr count
 NULL
 
 # R6 class
@@ -733,6 +732,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     filters <- do.call(cbind, filters_list)
     log <- apply(filters,1,all) #Logical of which cell to keep
     log_list <- split(log, split_vec)
+    log_list <- log_list[order(gsub("([A-Z]+)([0-9]+)", "\\1", names(log_list)), 
+                               as.numeric(gsub("([A-Z]+)([0-9]+)", "\\2", names(log_list))))]
     cms <- mapply(function(x,y) x[,y], x = cms, y = log_list) #Filter count matrices
     
     # Save filtered CMs
@@ -842,7 +843,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (type == "bar") {
       g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1), 
                           filter = ifelse(grepl("+", filter, fixed = TRUE), "combined", as.character(filter))) %>%
-        group_by(sample) %>% count() %>% mutate(pct = freq/sum(freq)*100) %>% 
+        group_by(sample,filter) %>% dplyr::count() %>% ungroup() %>% group_by(sample) %>% 
+        mutate(pct = n/sum(n)*100) %>% 
         ungroup() %>% filter(filter != "kept") %>%
         ggplot(aes(sample, pct, fill = filter)) +
         geom_bar(stat = "identity") +

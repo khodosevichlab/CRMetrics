@@ -196,7 +196,7 @@ crm$plotUmap(mito.frac = TRUE)
 We can plot all the cells to be filtered in the UMAP embedding
 
 ```{r}
-crm$plotFilteredCells(type = "umap")
+crm$plotFilteredCells(type = "umap", doublet_method = "scrublet")
 ```
 
 And we can plot the cells to be filtered per sample
