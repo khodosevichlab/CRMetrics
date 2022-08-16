@@ -19,6 +19,7 @@ Imports:
     ggrepel,
     magrittr,
     Matrix,
+    plyr,
     readr,
     R6,
     sccore,
