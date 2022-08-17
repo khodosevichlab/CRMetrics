@@ -1,4 +1,4 @@
-#' @import dutchmasters dplyr magrittr ggplot2 ggrepel
+#' @import dplyr magrittr ggplot2 ggrepel
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply
 #' @importFrom Matrix colSums t
@@ -63,9 +63,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field verbose (default = TRUE)
    verbose = TRUE,
    
-   #' @field pal (default = NULL)
-   pal = NULL,
-   
    #' @field theme (default = NULL)
    theme = NULL,
    
@@ -79,14 +76,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
   #' @param detailed_metrics Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL).
   #' @param verbose Print messages or not (default = TRUE).
-  #' @param pal Palette from package 'dutchmasters' for plotting (default: "pearl_earring").
   #' @param theme Ggplot2 theme (default: theme_bw()).
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
   #' @param raw.meta Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
   #' @return CRMetrics object
   #' @examples 
   #' crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
-  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, pal = "pearl_earring", theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
+  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
       for (n in ls(data_path)) {
@@ -99,7 +95,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$n.cores <- n.cores
     self$data_path <- data_path
     self$verbose <- verbose
-    self$pal <- pal
     self$theme <- theme
     if (is.null(metadata)) {
       self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
@@ -177,8 +172,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       geom_bar(stat = "identity", position = "dodge") +
       self$theme +
       labs(x = comp_group, y = "Freq") +
-      theme(legend.position = "right") +
-      scale_fill_dutchmasters(palette = self$pal)
+      theme(legend.position = "right")
     
     
     if (plot_stats) {
@@ -222,7 +216,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       # check if selected metrics are available
       difs <- setdiff(metrics, self$summary_metrics$metric %>% unique())
-      if ("samples per group" %in% difs) difs <- difs[difs != "samples per groups"]
+      if ("samples per group" %in% difs) difs <- difs[difs != "samples per group"]
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
@@ -245,28 +239,24 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
             ggplot(aes(x = !!sym(comp_group), y = value)) +
             plotGeom(plot_geom, col = comp_group) + 
             labs(y = met, x = element_blank()) +
-            self$theme +
-            scale_color_dutchmasters(palette = self$pal)
+            self$theme
         } else {
           g <- tmp %>% 
             ggplot(aes(!!sym(comp_group), value)) +
             plotGeom(plot_geom, col = second_comp_group) + 
             labs(y = met, x = comp_group) +
-            self$theme +
-            scale_color_dutchmasters(palette = self$pal)
+            self$theme
         }
         
         if (is.numeric(metadata[[comp_group]])) {
-          line.aes = aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))
-          
           if (!group_reg_lines) {
             g <- g + 
-              ggpmisc::stat_poly_eq(color = "black", line.aes) +
+              ggpmisc::stat_poly_eq(color = "black", aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))) +
               ggpmisc::stat_poly_line(color = "black", se = se)
           } else {
             g <- g + 
-              ggpmisc::stat_poly_eq(line.aes) +
-              ggpmisc::stat_poly_line(se = se)
+              ggpmisc::stat_poly_eq(aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"), col = !!sym(second_comp_group))) +
+              ggpmisc::stat_poly_line(aes(col = !!sym(second_comp_group)), se = se)
           }
         }
         
@@ -342,7 +332,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       # check if selected metrics are available
       difs <- setdiff(metrics, self$detailed_metrics$metric %>% unique())
-      if ("depth" %in% difs) difs <- difs[difs != "depth"]
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
@@ -364,8 +353,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           {if (plot_geom == "violin") scale_y_log10()} +
           {if (hline) geom_hline(yintercept = median(tmp$value))} +
           labs(y = met, x = element_blank()) +
-          self$theme +
-          scale_fill_dutchmasters(palette = self$pal)
+          self$theme
         
         # a legend only makes sense if the comparison is not the samples
         if (comp_group != "sample") {
@@ -427,7 +415,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         split_vec <- strsplit(names(depths), "!!") %>% sapply('[[',1)
         depths_list <- split(depths, split_vec)
         depths <- mapply(function(x,y) x >= y, x=depths_list, y=depth.cutoff) %>% unlist() %>% setNames(names(depths))
-        g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = paste0("Cells with low depth with sample specific cutoff, < ",depth.cutoff), ...)
+        g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = "Cells with low depth with sample-specific cutoff", ...)
       } else {
         g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
       }
@@ -465,65 +453,55 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return ggplot2 object
   #' @examples 
   #' crm$plotDepth()
-  plotDepth = function(cutoff = 1e3, per_sample = FALSE){
-    #Get depth
+  plotDepth = function(cutoff = 1e3){
+    # Checks
     if (is.null(self$con)) {
       message("No Conos object found, running createEmbedding.")
       self$createEmbedding()
     }
     
-    if (!per_sample & (length(cutoff) > 1)) stop("Only one 'cutoff' value allowed.")
+    if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
+    
     depths <- self$getConosDepth()
     
-    if (per_sample){
-      # somehow match names(crm$detailed_metrics) with names(crm$depth) and add crm$detailed_metrics$sample
-      tmp <- depths %>% 
-        {data.frame(depth = unname(.), sample = names(.))} %>% 
-        mutate(sample = sample %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1)) %>%
-        split(., .$sample) %>% 
-        lapply(\(z) with(density(z$depth, adjust = 1/10), data.frame(x,y))) %>% 
-        {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
-        bind_rows()
-      
-      depth_plot <- tmp %>% 
-        pull(sample) %>% 
-        unique() %>% 
-        lapply(\(id) {
-          if (length(cutoff) == 1) {
-            g <- tmp %>% filter(sample == id) %>%  
-              ggplot(aes(x,y)) +
-              self$theme +
-              geom_line() +
-              geom_area(fill = "#A65141") +
-              geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "#E7CDC2") +
-              xlim(0,2e4) +
-              theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
-              labs(title = id, y = "Density [AU]", x = "")
-          } else {
-            g <- tmp %>% filter(sample == id) %>%  
-              ggplot(aes(x,y)) +
-              self$theme +
-              geom_line() +
-              geom_area(fill = "#A65141") +
-              geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "#E7CDC2") +
-              xlim(0,2e4) +
-              theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
-              labs(title = id, y = "Density [AU]", x = "")
-          }
-          return(g)
-        }) %>% 
-        plot_grid(plotlist = ., ncol = 3,label_size = 5)
-    } else {
-    # Plot depth in histogram
-    depth_plot <- with(density(depths, adjust = 1/10), data.frame(x,y)) %>% 
-      ggplot(aes(x,y)) +
-        self$theme +
-        geom_line() +
-        geom_area(fill = "#A65141") +
-        geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "#E7CDC2") + 
-        xlim(0,2e4) +
-        theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1))
-    }
+    # Preparations
+    tmp <- depths %>% 
+      {data.frame(depth = unname(.), sample = names(.))} %>% 
+      mutate(sample = sample %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1)) %>%
+      split(., .$sample) %>% 
+      lapply(\(z) with(density(z$depth, adjust = 1/10), data.frame(x,y))) %>% 
+      {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
+      bind_rows()
+    
+    # Plot
+    depth_plot <- tmp %>% 
+      pull(sample) %>% 
+      unique() %>% 
+      lapply(\(id) {
+        if (length(cutoff) == 1) {
+          g <- tmp %>% filter(sample == id) %>%  
+            ggplot(aes(x,y)) +
+            self$theme +
+            geom_line() +
+            geom_area(fill = "#A65141") +
+            geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "#E7CDC2") +
+            xlim(0,2e4) +
+            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
+            labs(title = id, y = "Density [AU]", x = "")
+        } else {
+          g <- tmp %>% filter(sample == id) %>%  
+            ggplot(aes(x,y)) +
+            self$theme +
+            geom_line() +
+            geom_area(fill = "#A65141") +
+            geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "#E7CDC2") +
+            xlim(0,2e4) +
+            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
+            labs(title = id, y = "Density [AU]", x = "")
+        }
+        return(g)
+      }) %>% 
+      plot_grid(plotlist = ., ncol = 3,label_size = 5)
     
     return(depth_plot)
   },
@@ -535,20 +513,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param sep What separator to use (default = "\t").
   #' @return file
   #' @examples 
-  #' crm$saveSummaryMetrics(file = "Summary_metrics.txt")
-  saveSummaryMetrics = function(file = "Summary_metrics.txt", dec = ".", sep = "\t") {
+  #' crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
+  saveSummaryMetrics = function(file = "Summary_metrics.tsv", dec = ".", sep = "\t") {
     write.table(self$summary_metrics, file, sep = sep, dec = dec)
   },
   
   #' Save detailed metrics
   #' @description Save detailed metrics to text file.
-  #' @param file Output file (default = "Summary_metrics.txt").
+  #' @param file Output file (default = "Summary_metrics.tsv").
   #' @param dec How the decimals are defined (default = ".").
   #' @param sep What separator to use (default = "\t").
   #' @return file
   #' @examples 
-  #' crm$saveDetailedMetrics(file = "Detailed_metrics.txt")
-  saveDetailedMetrics = function(file = "Detailed_metrics.txt", dec = ".", sep = "\t") {
+  #' crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
+  saveDetailedMetrics = function(file = "Detailed_metrics.tsv", dec = ".", sep = "\t") {
     write.table(self$detailed_metrics, file, sep = sep, dec = dec)
   },
   
@@ -684,12 +662,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Filter count matrices
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
   #' @param file File to save filtered count matrices to (default = "cms_filtered.rds").
-  #' @param raw To take raw count matrices or not (default = TRUE).
+  #' @param raw Save raw count matrices (TRUE) or normalized count matrices (default = TRUE).
   #' @param depth_cutoff Depth cutoff (default = NULL).
   #' @param mito_cutoff Mitochondrial fraction cutoff (default = NULL).
   #' @param doublets Doublet detection method to use (default = NULL).
   #' @param compress Compress the file or not (default = FALSE).
-  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
+  #' @param species Species to calculate the mitochondrial fraction for (default = "human").
   #' @param ... Parameters for saving R object passed to `saveRDS`.
   #' @return file
   #' @examples 
@@ -841,7 +819,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (type == "bar") {
       g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1), 
-                          filter = ifelse(grepl("+", filter, fixed = TRUE), "combined", as.character(filter))) %>%
+                          filter = ifelse(grepl("+", filter, fixed = TRUE), "combination", as.character(filter))) %>%
         group_by(sample) %>% count() %>% mutate(pct = freq/sum(freq)*100) %>% 
         ungroup() %>% filter(filter != "kept") %>%
         ggplot(aes(sample, pct, fill = filter)) +
@@ -850,8 +828,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                         position = position_stack(vjust = 0.5), direction = "y", size = 2.5) +
         self$theme +
         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-        labs(x = "", y = "Percentage cells filtered") +
-        scale_fill_dutchmasters(palette = self$pal)
+        labs(x = "", y = "Percentage cells filtered")
     } else if (type == "tile") {
       g <- labelsFilter(tmp) %>%
         ggplot(aes(fraction, sample, fill = value)) +

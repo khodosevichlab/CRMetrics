@@ -3,7 +3,6 @@
 export(CRMetrics)
 export(loadCountMatrices)
 import(dplyr)
-import(dutchmasters)
 import(ggplot2)
 import(ggrepel)
 import(magrittr)

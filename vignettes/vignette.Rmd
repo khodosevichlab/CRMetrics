@@ -1,42 +1,27 @@
 ---
 title: "Analysis of 10x test data"
-output: github_document
+output: 
+  github_document:
+    toc: true
 ---
 
 # Preparations
 
-## Download test data from 10x
+We have selected [publicly available datasets](https://www.10xgenomics.com/resources/datasets) from 10x which can be downloaded [here](http://kkh.bric.ku.dk/rasmus/crmetrics_testdata.tar.gz). You can download the zipped data using wget or curl, e.g. 
+`wget http://kkh.bric.ku.dk/rasmus/crmetrics_testdata.tar.gz`, and then unpack using 
+`tar -xvf crmetrics_testdata.tar.gz`
 
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_heart_CNIK_3pv3/5k_mouse_heart_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_liver_CNIK_3pv3/5k_mouse_liver_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_lung_CNIK_3pv3/5k_mouse_lung_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/1k_mouse_kidney_CNIK_3pv3/1k_mouse_kidney_CNIK_3pv3_filtered_feature_bc_matrix.tar.gz
-
-Unpack (tar -xf) in format resembling Cellranger output: <sample-ID>/outs/filtered_feature_bc_matrix
-
-## Download metrics summaries from 10x
-
-Place in corresponding /outs/ folders, rename to 'metrics_summary.csv'
-
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/1k_mouse_kidney_CNIK_3pv3/1k_mouse_kidney_CNIK_3pv3_metrics_summary.csv
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_heart_CNIK_3pv3/5k_mouse_heart_CNIK_3pv3_metrics_summary.csv
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_liver_CNIK_3pv3/5k_mouse_liver_CNIK_3pv3_metrics_summary.csv
-wget https://cf.10xgenomics.com/samples/cell-exp/7.0.0/5k_mouse_lung_CNIK_3pv3/5k_mouse_lung_CNIK_3pv3_metrics_summary.csv
-
-# CRMetrics class
-
-
-## Initializing a CRMetrics class
+# Initializing a CRMetrics class
 
 Load the library
 
-```{r setup}
+```{r setup, message=FALSE}
 library(CRMetrics)
 library(magrittr)
 library(dplyr)
 ```
 
-Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file.
+Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file. Here, the folder with our test data is stored in `/data/ExtData/`.
 Metadata can be added in the initialization call from a comma-separated file. The metadata file contains a column `sample` with the samples and optionally more columns with factors. Only sample IDs in column `sample` will be included.
 
 ```{r}
@@ -51,7 +36,7 @@ We can review our metadata
 crm$metadata
 ```
 
-## Plot summary statistics
+# Plot summary statistics
 
 We can investigate which metrics are available and choose the ones we would like to plot
 
@@ -60,35 +45,99 @@ crm$selectMetrics()
 ```
 
 
-In one plot, we can plot selected metric summary stats. If no comparison group is set, it defaults to `sample`.
+## Samples per condition
 
-```{r fig.width=12, fig.height=12}
+First, we can plot the number of samples per condition. Here, we investigate how the distribution of the 10x Chromium chemistry differs between the throughput (resolution) of the 10x kits where LT is short for low throughput.
+
+```{r warning=FALSE}
+crm$plotSummaryMetrics(comp_group = "chemistry", metrics = "samples per group", second_comp_group = "resolution")
+```
+
+## Metrics per sample
+
+In one plot, we can illustrate selected metric summary stats. If no comparison group is set, it defaults to `sample`. We note that `donorC_3k` was counted with an old version of Cell Ranger and therefore does not contain all metrics.
+
+```{r fig.width=12, fig.height=12, warning=FALSE}
 metrics.to.plot <- crm$selectMetrics(ids = c(1:4,6,18,19))
-crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
+crm$plotSummaryMetrics(metrics = metrics.to.plot, 
+                       plot_geom = "point")
 ```
 
-We can do the same, but set the comparison group to `chemistry`. This will add statistics to the plots
+## Metrics per condition
 
-```{r fig.width=12, fig.height=12}
+We can do the same, but set the comparison group to `chemistry`. This will add statistics to the plots. Additionally, we can add a second comparison group for coloring.
+
+```{r fig.width=12, fig.height=10, warning=FALSE}
 crm$addComparison("chemistry")
-crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
+crm$plotSummaryMetrics(metrics = metrics.to.plot, 
+                       plot_geom = "point", 
+                       stat_test = "non_parametric",
+                       second_comp_group = "cellranger")
 ```
 
-## Add detailed metrics
+## Metrics per condition with >2 levels
 
-We can read in count matrices to assess detailed metrics
+For the sake of the example, we change Cell Ranger versions for samples before v. 3 to "<3.0.0". This will provide us with three comparisons groups to exemplify how to use automated statistics for such situations.
+
+```{r, fig.width=12, fig.height=10}
+crm$metadata$cellranger %<>% 
+  as.character() %>% 
+  {c(.[c(1,2)],rep("<3.0.0",2),.[c(5,6)])} %>% 
+  factor()
+
+crm$plotSummaryMetrics(comp_group = "cellranger",
+                       metrics = metrics.to.plot, 
+                       plot_geom = "point", 
+                       stat_test = "non_parametric",
+                       second_comp_group = "chemistry", 
+                       secondary_testing = TRUE)
+```
+
+
+## Metrics per condition with numeric covariate
+
+For the sake of the example, we add a numeric vector to our metadata. Then, we can choose a numeric comparison group which will add regression lines to the plots.
+
+```{r fig.height=10, fig.width=12}
+crm$metadata$num.vec <- c(4,3,4,3,4,6) %>% as.numeric()
+
+crm$plotSummaryMetrics(comp_group = "num.vec",
+                       metrics = metrics.to.plot, 
+                       plot_geom = "point",
+                       second_comp_group = "chemistry",
+                       se = FALSE)
+```
+
+We see that there's a significant effect of the numeric vector on `Mean Reads per Cell`. Let us investigate `Mean Reads per Cell` closer by performing regression analyses for both conditions of `chemistry`.
+
+```{r}
+crm$plotSummaryMetrics(comp_group = "num.vec",
+                       metrics = "Mean Reads per Cell", 
+                       plot_geom = "point",
+                       second_comp_group = "chemistry", 
+                       group_reg_lines = TRUE)
+```
+
+We see that there is no significant effect of the numeric vector on neither of the chemistries although the R2 values are high.
+
+# Add detailed metrics
+
+We can read in count matrices to assess detailed metrics.
 
 ```{r}
 crm$addDetailedMetrics()
 ```
 
+The horizontal lines indicates the median values for all samples.
+
 ```{r}
 metrics.to.plot <- crm$detailed_metrics$metric %>%
   unique()
-crm$plotDetailedMetrics(metrics = metrics.to.plot, plot_geom = "violin")
+crm$plotDetailedMetrics(metrics = metrics.to.plot, 
+                        plot_geom = "violin")
 ```
 
-## Embed cells using Conos and UMAP
+# Embed cells using Conos and UMAP
 
 In order to plot our cells in a UMAP embedding, we need to perform preprocessing of the raw count matrices. To do this, either `pagoda2` (default) or `Seurat` can be used. 
 
@@ -98,7 +147,7 @@ crm$doPreprocessing()
 
 Then, we create the UMAP embedding using `conos`.
 
-```{r}
+```{r, echo=FALSE}
 crm$createEmbedding()
 ```
 
@@ -108,35 +157,41 @@ We can now plot our cells.
 crm$plotUmap()
 ```
 
-We can also plot cell depth, both in the UMAP embedding or as histograms for all samples or per sample.
+
+# Cell depth
+
+We can plot cell depth, both in the UMAP embedding or as histograms per sample.
 
 ```{r}
-crm$plotUmap(depth = TRUE, depth.cutoff = 1.5e3)
+crm$plotUmap(depth = TRUE, 
+             depth.cutoff = 1.5e3)
 ```
 
-```{r}
-crm$plotDetailedMetrics(metrics = c("depth"), plot_geom = "point")
+```{r, warning=FALSE}
 crm$plotDepth()
-```
-
-```{r}
-crm$plotDepth(per_sample = TRUE)
 ```
 
 We can see that the depth distribution varies between samples. We can create a cutoff vector specifying the depth cutoff per sample. It should be a named vector containing sample names.
 
 ```{r}
 depth_cutoff_vec <- c(1e3,1e3,1e3,1e3,3e3,3.5e3) %>% 
-  setNames(crm$detailed_metrics$sample %>% unique())
+  setNames(crm$detailed_metrics$sample %>% unique() %>% sort())
 
 depth_cutoff_vec
 ```
 
 Let's plot the updated cutoffs:
-```{r}
-crm$plotDepth(cutoff = depth_cutoff_vec, per_sample = TRUE)
+
+```{r, warning=FALSE}
+crm$plotDepth(cutoff = depth_cutoff_vec)
 ```
 
+Also, we can do this in the UMAP embedding:
+
+```{r}
+crm$plotUmap(depth = TRUE, 
+             depth.cutoff = depth_cutoff_vec)
+```
 
 # Doublet detection
 
@@ -149,8 +204,13 @@ Install and load `reticulate`, then create a conda environment. In this example,
 ```{r eval = FALSE}
 install.packages("reticulate")
 library(reticulate)
-conda_create("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/conda", python_version = 3.8)
-conda_install("r-reticulate", conda = "/opt/software/miniconda/4.12.0/condabin/conda", pip = TRUE, packages = c("scrublet","doubletdetection"))
+conda_create("r-reticulate", 
+             conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+             python_version = 3.8)
+conda_install("r-reticulate", 
+              conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+              pip = TRUE, 
+              packages = c("scrublet","doubletdetection"))
 ```
 
 There is a known problem with openBLAS which may be different between R and Python. If this is the case, you will receive the error `floating point exception` and R will crash when you try to run a Python script using `reticulate`.
@@ -180,7 +240,8 @@ crm$plotUmap(doublet_method = "scrublet")
 And we can plot the scores for the doublet estimations.
 
 ```{r}
-crm$plotUmap(doublet_method = "scrublet", doublet_scores = TRUE)
+crm$plotUmap(doublet_method = "scrublet", 
+             doublet_scores = TRUE)
 ```
 
 # Mitochondrial fraction
@@ -188,7 +249,9 @@ crm$plotUmap(doublet_method = "scrublet", doublet_scores = TRUE)
 We can also investigate the mitochondrial fraction in our cells
 
 ```{r}
-crm$plotUmap(mito.frac = TRUE)
+crm$plotUmap(mito.frac = TRUE, 
+             mito.cutoff = 0.05, 
+             species = "human")
 ```
 
 # Plot filtered cells
@@ -196,13 +259,25 @@ crm$plotUmap(mito.frac = TRUE)
 We can plot all the cells to be filtered in the UMAP embedding
 
 ```{r}
-crm$plotFilteredCells(type = "umap")
+crm$plotFilteredCells(type = "umap", 
+                      depth = TRUE, 
+                      depth.cutoff = depth_cutoff_vec, 
+                      doublet_method = "scrublet", 
+                      mito.frac = TRUE, 
+                      mito.cutoff = 0.05, 
+                      species = "human")
 ```
 
-And we can plot the cells to be filtered per sample
+And we can plot the cells to be filtered per sample where `combination` means a cell that has at least two filter labels, e.g. `mito` and `depth`.
 
 ```{r}
-crm$plotFilteredCells(type = "bar", doublet_method = "scrublet")
+crm$plotFilteredCells(type = "bar", 
+                      doublet_method = "scrublet", 
+                      depth = TRUE, 
+                      depth.cutoff = depth_cutoff_vec, 
+                      mito.frac = TRUE, 
+                      mito.cutoff = 0.05, 
+                      species = "human")
 ```
 
 We can also extract the raw numbers for plotting in other ways than those included here
@@ -217,6 +292,14 @@ filter.data %>% head()
 Finally, we can filter the count matrices and save them for downstream applications.
 
 ```{r eval = FALSE}
-crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = TRUE)
+crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered.rds", 
+              depth_cutoff = depth_cutoff_vec, 
+              mito_cutoff = 0.05, 
+              species = "human",
+              doublets = "scrublet")
+```
+
+```{r}
+sessionInfo()
 ```
 
