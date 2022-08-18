@@ -403,7 +403,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       match.arg(c("human","mouse"))
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
-      if (verbose) message("No embedding found, running createEmbedding.")
+      if (self$verbose) message("No embedding found, running createEmbedding.")
       self$createEmbedding()
     }
     

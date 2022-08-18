@@ -147,7 +147,7 @@ crm$doPreprocessing()
 
 Then, we create the UMAP embedding using `conos`.
 
-```{r, echo=FALSE}
+```{r}
 crm$createEmbedding()
 ```
 
