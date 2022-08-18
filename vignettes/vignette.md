@@ -124,7 +124,7 @@ for low throughput.
 crm$plotSummaryMetrics(comp_group = "chemistry", metrics = "samples per group", second_comp_group = "resolution")
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ## Metrics per sample
 
@@ -141,7 +141,7 @@ crm$plotSummaryMetrics(metrics = metrics.to.plot,
 
     ## Using 'sample' for 'comp_group'
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ## Metrics per condition
 
@@ -157,7 +157,7 @@ crm$plotSummaryMetrics(metrics = metrics.to.plot,
                        second_comp_group = "cellranger")
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ## Metrics per condition with &gt;2 levels
 
@@ -179,7 +179,7 @@ crm$plotSummaryMetrics(comp_group = "cellranger",
                        secondary_testing = TRUE)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ## Metrics per condition with numeric covariate
 
@@ -197,7 +197,7 @@ crm$plotSummaryMetrics(comp_group = "num.vec",
                        se = FALSE)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 We see that there’s a significant effect of the numeric vector on
 `Mean Reads per Cell`. Let us investigate `Mean Reads per Cell` closer
@@ -211,7 +211,7 @@ crm$plotSummaryMetrics(comp_group = "num.vec",
                        group_reg_lines = TRUE)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 We see that there is no significant effect of the numeric vector on
 neither of the chemistries although the R2 values are high.
@@ -240,7 +240,7 @@ crm$plotDetailedMetrics(metrics = metrics.to.plot,
 
     ## Using 'sample' for 'comp_group'
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 # Embed cells using Conos and UMAP
 
@@ -528,7 +528,7 @@ We can now plot our cells.
 crm$plotUmap()
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 # Cell depth
 
@@ -540,13 +540,13 @@ crm$plotUmap(depth = TRUE,
              depth.cutoff = 1.5e3)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 crm$plotDepth()
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 We can see that the depth distribution varies between samples. We can
 create a cutoff vector specifying the depth cutoff per sample. It should
@@ -570,7 +570,7 @@ Let’s plot the updated cutoffs:
 crm$plotDepth(cutoff = depth_cutoff_vec)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 Also, we can do this in the UMAP embedding:
 
@@ -579,7 +579,7 @@ crm$plotUmap(depth = TRUE,
              depth.cutoff = depth_cutoff_vec)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 # Doublet detection
 
@@ -661,7 +661,7 @@ We can plot the estimated doublets in the UMAP embedding.
 crm$plotUmap(doublet_method = "scrublet")
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 And we can plot the scores for the doublet estimations.
 
@@ -670,7 +670,7 @@ crm$plotUmap(doublet_method = "scrublet",
              doublet_scores = TRUE)
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 # Mitochondrial fraction
 
@@ -682,7 +682,7 @@ crm$plotUmap(mito.frac = TRUE,
              species = "human")
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 # Plot filtered cells
 
@@ -701,7 +701,7 @@ crm$plotFilteredCells(type = "umap",
     ## Scale for 'colour' is already present. Adding another scale for 'colour',
     ## which will replace the existing scale.
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 And we can plot the cells to be filtered per sample where `combination`
 means a cell that has at least two filter labels, e.g. `mito` and
@@ -717,7 +717,7 @@ crm$plotFilteredCells(type = "bar",
                       species = "human")
 ```
 
-![](/tmp/Rtmp7eFMBs/preview-3213fe484d2919.dir/vignette_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](vignette_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 We can also extract the raw numbers for plotting in other ways than
 those included here
