@@ -710,8 +710,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     filters <- do.call(cbind, filters_list)
     log <- apply(filters,1,all) #Logical of which cell to keep
     log_list <- split(log, split_vec)
-    log_list <- log_list[order(gsub("([A-Z]+)([0-9]+)", "\\1", names(log_list)), 
-                               as.numeric(gsub("([A-Z]+)([0-9]+)", "\\2", names(log_list))))]
+    log_list <- log_list[order(match(names(log_list),self$metadata$sample))]
     cms <- mapply(function(x,y) x[,y], x = cms, y = log_list) #Filter count matrices
     
     # Save filtered CMs
