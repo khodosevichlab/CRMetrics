@@ -1,7 +1,7 @@
 #' @import dplyr magrittr ggplot2 ggrepel
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply
-#' @importFrom Matrix colSums t
+#' @importFrom Matrix t
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom cowplot plot_grid
 #' @importFrom stats setNames relevel
@@ -9,6 +9,7 @@
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
+#' @importFrom sparseMatrixStats rowSums2 colSums2
 NULL
 
 # R6 class
@@ -876,12 +877,157 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
       tmp <- self$con$samples %>% 
         lapply(`[[`, "counts") %>% 
-        lapply(\(cm) Matrix::rowSums(cm[,grep(symb, colnames(cm))]) / Matrix::rowSums(cm)) %>% 
+        lapply(\(cm) sparseMatrixStats::rowSums2(cm[,grep(symb, colnames(cm))]) / sparseMatrixStats::rowSums2(cm)) %>% 
         Reduce(c, .)
       self$mito.frac <- tmp
     } else {
       tmp <- self$mito.frac
     }
     return(tmp)
+  },
+  
+  #' Prepare CellBender correction
+  #' @description Create plots and script call for CellBender
+  #' @param shrinkage Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
+  #' @param show_expected_cells Plot line depicting expected number of cells (default = TRUE)
+  #' @param show_total_droplets Plot line depicting total droplets included for CellBender run (default = TRUE)
+  #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param cms.h5 Raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
+  #' @param umi.counts UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
+  #' @param verbose Show progress (default: stored vector)
+  #' @param n.cores Number of cores (default: stored vector)
+  #' @return ggplot2 object and bash script
+  prepareCellbender = function(shrinkage = 100, show_expected_cells = TRUE, show_total_droplets = TRUE, expected_cells = self$cellbender$expected.cells, total_droplets = self$cellbender$total.droplets, cms.h5 = self$cellbender$cms.h5, umi.counts = self$cellbender$umi.counts, verbose = self$verbose, n.cores = self$n.cores) {
+    # Preparations
+    if (verbose) message(paste0(Sys.time()," Started run using ",n.cores," cores"))
+    samples <- self$getSamples()
+    expected_cells <- self$getExpectedCells(expected_cells)
+    total_droplets <- self$getTotalDroplets(total_droplets, expected_cells)
+    
+    # Read CMs from HDF5 files
+    if (!is.null(cms.h5)) {
+      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set <CRMetrics object>$cellbender$cms.h5 <- NULL"))
+    } else {
+      if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
+      cms.h5 <- inputs %>% 
+        plapply(Seurat::Read10X_h5, n.cores = n.cores) %>% 
+        setNames(samples)
+      self$cellbender$cms.h5 <- cms.h5
+    }
+    
+    # Get UMI counts
+    if (!is.null(umi.counts)) {
+      if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set <CRMetrics object>$cellbender$umi.counts <- NULL"))
+    } else {
+      if (verbose) message(paste0(Sys.time()," Calculating UMI counts per sample"))
+      umi.counts <- cms.h5 %>% 
+        plapply(\(cm) {
+          sparseMatrixStats::colSums2(cm) %>%
+            sort(decreasing = TRUE) %>% 
+            {data.frame(y = .)} %>% 
+            filter(y > 0) %>% 
+            mutate(., x = 1:nrow(.))
+        }, n.cores = n.cores) %>% 
+        setNames(samples)
+      self$cellbender$umi.counts <- umi.counts
+    }
+    
+    # Create plot
+    if (verbose) message(paste0(Sys.time()," Plotting"))
+    data.df <- umi.counts %>% 
+      names() %>% 
+      lapply(\(sample) {
+        umi.counts[[sample]] %>% 
+          mutate(sample = sample) %>% 
+          .[seq(1, nrow(.), shrinkage),]
+      }) %>% 
+      bind_rows()
+    
+    line.df <- expected_cells %>% 
+      {data.frame(sample = names(.), exp = .)} %>% 
+      mutate(total = total_droplets %>% unname())
+    
+    g <- ggplot(data.df, aes(x, y)) + 
+      geom_line(color = "red") + 
+      scale_x_log10(labels = comma) +
+      scale_y_log10(labels = comma) +
+      theme_bw() +
+      labs(x = "Droplet ID ranked by count", y = "UMI count per droplet", col = "")
+    
+    if (show_expected_cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
+    if (show_total_droplets) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total droplets included"))
+    
+    g <- g + facet_wrap(~ sample)
+    
+    if (verbose) message(paste0(Sys.time()," Done!"))
+    return(g)
+  },
+  
+  #' Save CellBender script
+  #' @param file File name for CellBender script (default: cellbender_script.sh)
+  #' @param fpr False positive rate for CellBender (default = 0.01)
+  #' @param epochs Number of epochs for CellBender (default = 150)
+  #' @param use_gpu Use CUDA capable GPU (default = TRUE)
+  #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @return bash script
+  saveCellbenderScript = function(file = "cellbender_script.sh", fpr = 0.01, epochs = 150, use_gpu = TRUE, expected_cells = self$cellbender$expected.cells, total_droplets = self$cellbender$total.droplets) {
+    # Preparations
+    samples <- self$getSamples()
+    
+    inputs <- list.dirs(self$data_path, recursive = FALSE) %>% 
+      sapply(\(path) dir(paste0(path,"/outs"), glob2rx("raw*.h5"), full.names = TRUE)) %>% 
+      setNames(samples)
+    
+    outputs <- list.dirs(self$data_path, recursive = FALSE) %>% 
+      sapply(\(path) paste0(path,"/outs/cellbender.h5")) %>% 
+      setNames(samples)
+    
+    expected_cells <- self$getExpectedCells(expected_cells)
+    total_droplets <- self$getTotalDroplets(total_droplets, expected_cells)
+    
+    # Create CellBender shell scripts
+    script.list <- samples %>% 
+      lapply(\(sample) {
+        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use_gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected_cells[sample]," --total-droplets-included ",total_droplets[sample]," --fpr ",fpr," --epochs ",epochs)
+      })
+    
+    out <- list("#! /bin/sh", script.list) %>% 
+      unlist()
+    
+    cat(out, file = file, sep = "\n")
+  },
+  
+  getExpectedCells = function(expected_cells = self$cellbender$expected.cells) {
+    samples <- self$getSamples()
+    
+    if (is.null(expected_cells)) {
+      expected_cells <- self$summary_metrics %>% 
+        filter(metric == "Estimated Number of Cells") %$% 
+        setNames(value, sample)
+      self$cellbender$expected.cells <- expected_cells
+    } else {
+      stopifnot(length(expected_cells) == length(samples) & all(names(expected_cells) %in% samples))
+    }
+    
+    return(expected_cells)
+  },
+  
+  getTotalDroplets = function(total_droplets = self$cellbender$total.droplets, expected_cells = self$cellbender$expected.cells) {
+    samples <- self$getSamples()
+    
+    if (!is.null(total_droplets)) {
+      stopifnot(length(total_droplets) == length(samples) & all(names(total_droplets) %in% samples))
+    } else {
+      total_droplets <- expected_cells * 3
+      self$cellbender$total.droplets <- total_droplets
+    }
+    
+    return(total_droplets)
+  },
+  
+  getSamples = function(summary_metrics = self$summary_metrics) {
+    self$summary_metrics$sample %>% unique()
   }
  ))
