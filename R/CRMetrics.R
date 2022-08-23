@@ -174,7 +174,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       labs(x = comp_group, y = "Freq") +
       theme(legend.position = "right")
     
-    
     if (plot_stats) {
      g %<>% addPlotStatsSamples(comp_group, metadata, h.adj, exact, second_comp_group)
     }
@@ -378,7 +377,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
       }
-    
   },
   
   #' Plot UMAP
@@ -589,10 +587,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @examples 
   #' crm$doPreprocessing(preprocess = "pagoda2")
   doPreprocessing = function(cms = self$cms,
-                              preprocess = c("pagoda2","seurat"),
-                              verbose = self$verbose,
-                              n.cores = self$n.cores) {
-    preprocess %<>% tolower() %>% match.arg(c("pagoda2","seurat"))
+                             preprocess = c("pagoda2","seurat"),
+                             verbose = self$verbose,
+                             n.cores = self$n.cores) {
+    preprocess %<>% 
+      tolower() %>% 
+      match.arg(c("pagoda2","seurat"))
     if (is.null(cms)) {
       message("No count matrices found, running addDetailedMetrics.")
       self$addDetailedMetrics()
@@ -688,9 +688,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (!is.null(cutoff_list[[i]])) {
         if (names(cutoff_list)[i] == "depth") {
           if (!is.numeric(cutoff_list[[i]])) stop("'depth_cutoff' must be numeric.")
-          depth <- self$getConosDepth() %>% as.data.frame() %>% setNames("depth")
+          depth <- self$getConosDepth() %>% 
+            as.data.frame() %>% 
+            setNames("depth")
           if (length(cutoff_list[[i]] > 1)) {
-            split_vec <- strsplit(rownames(depth), "!!") %>% sapply('[[', 1)
+            split_vec <- strsplit(rownames(depth), "!!") %>% 
+              sapply('[[', 1)
             depth_list <- split(depth, split_vec)
             test <- mapply(function(x, y) x >= y, x = depth_list, y = cutoff_list[[i]])
             filters_list[[length(filters_list)+1]] <- data.frame(do.call(rbind, test))
@@ -699,7 +702,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           }
         } else if (names(cutoff_list)[i] == "mito") {
           if (!is.numeric(cutoff_list[[i]])) stop("'mito_cutoff' must be numeric.")
-          mf <- self$getMitoFraction() %>% as.data.frame() %>% setNames("mf")
+          mf <- self$getMitoFraction() %>% 
+            as.data.frame() %>% 
+            setNames("mf")
           filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
         } else if (names(cutoff_list)[i] == "doublets"){
           if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
@@ -768,7 +773,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito",""),
                   ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
     }
-    
     
     if (!is.null(doublet_method)) {
       tmp.doublets <- self$doublets[[doublet_method]]$result
