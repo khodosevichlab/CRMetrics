@@ -85,7 +85,7 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n
     }, n.cores = n.cores, progress = FALSE) %>%
     setNames(sample.names)
   
-  tmp %<>% createUniqueCellNames(sample.names, sep)
+  tmp %<>% createUniqueCellNames(sample.names, sep, n.cores)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -129,7 +129,7 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
     }, n.cores = n.cores, progress = FALSE) %>% 
     setNames(samples)
   
-  if (verbose) message(paste0(Sys.time()," Done! Creating table"))
+  if (verbose) message(paste0(Sys.time()," Creating table"))
   
   tmp <- samples %>% 
     plapply(\(sample.name) {
@@ -323,7 +323,7 @@ labelsFilter <- function(filter.data) {
 #' @param sample.names character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
 #' @export
-read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered","cellbender","cellbender_filtered"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE) {
+read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered","cellbender","cellbender_filtered"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE, unique_names = FALSE) {
   requireNamespace("rhdf5")
   
   if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
@@ -333,7 +333,7 @@ read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered",
   if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices using ", if (n.cores <- length(full_path)) n.cores else length(full_path)," cores"))
   out <- full_path %>%
     plapply(\(path) {
-      h5 <- h5read(path, "matrix")
+      h5 <- rhdf5::h5read(path, "matrix")
       
       tmp <- sparseMatrix(
         dims = h5$shape,
@@ -362,22 +362,23 @@ read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered",
         `dimnames<-`(list(rows, h5$barcodes))
       
       return(tmp)
-    }, n.cores = n.cores, progress = FALSE) %>% 
+    }, n.cores = n.cores) %>% 
     setNames(sample.names)
   
-  out %<>% createUniqueCellNames(sample.names, sep)
+  if (unique_names) out %<>% createUniqueCellNames(sample.names, sep, n.cores, verbose)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
   return(out)
 }
 
-createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
+createUniqueCellNames <- function(cms, sample.names, sep = "!!", n.cores = 1, verbose = TRUE) {
+  if (verbose) message(paste0(Sys.time()," Creating unique cell names"))
   sample.names %>%
-    lapply(\(sample) {
+    plapply(\(sample) {
       cms[[sample]] %>% 
         `colnames<-`(., paste0(sample,sep,colnames(.)))
-    }) %>%
+    }, n.cores = n.cores) %>%
     setNames(sample.names)
 }
 
