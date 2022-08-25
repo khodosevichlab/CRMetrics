@@ -125,15 +125,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @examples 
   #' crm$addDetailedMetrics()
   addDetailedMetrics = function(data_path = self$data_path, sample.names = self$metadata$sample, symbol = TRUE, sep = "!!", cellbender = FALSE, n.cores = self$n.cores, verbose = self$verbose) {
-    if (is.null(self$cms)) {
+    if (is.null(self$cms.filtered)) {
       if (cellbender) {
-        self$cms <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose)
+        self$cms.filtered <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose)
       } else {
-        self$cms <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+        self$cms.filtered <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
     }
     if (is.null(self$detailed_metrics)) {
-      self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
+      self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms.filtered, verbose = verbose, n.cores = n.cores)
     } else {
       message("Detailed metrics already present. To overwrite, set $detailed_metrics = NULL and rerun this function")
     }
@@ -536,14 +536,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Detect doublets
   #' @description Detect doublet cells.
   #' @param method Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
-  #' @param cms List containing the count matrices (default=self$cms).
+  #' @param cms List containing the count matrices (default=self$cms.filtered).
   #' @param env Environment to run python in (default="r-reticulate").
   #' @param conda.path Path to conda environment (default=system("whereis conda")).
   #' @param verbose Print messages or not (defeults = self$verbose).
   #' @return data frame
   #' @examples 
   #' crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
-  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms, env = "r-reticulate", conda.path = system("whereis conda"), verbose = self$verbose) {
+  detectDoublets = function(method = c("scrublet","doubletdetection"), cms = self$cms.filtered, env = "r-reticulate", conda.path = system("whereis conda"), verbose = self$verbose) {
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (verbose) message("Loading prerequisites...")
     requireNamespace("reticulate")
@@ -584,14 +584,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Conos preprocessing
   #' @description Perform conos preprocessing.
-  #' @param cms List containing the count matrices (default = self$cms).
+  #' @param cms List containing the count matrices (default = self$cms.filtered).
   #' @param preprocess Method to use for preprocessing (default = c("pagoda2","seurat")).
   #' @param verbose Print messages or not (default = self$verbose).
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
   #' @return Conos object
   #' @examples 
   #' crm$doPreprocessing(preprocess = "pagoda2")
-  doPreprocessing = function(cms = self$cms,
+  doPreprocessing = function(cms = self$cms.filtered,
                              preprocess = c("pagoda2","seurat"),
                              verbose = self$verbose,
                              n.cores = self$n.cores) {
@@ -633,7 +633,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Create Conos embedding
   #' @description Create conos UMAP embedding.
-  #' @param cms List containing the count matrices (default = self$cms).
+  #' @param cms List containing the preprocessed count matrices (default = self$cms.preprocessed).
   #' @param verbose Print messages or not (default = self$verbose).
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
   #' @return Conos object
@@ -678,12 +678,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return file
   #' @examples 
   #' crm$filterCMS(file = "cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = "scrublet")
-  filterCms = function(file = "cms_filtered.rds", raw = TRUE, depth_cutoff = NULL, mito_cutoff = NULL, doublets = NULL, compress = FALSE, species = c("human","mouse"), ...) {
+  filterCms = function(file = "cms_filtered.rds", raw = FALSE, depth_cutoff = NULL, mito_cutoff = NULL, doublets = NULL, compress = FALSE, species = c("human","mouse"), ...) {
     species %<>%
       tolower() %>% 
       match.arg(c("human","mouse"))
     
-    if (raw) cms <- self$cms else cms <- self$cms.preprocessed %>% lapply(\(x) x$counts) %>% setNames(self$cms.preprocessed %>% names())
+    if (raw) cms <- self$cms.raw else cms <- self$cms.filtered
     
     # Create list of cutoff values and doublets method and create empty list for filtered cells
     cutoff_list = list(depth=depth_cutoff, mito=mito_cutoff, doublets=doublets)
@@ -907,21 +907,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param verbose Show progress (default: stored vector)
   #' @param n.cores Number of cores (default: stored vector)
   #' @return ggplot2 object and bash script
-  prepareCellbender = function(shrinkage = 100, show_expected_cells = TRUE, show_total_droplets = TRUE, expected_cells = NULL, total_droplets = NULL, cms.h5 = self$cellbender$cms.h5, umi.counts = self$cellbender$umi.counts, data_path = self$data_path, samples = self$metadata$sample, verbose = self$verbose, n.cores = self$n.cores) {
+  prepareCellbender = function(shrinkage = 100, show_expected_cells = TRUE, show_total_droplets = TRUE, expected_cells = NULL, total_droplets = NULL, cms.raw = self$cms.raw, umi.counts = self$cellbender$umi.counts, data_path = self$data_path, samples = self$metadata$sample, verbose = self$verbose, n.cores = self$n.cores, unique_names = FALSE) {
     # Preparations
     if (verbose) message(paste0(Sys.time()," Started run using ", if(n.cores < length(samples)) n.cores else length(samples)," cores"))
     if (is.null(expected_cells)) expected_cells <- self$getExpectedCells(samples)
     if (is.null(total_droplets)) total_droplets <- self$getTotalDroplets(samples)
     
     # Read CMs from HDF5 files
-    if (!is.null(cms.h5)) {
-      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set $cellbender$cms.h5 <- NULL"))
+    if (!is.null(cms.raw)) {
+      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set $cms.raw <- NULL"))
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
-      cms.h5 <- getH5Paths(data_path, samples, "raw") %>% 
-        plapply(read10xH5, n.cores = n.cores) %>% 
-        setNames(samples)
-      self$cellbender$cms.h5 <- cms.h5
+      cms.raw <- read10xH5(data_path, samples, "raw", n.cores = n.cores, verbose = verbose, unique_names = unique_names)
+      self$cms.raw <- cms.raw
     }
     
     # Get UMI counts
@@ -929,7 +927,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set $cellbender$umi.counts <- NULL"))
     } else {
       if (verbose) message(paste0(Sys.time()," Calculating UMI counts per sample"))
-      umi.counts <- cms.h5[samples] %>% 
+      umi.counts <- cms.raw[samples] %>% 
         plapply(\(cm) {
           sparseMatrixStats::colSums2(cm) %>%
             sort(decreasing = TRUE) %>% 
@@ -1024,7 +1022,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (is.null(sample.names)) sample.names <- names(cms)
     if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
     
-    self$cms <- cms
+    self$cms.filtered <- cms
     warning("Overwriting metadata")
     self$metadata <- data.frame(sample = sample.names)
     if (!is.null(self$detailed_metrics)) warning("Consider updating detailed metrics by setting $detailed_metrics <- NULL and running $addDetailedMetrics()")
@@ -1141,7 +1139,7 @@ ggplot(amb, aes(Var1, Freq, fill = Var1)) +
   guides(fill = "none")
   },
 
-addSummaryFromCms = function(cms = self$cms, n.cores = self$n.cores, verbose = self$verbose) {
+addSummaryFromCms = function(cms = self$cms.filtered, n.cores = self$n.cores, verbose = self$verbose) {
   if (!is.null(self$summary_metrics)) warning("Overvriting existing summary metrics")
   
   if (verbose) message(paste0(Sys.time()," Calculating 30 summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
@@ -1169,5 +1167,81 @@ addSummaryFromCms = function(cms = self$cms, n.cores = self$n.cores, verbose = s
     arrange(sample)
     
   if (verbose) message(paste0(Sys.time()," Done!"))
+},
+
+runSoupX = function(cms.raw = self$cms.raw, data_path = self$data_path, samples = self$metadata$sample, n.cores = self$n.cores, verbose = self$verbose) {
+  requireNamespace("SoupX")
+  if (verbose) message(paste0(Sys.time()," Running using ", if (n.cores <- length(samples)) n.cores else length(samples)," cores"))
+  
+  # Create SoupX objects
+  if (verbose) message(paste0(Sys.time()," Loading data"))
+  soupx.list <- samples %>% 
+    plapply(\(sample) {
+      paste(data_path,sample,"outs", sep = "/") %>% 
+        SoupX::load10X()
+    }, n.cores = n.cores) %>% 
+    setNames(samples)
+  
+  # Perform automatic estimation of contamination
+  if (verbose) message(paste0(Sys.time()," Estimating contamination"))
+  tmp <- soupx.list %>% 
+    plapply(\(soupx.obj) {
+      SoupX::autoEstCont(soupx.obj)
+    }, n.cores = n.cores, progress = FALSE) %>% 
+    setNames(samples)
+  
+  # Save plot data
+  if (verbose) message(paste0(Sys.time()," Preparing plot data"))
+  rhoProbes=seq(0,1,.001)
+  self$soupx$plot.df <- samples %>%
+    plapply(\(id) {
+      dat <- tmp[[id]]
+      post_rho <- dat$fit$posterior
+      priorRho <- dat$fit$priorRho
+      priorRhoStdDev <- dat$fit$priorRhoStdDev
+      
+      v2 = (priorRhoStdDev/priorRho)**2
+      k = 1+v2**-2/2*(1+sqrt(1+4*v2))
+      theta = priorRho/(k-1)
+      prior_rho = dgamma(rhoProbes, k, scale=theta)
+      
+      df <- data.frame(rhoProbes = rhoProbes, 
+                       post_rho = post_rho, 
+                       prior_rho = prior_rho) %>% 
+        pivot_longer(cols = -c("rhoProbes"),
+                     names_to = "variable",
+                     values_to = "value") %>%
+        mutate(variable = as.character(variable)) %>% 
+        rbind(., c(rhoProbes = rhoProbes[which.max(.$value)], variable = "rho_max", value = 1)) %>% 
+        mutate(variable = factor(variable), 
+               rhoProbes = as.numeric(rhoProbes), 
+               value = as.numeric(value),
+               sample = id)
+    }, n.cores = n.cores) %>% 
+    setNames(samples) %>% 
+    bind_rows()
+  
+  # Adjust counts
+  if (verbose) message(paste0(Sys.time()," Adjusting counts"))
+  out <- tmp %>% 
+    plapply(SoupX::adjustCounts, n.cores = n.cores) %>% 
+    setNames(samples)
+  
+  self$soupx$cms.adj <- out
+  
+  if (verbose) message(paste0(Sys.time()," Done!"))
+},
+
+plotSoupX = function(plot.df = self$soupx$plot.df) {
+  if(is.null(plot.df)) stop("No plot data found. Please run $runSoupX first.")
+  
+  ggplot(plot.df, aes(rhoProbes, value, linetype = variable, col = variable)) + 
+    geom_line() +
+    geom_vline(aes(xintercept = priorRho), col = "red") +
+    scale_color_manual(name = "", values = c("post_rho" = "black", "prior_rho" = "black", "rho_max" = "red")) +
+    scale_linetype_manual(name = "", values = c("post_rho" = "solid", "prior_rho" = "longdash", "rho_max" = "solid")) +
+    theme_bw() +
+    labs(x = "Contamination fraction", y = "Probability density") +
+    facet_wrap(~sample)
 }
  ))
