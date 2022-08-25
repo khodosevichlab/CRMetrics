@@ -74,7 +74,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param data_path Path to cellranger count data (default = NULL).
   #' @param metadata Path to metadata file or name of metadata object (default = NULL).
   #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
-  #' @param detailed_metrics Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL).
   #' @param verbose Print messages or not (default = TRUE).
   #' @param theme Ggplot2 theme (default: theme_bw()).
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
@@ -82,7 +81,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return CRMetrics object
   #' @examples 
   #' crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
-  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
+  initialize = function(data_path, metadata = NULL, comp_group = NULL, verbose = TRUE, theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
       for (n in ls(data_path)) {
@@ -111,26 +110,33 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     checkCompMeta(comp_group, self$metadata)
     self$summary_metrics <- addSummaryMetrics(data_path, self$metadata, verbose)
-    
-    if (detailed_metrics) {
-      self$detailed_metrics <- self$addDetailedMetrics()
-    }
   },
   
   #' Add detailed metrics
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
   #' @param data_path Path to cellranger count data (default = self$data_path).
-  #' @param samples Vector containing samples (default = self$metadata$sample).
-  #' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").
+  #' @param sample.names Vector containing sample names (default = self$metadata$sample).
+  #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param sep Separator for cell names (default = "!!").
+  #' @param cellbender Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
   #' @param verbose Print messages or not (default = self$verbose).
   #' @return Count matrices
   #' @examples 
   #' crm$addDetailedMetrics()
-  addDetailedMetrics = function(data_path = self$data_path, samples = self$metadata$sample, transcript = "SYMBOL", sep = "!!", n.cores = self$n.cores, verbose = self$verbose) {
-    if (is.null(self$cms)) self$cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, sep = sep, n.cores = n.cores, verbose = verbose)
-    self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
+  addDetailedMetrics = function(data_path = self$data_path, sample.names = self$metadata$sample, symbol = TRUE, sep = "!!", cellbender = FALSE, n.cores = self$n.cores, verbose = self$verbose) {
+    if (is.null(self$cms)) {
+      if (cellbender) {
+        self$cms <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+      } else {
+        self$cms <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+      }
+    }
+    if (is.null(self$detailed_metrics)) {
+      self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
+    } else {
+      message("Detailed metrics already present. To overwrite, set <CRMetrics object>$detailed_metrics = NULL")
+    }
   },
   
   #' Add comparison group
@@ -322,7 +328,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' metrics.to.plot <- crm$detailed_metrics$metric %>% unique()
   #' crm$plotDetailedMetrics()
   plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path, hline = TRUE){
-    detailed_metrics %<>% checkDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
+    detailed_metrics %<>% self$addDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
     # If no metric is selected, return list of options

@@ -1,28 +1,7 @@
 #' @importFrom utils combn read.delim
 #' @importFrom readr cols read_csv
+#' @importFrom Matrix sparseMatrix
 NULL
-
-#' Add detailed metrics if they don't exist
-#' @description Internal function for adding detailed metrics.
-#' @param detailed_metrics Object containing a data frame with the detailed metrics.
-#' @param data_path Path to cellranger count data.
-#' @param samples Vector of samples.
-#' @param verbose Print messages (default = TRUE).
-#' @param n.cores Number of cores for the calculations (default = 1).
-#' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").
-#' @keywords internal
-#' @return data frame
-#' @examples 
-#' detailed.metrics <- checkDetailedMetrics(detailed_metrics = crm$detailed_metrics, data_path = crm$data_path, samples = crm$metadata$samples)
-checkDetailedMetrics <- function(detailed_metrics, data_path, samples, verbose = TRUE, n.cores = 1, transcript = "SYMBOL") {
-  if (is.null(detailed_metrics)) {
-    if (verbose) cat("Adding detailed metrics... ")
-    cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, n.cores = n.cores, verbose = verbose)
-    detailed_metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
-    if (verbose) cat(" done!\n")
-  }
-  return(detailed_metrics)
-}
 
 #' Set correct 'comp_group' parameter
 #' @description Set comp_group to 'category' if null.
