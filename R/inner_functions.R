@@ -32,31 +32,29 @@ checkCompMeta <- function(comp_group, metadata) {
   if (!is.null(comp_group) && (!comp_group %in% colnames(metadata))) stop("'comp_group' doesn't match any column name in metadata.")
 }
 
-#' Load count matrices
+#' Load 10x count matrices
 #' @description Load gene expression count data
 #' @param data_path Path to cellranger count data.
-#' @param samples Vector of samples.
-#' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").
+#' @param sample.names Vector of sample names (default = NULL)
+#' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
 #' @param sep Separator for cell names (default = "!!").
 #' @param n.cores Number of cores for the calculations (default = 1).
 #' @param verbose Print messages (default = TRUE).
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' cms <- loadCountMatrices(data_path = crm$data_path, samples = crm$metadata$samples, transcript = "SYMBOL", n.cores = crm$n.cores)
+#' cms <- read10x(data_path = crm$data_path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
 #' @export
-loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL","ENSEMBL"), sep = "!!", n.cores = 1, verbose = TRUE) {
+read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE) {
   requireNamespace("data.table")
-  transcript %<>% match.arg(c("SYMBOL","ENSEMBL"))
-  if (is.null(samples)) samples <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
+  if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
   
-  full_path <- samples %>% 
+  full_path <- sample.names %>% 
     sapply(\(sample) {
-      std_path <- paste(data_path,sample,"outs", sep = "/")
-      if (any(grepl("feature", list.dirs(std_path)))) paste(std_path,"filtered_feature_bc_matrix", sep = "/") else if (any(grepl("gene", list.dirs(std_path)))) paste(std_path,"filtered_gene_bc_matrices", sep = "/") else stop("No output directory found for ",sample,".")
+      dir(paste(data_path,sample,"outs", sep = "/"), pattern = glob2rx("filtered_*_bc_matri*"), full.names = T)
     })
   
-  if (verbose) cat(paste0("Loading ",length(full_path)," count matrices..."))
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices"))
   tmp <- full_path %>%
     plapply(\(sample) {
       tmp_dir <- dir(sample, full.names = TRUE)
@@ -74,7 +72,7 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
       feat <- tmp_dir %>%
         .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>%
         data.table::fread(header = FALSE)
-      if (transcript == "SYMBOL") rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
+      if (symbol) rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
 
       # Add barcodes
       barcodes <- tmp_dir %>%
@@ -83,18 +81,11 @@ loadCountMatrices <- function(data_path, samples = NULL, transcript = c("SYMBOL"
       colnames(mat) <- barcodes %>% pull(V1)
       return(mat)
     }, n.cores = n.cores, progress = FALSE) %>%
-    setNames(samples)
+    setNames(sample.names)
   
-  # Create unique cell names
-  tmp <- samples %>%
-    lapply(\(sample) {
-      cm <- tmp[[sample]]
-      colnames(cm) %<>% {paste0(sample,sep,.)}
-      return(cm)
-    }) %>%
-    setNames(samples)
+  tmp %<>% createUniqueCellNames(sample.names, sep)
   
-  if (verbose) cat(" done!\n")
+  if (verbose) paste0(Sys.time()," Done!")
   
   return(tmp)
 }
@@ -228,7 +219,7 @@ addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) 
   
   if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data_path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
-  if (verbose) cat(paste0("Adding ",length(samples)," samples..."))
+  if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
   metrics <- samples %>% 
     plapply(\(s) {
@@ -241,7 +232,7 @@ addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) 
                      values_to = "value")
     }, n.cores = n.cores, progress = FALSE) %>% 
     bind_rows()
-  if (verbose) cat(" done!\n")
+  if (verbose) message(paste0(Sys.time()," Done!"))
   return(metrics)
 }
 
@@ -320,4 +311,84 @@ labelsFilter <- function(filter.data) {
     mutate(value = value %>% factor(levels = c("Low","Medium","High")))
   
   return(tmp)
+}
+
+#' @param sample.names character vector, select specific samples for processing (default = NULL)
+#' @type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from <CRMetrics object>$saveCellbenderScript()
+#' @export
+read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered","cellbender"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE) {
+  requireNamespace("rhdf5")
+  
+  if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
+  
+  full_path <- getH5Paths(data_path, sample.names, type)
+  
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices"))
+  tmp <- full_path %>%
+    plapply(\(path) {
+      h5 <- h5read(path, "matrix")
+      
+      tmp <- sparseMatrix(
+        dims = h5$shape,
+        i = h5$indices %>% as.integer(),
+        p = h5$indptr %>% as.integer(),
+        x = h5$data %>% as.integer()
+      )
+      
+      # Extract gene names, different after V3
+      if ("features" %in% names(h5)) {
+        if (symbol) {
+          rows <- h5$features$name
+        } else {
+          rows <- h5$features$id
+        }
+      } else {
+        if (symbol) {
+          rows <- h5$genes$name
+        } else {
+          rows <- h5$genes$id
+        }
+      }
+      
+      tmp %<>% 
+        `dimnames<-`(list(rows, h5$barcodes))
+      
+      return(tmp)
+    }, n.cores = n.cores, progress = FALSE) %>% 
+    setNames(sample.names)
+  
+  tmp %<>% createUniqueCellNames(sample.names, sep)
+  
+  if (verbose) message(paste0(Sys.time()," Done!"))
+  
+  return(tmp)
+}
+
+createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
+  sample.names %>%
+    lapply(\(sample) {
+      cms[[sample]] %>% 
+        `colnames<-`(., paste0(sample,sep,.))
+    }) %>%
+    setNames(sample.names)
+}
+
+getH5Paths <- function(data_path, samples = NULL, type = NULL) {
+  # Check input
+  type %<>%
+    tolower() %>% 
+    match.arg(c("raw","filtered","cellbender"))
+  
+  # Get H5 paths
+  paths <- samples %>% 
+    sapply(\(sample) {
+      if (type == "cellbender") {
+        paste(data_path,sample,"outs/cellbender.h5", sep = "/")
+      } else {
+        dir(paste0(data_path,sample,"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
+      }
+    }) %>% 
+    setNames(samples)
+  
+  return(paths)
 }

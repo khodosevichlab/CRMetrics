@@ -127,7 +127,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   addDetailedMetrics = function(data_path = self$data_path, sample.names = self$metadata$sample, symbol = TRUE, sep = "!!", cellbender = FALSE, n.cores = self$n.cores, verbose = self$verbose) {
     if (is.null(self$cms)) {
       if (cellbender) {
-        self$cms <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+        self$cms <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender", sep = sep, n.cores = n.cores, verbose = verbose)
       } else {
         self$cms <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
@@ -328,7 +328,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' metrics.to.plot <- crm$detailed_metrics$metric %>% unique()
   #' crm$plotDetailedMetrics()
   plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path, hline = TRUE){
-    detailed_metrics %<>% self$addDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
+    detailed_metrics %<>% self$addDetailedMetrics(data_path = data_path, samples = metadata$sample, verbose = self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
     # If no metric is selected, return list of options
@@ -908,10 +908,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param verbose Show progress (default: stored vector)
   #' @param n.cores Number of cores (default: stored vector)
   #' @return ggplot2 object and bash script
-  prepareCellbender = function(shrinkage = 100, show_expected_cells = TRUE, show_total_droplets = TRUE, expected_cells = self$cellbender$expected.cells, total_droplets = self$cellbender$total.droplets, cms.h5 = self$cellbender$cms.h5, umi.counts = self$cellbender$umi.counts, verbose = self$verbose, n.cores = self$n.cores) {
+  prepareCellbender = function(shrinkage = 100, show_expected_cells = TRUE, show_total_droplets = TRUE, expected_cells = self$cellbender$expected.cells, total_droplets = self$cellbender$total.droplets, cms.h5 = self$cellbender$cms.h5, umi.counts = self$cellbender$umi.counts, data_path = self$data_path, samples = self$metadata$sample, verbose = self$verbose, n.cores = self$n.cores) {
     # Preparations
     if (verbose) message(paste0(Sys.time()," Started run using ",n.cores," cores"))
-    samples <- self$getSamples()
+    inputs <- getH5Paths(data_path, samples, "cellbender")
     expected_cells <- self$getExpectedCells(expected_cells)
     total_droplets <- self$getTotalDroplets(total_droplets, expected_cells)
     
@@ -921,7 +921,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
       cms.h5 <- inputs %>% 
-        plapply(Seurat::Read10X_h5, n.cores = n.cores) %>% 
+        plapply(read10xH5, n.cores = n.cores) %>% 
         setNames(samples)
       self$cellbender$cms.h5 <- cms.h5
     }
@@ -981,17 +981,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param use_gpu Use CUDA capable GPU (default = TRUE)
   #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
   #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param ... (optional) Additional parameters for CellBender
   #' @return bash script
-  saveCellbenderScript = function(file = "cellbender_script.sh", fpr = 0.01, epochs = 150, use_gpu = TRUE, expected_cells = self$cellbender$expected.cells, total_droplets = self$cellbender$total.droplets) {
+  saveCellbenderScript = function(file = "cellbender_script.sh", fpr = 0.01, epochs = 150, use_gpu = TRUE, expected_cells = self$cellbender$expected.cells, total_droplets = self$cellbender$total.droplets, data_path = self$data_path, samples = self$metadata$sample %>% unique(), ...) {
     # Preparations
-    samples <- self$getSamples()
-    
-    inputs <- list.dirs(self$data_path, recursive = FALSE) %>% 
-      sapply(\(path) dir(paste0(path,"/outs"), glob2rx("raw*.h5"), full.names = TRUE)) %>% 
-      setNames(samples)
-    
-    outputs <- list.dirs(self$data_path, recursive = FALSE) %>% 
-      sapply(\(path) paste0(path,"/outs/cellbender.h5")) %>% 
+    inputs <- getH5Paths(data_path, samples, "raw")
+    outputs <- sapply(samples, \(sample) paste0(data_path,sample,"/outs/cellbender.h5")) %>% 
       setNames(samples)
     
     expected_cells <- self$getExpectedCells(expected_cells)
@@ -1000,7 +995,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Create CellBender shell scripts
     script.list <- samples %>% 
       lapply(\(sample) {
-        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use_gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected_cells[sample]," --total-droplets-included ",total_droplets[sample]," --fpr ",fpr," --epochs ",epochs)
+        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use_gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected_cells[sample]," --total-droplets-included ",total_droplets[sample]," --fpr ",fpr," --epochs ",epochs,if (!missing(...)) ...)
       })
     
     out <- list("#! /bin/sh", script.list) %>% 
@@ -1036,8 +1031,4 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     return(total_droplets)
   },
-  
-  getSamples = function(summary_metrics = self$summary_metrics) {
-    self$summary_metrics$sample %>% unique()
-  }
  ))
