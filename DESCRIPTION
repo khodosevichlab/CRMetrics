@@ -21,6 +21,7 @@ Imports:
     readr,
     R6,
     sccore,
+    sparseMatrixStats,
     stats,
     tibble,
     tidyr
@@ -29,6 +30,7 @@ Suggests:
     data.table,
     pagoda2,
     Seurat
+Remotes: const-ae/sparseMatrixStats
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.0
 URL: https://github.com/khodosevichlab/CRMetrics

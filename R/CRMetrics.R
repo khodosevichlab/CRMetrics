@@ -1,7 +1,7 @@
 #' @import dplyr magrittr ggplot2 ggrepel
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply
-#' @importFrom Matrix colSums t
+#' @importFrom Matrix t
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom cowplot plot_grid
 #' @importFrom stats setNames relevel
@@ -9,6 +9,7 @@
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
+#' @importFrom sparseMatrixStats rowSums2 colSums2
 NULL
 
 # R6 class
@@ -73,7 +74,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param data_path Path to cellranger count data (default = NULL).
   #' @param metadata Path to metadata file or name of metadata object (default = NULL).
   #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
-  #' @param detailed_metrics Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL).
   #' @param verbose Print messages or not (default = TRUE).
   #' @param theme Ggplot2 theme (default: theme_bw()).
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
@@ -81,7 +81,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return CRMetrics object
   #' @examples 
   #' crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
-  initialize = function(data_path, metadata = NULL, comp_group = NULL, detailed_metrics = FALSE, verbose = TRUE, theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
+  initialize = function(data_path, metadata = NULL, comp_group = NULL, verbose = TRUE, theme = theme_bw(), n.cores = 1, raw.meta = FALSE) {
     
     if ('CRMetrics' %in% class(data_path)) { # copy constructor
       for (n in ls(data_path)) {
@@ -110,26 +110,33 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     checkCompMeta(comp_group, self$metadata)
     self$summary_metrics <- addSummaryMetrics(data_path, self$metadata, verbose)
-    
-    if (detailed_metrics) {
-      self$detailed_metrics <- self$addDetailedMetrics()
-    }
   },
   
   #' Add detailed metrics
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
   #' @param data_path Path to cellranger count data (default = self$data_path).
-  #' @param samples Vector containing samples (default = self$metadata$sample).
-  #' @param transcript The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").
+  #' @param sample.names Vector containing sample names (default = self$metadata$sample).
+  #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param sep Separator for cell names (default = "!!").
+  #' @param cellbender Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
   #' @param n.cores Number of cores for the calculations (default = self$n.cores).
   #' @param verbose Print messages or not (default = self$verbose).
   #' @return Count matrices
   #' @examples 
   #' crm$addDetailedMetrics()
-  addDetailedMetrics = function(data_path = self$data_path, samples = self$metadata$sample, transcript = "SYMBOL", sep = "!!", n.cores = self$n.cores, verbose = self$verbose) {
-    if (is.null(self$cms)) self$cms <- loadCountMatrices(data_path = data_path, samples = samples, transcript = transcript, sep = sep, n.cores = n.cores, verbose = verbose)
-    self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
+  addDetailedMetrics = function(data_path = self$data_path, sample.names = self$metadata$sample, symbol = TRUE, sep = "!!", cellbender = FALSE, n.cores = self$n.cores, verbose = self$verbose) {
+    if (is.null(self$cms)) {
+      if (cellbender) {
+        self$cms <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose)
+      } else {
+        self$cms <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+      }
+    }
+    if (is.null(self$detailed_metrics)) {
+      self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
+    } else {
+      message("Detailed metrics already present. To overwrite, set $detailed_metrics = NULL and rerun this function")
+    }
   },
   
   #' Add comparison group
@@ -172,7 +179,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$theme +
       labs(x = comp_group, y = "Freq") +
       theme(legend.position = "right")
-    
     
     if (plot_stats) {
      g %<>% addPlotStatsSamples(comp_group, metadata, h.adj, exact, second_comp_group)
@@ -313,26 +319,25 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param comp_group Comparison metric (default = self$comp_group).
   #' @param detailed_metrics Object containing the count matrices (default = self$detailed_metrics).
   #' @param metadata Metadata for samples (default = self$metadata).
-  #' @param metrics Metrics to plot (default = NULL).
-  #' @param plot_geom How to plot the data (default = NULL).
+  #' @param metrics Metrics to plot. NULL plots both plots (default = NULL).
+  #' @param plot_geom How to plot the data (default = "violin").
   #' @param data_path Path to cellranger count data (default = self$data_path).
   #' @param hline Whether to show median as horizontal line (default = TRUE)
   #' @return ggplot2 object
   #' @examples 
   #' metrics.to.plot <- crm$detailed_metrics$metric %>% unique()
   #' crm$plotDetailedMetrics()
-  plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = NULL, data_path = self$data_path, hline = TRUE){
-    detailed_metrics %<>% checkDetailedMetrics(data_path = data_path, samples = metadata$samples, verbose = self$verbose)
+  plotDetailedMetrics = function(comp_group = self$com_group, detailed_metrics = self$detailed_metrics, metadata = self$metadata, metrics = NULL, plot_geom = "violin", data_path = self$data_path, hline = TRUE){
+    if (is.null(detailed_metrics)) detailed_metrics <- self$addDetailedMetrics(data_path = data_path, sample.names = metadata$sample, verbose = self$verbose)
     comp_group %<>% checkCompGroup("sample", self$verbose)
     
-    # If no metric is selected, return list of options
     if (is.null(metrics)) {
-      stop("Define a metric to plot, can be one of these: 'UMI_count', 'gene_count'.")
-    } else {
-      # check if selected metrics are available
-      difs <- setdiff(metrics, self$detailed_metrics$metric %>% unique())
-      if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
+      metrics <- c("UMI_count","gene_count")
     }
+    
+    # check if selected metrics are available
+    difs <- setdiff(metrics, self$detailed_metrics$metric %>% unique())
+    if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     
     # if no plot type is defined, return a list of options
     if (is.null(plot_geom)) {
@@ -377,7 +382,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       return(plot_grid(plotlist = plotList, ncol = min(length(plotList), 3)))
       }
-    
   },
   
   #' Plot UMAP
@@ -588,10 +592,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @examples 
   #' crm$doPreprocessing(preprocess = "pagoda2")
   doPreprocessing = function(cms = self$cms,
-                              preprocess = c("pagoda2","seurat"),
-                              verbose = self$verbose,
-                              n.cores = self$n.cores) {
-    preprocess %<>% tolower() %>% match.arg(c("pagoda2","seurat"))
+                             preprocess = c("pagoda2","seurat"),
+                             verbose = self$verbose,
+                             n.cores = self$n.cores) {
+    preprocess %<>% 
+      tolower() %>% 
+      match.arg(c("pagoda2","seurat"))
     if (is.null(cms)) {
       message("No count matrices found, running addDetailedMetrics.")
       self$addDetailedMetrics()
@@ -655,6 +661,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     con$embedGraph(method = 'UMAP')
     
     self$con <- con
+    if (!is.null(self$depth)) warning("Overwriting previous depth vector")
     invisible(con)
   },
   
@@ -687,9 +694,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (!is.null(cutoff_list[[i]])) {
         if (names(cutoff_list)[i] == "depth") {
           if (!is.numeric(cutoff_list[[i]])) stop("'depth_cutoff' must be numeric.")
-          depth <- self$getConosDepth() %>% as.data.frame() %>% setNames("depth")
+          depth <- self$getConosDepth() %>% 
+            as.data.frame() %>% 
+            setNames("depth")
           if (length(cutoff_list[[i]] > 1)) {
-            split_vec <- strsplit(rownames(depth), "!!") %>% sapply('[[', 1)
+            split_vec <- strsplit(rownames(depth), "!!") %>% 
+              sapply('[[', 1)
             depth_list <- split(depth, split_vec)
             test <- mapply(function(x, y) x >= y, x = depth_list, y = cutoff_list[[i]])
             filters_list[[length(filters_list)+1]] <- data.frame(do.call(rbind, test))
@@ -698,7 +708,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           }
         } else if (names(cutoff_list)[i] == "mito") {
           if (!is.numeric(cutoff_list[[i]])) stop("'mito_cutoff' must be numeric.")
-          mf <- self$getMitoFraction() %>% as.data.frame() %>% setNames("mf")
+          mf <- self$getMitoFraction() %>% 
+            as.data.frame() %>% 
+            setNames("mf")
           filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
         } else if (names(cutoff_list)[i] == "doublets"){
           if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
@@ -766,7 +778,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito",""),
                   ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
     }
-    
     
     if (!is.null(doublet_method)) {
       tmp.doublets <- self$doublets[[doublet_method]]$result
@@ -875,12 +886,288 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
       tmp <- self$con$samples %>% 
         lapply(`[[`, "counts") %>% 
-        lapply(\(cm) Matrix::rowSums(cm[,grep(symb, colnames(cm))]) / Matrix::rowSums(cm)) %>% 
+        lapply(\(cm) sparseMatrixStats::rowSums2(cm[,grep(symb, colnames(cm))]) / sparseMatrixStats::rowSums2(cm)) %>% 
         Reduce(c, .)
       self$mito.frac <- tmp
     } else {
       tmp <- self$mito.frac
     }
     return(tmp)
-  }
+  },
+  
+  #' Prepare CellBender correction
+  #' @description Create plots and script call for CellBender
+  #' @param shrinkage Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
+  #' @param show_expected_cells Plot line depicting expected number of cells (default = TRUE)
+  #' @param show_total_droplets Plot line depicting total droplets included for CellBender run (default = TRUE)
+  #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param cms.h5 Raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
+  #' @param umi.counts UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
+  #' @param verbose Show progress (default: stored vector)
+  #' @param n.cores Number of cores (default: stored vector)
+  #' @return ggplot2 object and bash script
+  prepareCellbender = function(shrinkage = 100, show_expected_cells = TRUE, show_total_droplets = TRUE, expected_cells = NULL, total_droplets = NULL, cms.h5 = self$cellbender$cms.h5, umi.counts = self$cellbender$umi.counts, data_path = self$data_path, samples = self$metadata$sample, verbose = self$verbose, n.cores = self$n.cores) {
+    # Preparations
+    if (verbose) message(paste0(Sys.time()," Started run using ", if(n.cores < length(samples)) n.cores else length(samples)," cores"))
+    if (is.null(expected_cells)) expected_cells <- self$getExpectedCells(samples)
+    if (is.null(total_droplets)) total_droplets <- self$getTotalDroplets(samples)
+    
+    # Read CMs from HDF5 files
+    if (!is.null(cms.h5)) {
+      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set $cellbender$cms.h5 <- NULL"))
+    } else {
+      if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
+      cms.h5 <- getH5Paths(data_path, samples, "raw") %>% 
+        plapply(read10xH5, n.cores = n.cores) %>% 
+        setNames(samples)
+      self$cellbender$cms.h5 <- cms.h5
+    }
+    
+    # Get UMI counts
+    if (!is.null(umi.counts)) {
+      if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set $cellbender$umi.counts <- NULL"))
+    } else {
+      if (verbose) message(paste0(Sys.time()," Calculating UMI counts per sample"))
+      umi.counts <- cms.h5[samples] %>% 
+        plapply(\(cm) {
+          sparseMatrixStats::colSums2(cm) %>%
+            sort(decreasing = TRUE) %>% 
+            {data.frame(y = .)} %>% 
+            filter(y > 0) %>% 
+            mutate(., x = 1:nrow(.))
+        }, n.cores = n.cores) %>% 
+        setNames(samples)
+      self$cellbender$umi.counts <- umi.counts
+    }
+    
+    # Create plot
+    if (verbose) message(paste0(Sys.time()," Plotting"))
+    data.df <- umi.counts[samples] %>% 
+      names() %>% 
+      lapply(\(sample) {
+        umi.counts[[sample]] %>% 
+          mutate(sample = sample) %>% 
+          .[seq(1, nrow(.), shrinkage),]
+      }) %>% 
+      bind_rows()
+    
+    line.df <- expected_cells %>% 
+      {data.frame(sample = names(.), exp = .)} %>% 
+      mutate(total = total_droplets %>% unname())
+    
+    g <- ggplot(data.df, aes(x, y)) + 
+      geom_line(color = "red") + 
+      scale_x_log10(labels = comma) +
+      scale_y_log10(labels = comma) +
+      theme_bw() +
+      labs(x = "Droplet ID ranked by count", y = "UMI count per droplet", col = "")
+    
+    if (show_expected_cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
+    if (show_total_droplets) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total droplets included"))
+    
+    g <- g + facet_wrap(~ sample)
+    
+    if (verbose) message(paste0(Sys.time()," Done!"))
+    return(g)
+  },
+  
+  #' Save CellBender script
+  #' @param file File name for CellBender script (default: cellbender_script.sh)
+  #' @param fpr False positive rate for CellBender (default = 0.01)
+  #' @param epochs Number of epochs for CellBender (default = 150)
+  #' @param use_gpu Use CUDA capable GPU (default = TRUE)
+  #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param args (optional) Additional parameters for CellBender
+  #' @return bash script
+  saveCellbenderScript = function(file = "cellbender_script.sh", fpr = 0.01, epochs = 150, use_gpu = TRUE, expected_cells = NULL, total_droplets = NULL, data_path = self$data_path, samples = self$metadata$sample, args = NULL) {
+    # Preparations
+    inputs <- getH5Paths(data_path, samples, "raw")
+    outputs <- sapply(samples, \(sample) paste0(data_path,sample,"/outs/cellbender.h5")) %>% 
+      setNames(samples)
+    
+    if (is.null(expected_cells)) expected_cells <- self$getExpectedCells(samples)
+    if (is.null(total_droplets)) total_droplets <- self$getTotalDroplets(samples)
+    
+    # Create CellBender shell scripts
+    script.list <- samples %>% 
+      lapply(\(sample) {
+        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use_gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected_cells[sample]," --total-droplets-included ",total_droplets[sample]," --fpr ",fpr," --epochs ",epochs," ",if (!is.null(args)) paste(args, collapse = " "))
+      })
+    
+    out <- list("#! /bin/sh", script.list) %>% 
+      unlist()
+    
+    cat(out, file = file, sep = "\n")
+  },
+  
+  getExpectedCells = function(samples = self$metadata$sample) {
+    expected_cells <- self$summary_metrics %>% 
+      filter(metric == "Estimated Number of Cells") %$% 
+      setNames(value, sample) %>%
+      .[samples]
+    
+    return(expected_cells)
+  },
+  
+  getTotalDroplets = function(samples = self$metadata$sample) {
+    expected_cells <- self$getExpectedCells(samples = samples)
+    total_droplets <- expected_cells * 3
+    
+    return(total_droplets)
+  },
+  
+  addCms = function(cms = NULL, sample.names = NULL) {
+    if (is.null(cms)) stop("cms cannot be NULL")
+    if (!is.list(cms)) stop("cms must be a list of count matrices")
+    if (is.null(sample.names)) sample.names <- names(cms)
+    if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
+    
+    self$cms <- cms
+    warning("Overwriting metadata")
+    self$metadata <- data.frame(sample = sample.names)
+    if (!is.null(self$detailed_metrics)) warning("Consider updating detailed metrics by setting $detailed_metrics <- NULL and running $addDetailedMetrics()")
+    if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding()")
+    if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets()")
+  },
+  
+  plotCbTraining = function(data_path = self$data_path, samples = self$metadata$sample) {
+    paths <- getH5Paths(data_path, samples, "cellbender")
+    
+    train.df <- samples %>% 
+      lapply(\(id) {
+        h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
+          {data.frame(ELBO = ., 
+                      Epoch = 1:length(.), 
+                      sample = id)}
+      }) %>% 
+      setNames(samples) %>% 
+      bind_rows()
+    
+    test.df <- samples %>%
+      lapply(\(id) {
+        path <- paths[id]
+        data.frame(ELBO = h5read(path, "matrix/test_elbo"), 
+                   Epoch = h5read(path, "matrix/test_epoch"), 
+                   sample = id)
+      }) %>% 
+      setNames(samples) %>% 
+      bind_rows()
+    
+    g <- ggplot() + 
+      geom_point(data = train.df, aes(Epoch, ELBO, col = "Train")) +
+      geom_line(data = train.df, aes(Epoch, ELBO, col = "Train")) +
+      geom_point(data = test.df, aes(Epoch, ELBO, col = "Test")) +
+      geom_line(data = test.df, aes(Epoch, ELBO, col = "Test")) +
+      theme_bw() +
+      labs(col = "") +
+      facet_wrap(~sample, scales = "free_y")
+    
+    return(g)
+  },
+  
+  plotCbCellProbs = function(data_path = self$data_path, samples = self$metadata$sample) {
+    paths <- getH5Paths(data_path, samples, "cellbender")
+    
+    cell.prob <- samples %>%
+      lapply(\(id) {
+        h5read(paths[id], "matrix/latent_cell_probability") %>%
+          {data.frame(prob = ., 
+                      cell = 1:length(.), 
+                      sample = id)}
+      }) %>% 
+      setNames(samples) %>% 
+      bind_rows()
+    
+    ggplot(cell.prob, aes(cell, prob, col = prob)) + 
+      geom_point() +
+      scale_color_gradient(low="gray", high="red") +
+      theme_bw() +
+      labs(x = "Cells", y = "Cell probability", col = "") +
+      facet_wrap(~sample, scales = "free_x")
+  },
+  
+  plotCbAmbExp = function(cutoff = 0.005, data_path = self$data_path, samples = self$metadata$sample) {
+    paths <- getH5Paths(data_path, samples, "cellbender")
+    
+    amb <- samples %>% 
+      lapply(\(id) {
+        h5read(paths[id], "matrix/ambient_expression") %>% 
+          {data.frame(exp = ., 
+                      cell = 1:length(.), 
+                      gene.names = h5read(paths[id], "matrix/features/name") %>% as.character(), 
+                      sample = id)}
+      }) %>% 
+      setNames(samples) %>% 
+      bind_rows()
+    
+    g <- ggplot(amb, aes(cell, exp)) + 
+      geom_point() + 
+      geom_hline(yintercept = cutoff) +
+      geom_label_repel(data = amb[amb$exp > cutoff,], aes(cell, exp, label = gene.names)) +
+      theme_bw() +
+      labs(y = "Ambient expression", x = "Genes") + 
+      facet_wrap(~sample, scales = "free_y")
+    
+    return(g)
+  },
+  
+  plotCbAmbGenes = function(cutoff = 0.005, data_path = self$data_path, samples = self$metadata$sample) {
+    paths <- getH5Paths(data_path, samples, "cellbender")
+    
+    amb <- samples %>% 
+      lapply(\(id) {
+        h5read(paths[id], "matrix/ambient_expression") %>% 
+          {data.frame(exp = ., 
+                      cell = 1:length(.), 
+                      gene.names = h5read(paths[id], "matrix/features/name") %>% as.character(), 
+                      sample = id)} %>% 
+          filter(exp >= cutoff)
+      }) %>% 
+      setNames(samples) %>% 
+      bind_rows() %>%
+      {table(.$gene.names)} %>%
+      as.data.frame() %>% 
+      arrange(desc(Freq)) %>%
+      mutate(Freq = Freq / length(samples),
+             Var1 = factor(Var1, levels = Var1))
+
+ggplot(amb, aes(Var1, Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  labs(x = "", y = "Proportion") +
+  theme(axis.text.x = element_text(angle = 90)) + 
+  guides(fill = "none")
+  },
+
+addSummaryFromCms = function(cms = self$cms, n.cores = self$n.cores, verbose = self$verbose) {
+  if (!is.null(self$summary_metrics)) warning("Overvriting existing summary metrics")
+  
+  if (verbose) message(paste0(Sys.time()," Calculating 30 summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
+  
+  self$summary_metrics <- cms %>% 
+    names() %>% 
+    plapply(\(id) {
+      cm <- cms[[id]]
+    cm.bin <- cm
+    cm.bin[cm.bin > 0] <- 1
+    data.frame(cells = ncol(cm),
+               median.genes = sparseMatrixStats::colSums2(cm.bin) %>% median(),
+               median.umi = sparseMatrixStats::colSums2(cm) %>% median(),
+               total.genes = sum(sparseMatrixStats::rowSums2(cm.bin) > 0),
+               sample = id)
+  }, n.cores = n.cores, progress = FALSE) %>% 
+    bind_rows() %>% 
+    pivot_longer(cols = -c(sample),
+                 names_to = "metric",
+                 values_to = "value")
+    mutate(metric = factor(metric, labels = c("Estimated Number of Cells",
+                                              "Median Genes per Cell",
+                                              "Median UMI Counts per Cell",
+                                              "Total Genes Detected"))) %>% 
+    arrange(sample)
+    
+  if (verbose) message(paste0(Sys.time()," Done!"))
+}
  ))

@@ -11,6 +11,36 @@ We have selected [publicly available datasets](https://www.10xgenomics.com/resou
 `wget http://kkh.bric.ku.dk/rasmus/crmetrics_testdata.tar.gz`, and then unpack using 
 `tar -xvf crmetrics_testdata.tar.gz`
 
+# Using Python modules
+
+We have included several Python modules in this package. If you work on a server using RStudio Server, there may be some preparational steps needed for getting the doublet detection to work. If you are on your own machine, it should be enough to install `reticulate` and the relevant Python module(s).
+
+First, you should install `reticulate`:
+
+```{r, eval=FALSE}
+install.packages("reticulate")
+library(reticulate)
+```
+
+
+Then you are ready to create a conda environment. In this example, we're on a server and we load `miniconda` using modules. The `conda` parameter should point to wherever your conda binary is located (in terminal, try `whereis conda`)
+
+```{r}
+conda_create("r-reticulate", 
+             conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+             python_version = 3.8)
+```
+
+There is a known problem with openBLAS which may be different between R and Python. If this is the case, you will receive the error `floating point exception` and R will crash when you try to run a Python script using `reticulate`.
+In Python, the problem lies within numpy. numba requires numpy < 1.23, so force reinstall from scratch with no binaries in the `r-reticulate` conda environment from terminal
+`module load miniconda/4.12.0`
+`conda activate r-reticulate`
+`python -m pip install numpy==1.22.0 --force-reinstall --no-binary numpy`
+
+Finally, restart your R session.
+
+Please note, if at any point you receive an error that you can't change the current Python instance, please remove any Python-dependent object in your environment and restart your R session.
+
 # Initializing a CRMetrics class
 
 Load the library
@@ -34,6 +64,92 @@ We can review our metadata
 
 ```{r}
 crm$metadata
+```
+
+# Remove ambient RNA
+
+We have added functionality to remove ambient RNA from our samples. This approach should be used with caution since it induces changes to the UMI counts (NB: it does not overwrite the outputs from Cell Ranger).
+We have included preparative steps for [CellBender](https://github.com/broadinstitute/CellBender/) as well as incorporated [SoupX]() into CRMetrics. 
+
+## CellBender
+
+### Installation
+
+To install, follow [these instructions](https://cellbender.readthedocs.io/en/latest/installation/index.html#manual-installation). It is highly recommended to run `CellBender` using GPU acceleration.
+If you are more comfortable installing through `reticulate` in R, these lines should be run:
+
+```{r, eval=FALSE}
+library(reticulate)
+conda_create("cellbender", 
+             conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+             python_version = 3.7)
+conda_install("cellbender", 
+              conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+              forge = FALSE, 
+              channel = "anaconda", 
+              packages = "pytables")
+conda_install("cellbender", 
+              conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+              packages = c("pytorch","torchvision","torchaudio"),
+              channel = "pytorch")
+```
+
+Then, clone the `CellBender` repository as instructed in the manual. Here, we clone to `/apps/` through `cd /apps/; git clone https://github.com/broadinstitute/CellBender.git` and then `CellBender` can be installed:
+
+```{r, eval=FALSE}
+conda_install("cellbender", pip = TRUE, pip_options = "-e", packages = "/apps/CellBender/")
+```
+
+### Analysis
+
+For `CellBender`, we need to specify expected number of cells and total droplets included (please see the [manual](https://cellbender.readthedocs.io/en/latest/usage/index.html) for additional information). As hinted in the manual, the number of total droplets included could be expected number of cells multiplied by 3 (which we set as default). First, we plot these measures:
+
+```{r}
+crm$prepareCellbender(shrinkage = 100, 
+                      show_expected_cells = TRUE, 
+                      show_total_droplets = TRUE)
+```
+
+We could change the total droplets included for sampleX. Let us first look at the vector.
+
+```{r}
+droplets <- crm$getTotalDroplets()
+droplets
+```
+
+Then we change the total droplets for sampleX.
+
+```{r}
+droplets["sampleX"] <- 1e4
+```
+
+We plot this change.
+
+```{r}
+crm$prepareCellbender(shrinkage = 100, 
+                      show_expected_cells = TRUE, 
+                      show_total_droplets = TRUE, 
+                      total_droplets = droplets)
+```
+
+We could also multiply expected cells by 4 for all samples and save this in our CRMetrics object.
+
+```{r, eval=FALSE}
+crm$cellbender$total.droplets <- crm$cellbender$expected.cells * 4
+```
+
+Finally, we save a script for running `CellBender` on all our samples. Here, we use our modified total droplet vector.
+
+```{r}
+crm$saveCellbenderScript(file = "/apps/cellbender_script.sh", fpr = 0.01, epochs = 150, use_gpu = TRUE)
+```
+
+We can run this script in the terminal. Here, we load our miniconda module: `module load miniconda\4.12.0`, we activate the environment: `conda activate cellbender` and we run the bash script: `sh /apps/cellbender_script.sh`
+
+## SoupX
+
+```{r}
+
 ```
 
 # Plot summary statistics
@@ -195,35 +311,15 @@ crm$plotUmap(depth = TRUE,
 
 # Doublet detection
 
-For doublet detection, we included the possibility to do so using the Python modules `scrublet` and `DoubletDetection`. If you work on a server using RStudio Server, there may be some preparational steps needed for getting the doublet detection to work. If you are on your own machine, it should be enough to install `reticulate` and the relevant Python module(s).
-
-## Preparations
-
-Install and load `reticulate`, then create a conda environment. In this example, we're on a server and we load `miniconda` using modules. The `conda` parameter should point to wherever your conda binary is located (in terminal, try `whereis conda`)
+For doublet detection, we included the possibility to do so using the Python modules `scrublet` and `DoubletDetection`. First, we should install these packages:
 
 ```{r eval = FALSE}
-install.packages("reticulate")
 library(reticulate)
-conda_create("r-reticulate", 
-             conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
-             python_version = 3.8)
 conda_install("r-reticulate", 
               conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
               pip = TRUE, 
               packages = c("scrublet","doubletdetection"))
 ```
-
-There is a known problem with openBLAS which may be different between R and Python. If this is the case, you will receive the error `floating point exception` and R will crash when you try to run a Python script using `reticulate`.
-In Python, the problem lies within numpy. numba requires numpy < 1.23, so force reinstall from scratch with no binaries in the `r-reticulate` conda environment from terminal
-`module load miniconda/4.12.0`
-`conda activate r-reticulate`
-`python -m pip install numpy==1.22.0 --force-reinstall --no-binary numpy`
-
-Finally, restart your R session.
-
-Please note, if at any point you receive an error that you can't change the current Python instance, please remove any Python-dependent object in your environment and restart your R session.
-
-## Analysis
 
 `scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we use `scrublet`.
 
