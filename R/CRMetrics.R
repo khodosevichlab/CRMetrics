@@ -662,6 +662,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     con$embedGraph(method = 'UMAP')
     
     self$con <- con
+    if (!is.null(self$depth)) warning("Overwriting previous depth vector")
     invisible(con)
   },
   
@@ -1031,4 +1032,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     return(total_droplets)
   },
+  
+  addCms = function(cms = NULL, sample.names = NULL) {
+    if (is.null(cms)) stop("cms cannot be NULL")
+    if (!is.list) stop("cms must be a list of count matrices")
+    if (is.null(sample.names)) sample.names <- names(cms)
+    if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
+    
+    self$cms <- cms
+    warning("Overwriting metadata")
+    self$metadata <- data.frame(sample = sample.names)
+    if (!is.null(self$detailed_metrics)) warning("Consider updating detailed metrics: <CRMetrics object>$addDetailedMetrics()")
+    if (!is.null(self$con)) warning("Consider updating embedding: <CRMetrics object>$doPreprocessing() and $createEmbedding()")
+    if (!is.null(self$doublets)) warning("Consider updating doublet scores: <CRMetrics object$detectDoublets()")
+  }
  ))
