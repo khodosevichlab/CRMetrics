@@ -1,6 +1,7 @@
 #' @importFrom utils combn read.delim
 #' @importFrom readr cols read_csv
 #' @importFrom Matrix sparseMatrix
+#' @importFrom sparseMatrixStats colSums2
 NULL
 
 #' Set correct 'comp_group' parameter
@@ -51,10 +52,11 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n
   
   full_path <- sample.names %>% 
     sapply(\(sample) {
-      dir(paste(data_path,sample,"outs", sep = "/"), pattern = glob2rx("filtered_*_bc_matri*"), full.names = T)
+      dir(paste(data_path,sample,"outs", sep = "/"), pattern = glob2rx("filtered_*_bc_matri*"), full.names = TRUE) %>% 
+        .[!grepl(".h5", .)]
     })
   
-  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices"))
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices using ", if (n.cores > length(full_path)) length(full_path) else n.cores," cores"))
   tmp <- full_path %>%
     plapply(\(sample) {
       tmp_dir <- dir(sample, full.names = TRUE)
@@ -85,7 +87,7 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n
   
   tmp %<>% createUniqueCellNames(sample.names, sep)
   
-  if (verbose) paste0(Sys.time()," Done!")
+  if (verbose) message(paste0(Sys.time()," Done!"))
   
   return(tmp)
 }
@@ -100,12 +102,15 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n
 #' @examples 
 #' detailed.metrics <- addDetailedMetricsInner(cms = crm$cms, n.cores = crm$n.cores)
 addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
-  if (verbose) cat("Counting...")
+  if (verbose) message(Sys.time()," Counting using ", if (n.cores < length(cms)) n.cores else length(cms)," cores")
+  samples <- cms %>% 
+    names()
+  
   metricsDetailed <- cms %>% 
     plapply(\(cm) {
       # count UMIs
       totalUMI <- cm %>% 
-        colSums() %>% 
+        sparseMatrixStats::colSums2() %>% 
         as.data.frame() %>% 
         setNames("value") %>% 
         mutate(., metric = "UMI_count", barcode = rownames(.))
@@ -114,7 +119,7 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
       cm.bin[cm.bin > 0] = 1
       
       totalGenes <- cm.bin %>% 
-        colSums() %>% 
+        sparseMatrixStats::colSums2() %>% 
         as.data.frame() %>% 
         setNames("value") %>% 
         mutate(., metric = "gene_count", barcode = rownames(.))
@@ -122,21 +127,22 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
       metricsDetailedSample <- rbind(totalUMI, totalGenes)
       return(metricsDetailedSample)
     }, n.cores = n.cores, progress = FALSE) %>% 
-    setNames(cms %>% names())
+    setNames(samples)
   
-  metricsDetailed %<>%
-    names() %>% 
+  if (verbose) message(paste0(Sys.time()," Done! Creating table"))
+  
+  tmp <- samples %>% 
     plapply(\(sample.name) {
-      tmp <- metricsDetailed[[sample.name]] %>% 
+      metricsDetailed[[sample.name]] %>% 
         mutate(sample = sample.name)
-      return(tmp)
     }) %>% 
+    setNames(samples) %>% 
     bind_rows() %>% 
     select(c("sample", "barcode", "metric", "value"))
   
-  if (verbose) cat(" done!\n")
+  if (verbose) message(paste0(Sys.time()," Done!"))
   
-  return(metricsDetailed)
+  return(tmp)
 }
 
 #' Add statistics to plot
@@ -313,18 +319,19 @@ labelsFilter <- function(filter.data) {
   return(tmp)
 }
 
+#' Read 10x HDF5 files
 #' @param sample.names character vector, select specific samples for processing (default = NULL)
-#' @type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from <CRMetrics object>$saveCellbenderScript()
+#' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
 #' @export
-read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered","cellbender"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE) {
+read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered","cellbender","cellbender_filtered"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE) {
   requireNamespace("rhdf5")
   
   if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
   
   full_path <- getH5Paths(data_path, sample.names, type)
   
-  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices"))
-  tmp <- full_path %>%
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices using ", if (n.cores <- length(full_path)) n.cores else length(full_path)," cores"))
+  out <- full_path %>%
     plapply(\(path) {
       h5 <- h5read(path, "matrix")
       
@@ -332,7 +339,8 @@ read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered",
         dims = h5$shape,
         i = h5$indices %>% as.integer(),
         p = h5$indptr %>% as.integer(),
-        x = h5$data %>% as.integer()
+        x = h5$data %>% as.integer(), 
+        index1 = FALSE
       )
       
       # Extract gene names, different after V3
@@ -357,18 +365,18 @@ read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered",
     }, n.cores = n.cores, progress = FALSE) %>% 
     setNames(sample.names)
   
-  tmp %<>% createUniqueCellNames(sample.names, sep)
+  out %<>% createUniqueCellNames(sample.names, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
-  return(tmp)
+  return(out)
 }
 
 createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
   sample.names %>%
     lapply(\(sample) {
       cms[[sample]] %>% 
-        `colnames<-`(., paste0(sample,sep,.))
+        `colnames<-`(., paste0(sample,sep,colnames(.)))
     }) %>%
     setNames(sample.names)
 }
@@ -377,13 +385,13 @@ getH5Paths <- function(data_path, samples = NULL, type = NULL) {
   # Check input
   type %<>%
     tolower() %>% 
-    match.arg(c("raw","filtered","cellbender"))
+    match.arg(c("raw","filtered","cellbender","cellbender_filtered"))
   
   # Get H5 paths
   paths <- samples %>% 
     sapply(\(sample) {
-      if (type == "cellbender") {
-        paste(data_path,sample,"outs/cellbender.h5", sep = "/")
+      if (grepl("cellbender", type)) {
+        paste0(data_path,"/",sample,"/outs/",type,".h5")
       } else {
         dir(paste0(data_path,sample,"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
       }
