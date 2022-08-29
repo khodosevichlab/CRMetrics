@@ -1018,15 +1018,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(total_droplets)
   },
   
-  addCms = function(cms = NULL, sample.names = NULL) {
-    if (is.null(cms)) stop("cms cannot be NULL")
+  addCms = function(cms, sample.names = NULL, unique.names = TRUE, sep = "!!", n.cores = self$n.cores) {
     if (!is.list(cms)) stop("cms must be a list of count matrices")
     if (is.null(sample.names)) sample.names <- names(cms)
     if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
     
-    self$cms <- cms
-    warning("Overwriting metadata")
-    self$metadata <- data.frame(sample = sample.names)
+    if (unique_names) cms %<>% createUniqueCellNames(sample.names, sep, n.cores)
+    
+    self$cms.filtered <- cms
+    
+    if (length(cms != nrow(self$metadata))) {
+      warning("Overwriting metadata")
+      self$metadata <- data.frame(sample = sample.names)
+    }
+    
     if (!is.null(self$detailed_metrics)) warning("Consider updating detailed metrics by setting $detailed_metrics <- NULL and running $addDetailedMetrics()")
     if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding()")
     if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets()")

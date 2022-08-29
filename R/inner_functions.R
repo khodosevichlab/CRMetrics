@@ -46,7 +46,7 @@ checkCompMeta <- function(comp_group, metadata) {
 #' @examples 
 #' cms <- read10x(data_path = crm$data_path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
 #' @export
-read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE) {
+read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", unique_names = TRUE, n.cores = 1, verbose = TRUE) {
   requireNamespace("data.table")
   if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
   
@@ -85,7 +85,7 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", n
     }, n.cores = n.cores, progress = FALSE) %>%
     setNames(sample.names)
   
-  tmp %<>% createUniqueCellNames(sample.names, sep)
+  if (unique_names) tmp %<>% createUniqueCellNames(sample.names, sep, n.cores)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
