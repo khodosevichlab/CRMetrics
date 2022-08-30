@@ -167,42 +167,42 @@ Initialize a CRMetrics object}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{CRMetrics$new()}}
-\item \href{#method-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
-\item \href{#method-addComparison}{\code{CRMetrics$addComparison()}}
-\item \href{#method-plotSamples}{\code{CRMetrics$plotSamples()}}
-\item \href{#method-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
-\item \href{#method-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
-\item \href{#method-plotUmap}{\code{CRMetrics$plotUmap()}}
-\item \href{#method-plotDepth}{\code{CRMetrics$plotDepth()}}
-\item \href{#method-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
-\item \href{#method-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
-\item \href{#method-detectDoublets}{\code{CRMetrics$detectDoublets()}}
-\item \href{#method-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
-\item \href{#method-createEmbedding}{\code{CRMetrics$createEmbedding()}}
-\item \href{#method-filterCms}{\code{CRMetrics$filterCms()}}
-\item \href{#method-selectMetrics}{\code{CRMetrics$selectMetrics()}}
-\item \href{#method-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
-\item \href{#method-getConosDepth}{\code{CRMetrics$getConosDepth()}}
-\item \href{#method-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
-\item \href{#method-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
-\item \href{#method-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
-\item \href{#method-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
-\item \href{#method-getTotalDroplets}{\code{CRMetrics$getTotalDroplets()}}
-\item \href{#method-addCms}{\code{CRMetrics$addCms()}}
-\item \href{#method-plotCbTraining}{\code{CRMetrics$plotCbTraining()}}
-\item \href{#method-plotCbCellProbs}{\code{CRMetrics$plotCbCellProbs()}}
-\item \href{#method-plotCbAmbExp}{\code{CRMetrics$plotCbAmbExp()}}
-\item \href{#method-plotCbAmbGenes}{\code{CRMetrics$plotCbAmbGenes()}}
-\item \href{#method-addSummaryFromCms}{\code{CRMetrics$addSummaryFromCms()}}
-\item \href{#method-runSoupX}{\code{CRMetrics$runSoupX()}}
-\item \href{#method-plotSoupX}{\code{CRMetrics$plotSoupX()}}
-\item \href{#method-clone}{\code{CRMetrics$clone()}}
+\item \href{#method-CRMetrics-new}{\code{CRMetrics$new()}}
+\item \href{#method-CRMetrics-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
+\item \href{#method-CRMetrics-addComparison}{\code{CRMetrics$addComparison()}}
+\item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
+\item \href{#method-CRMetrics-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
+\item \href{#method-CRMetrics-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
+\item \href{#method-CRMetrics-plotUmap}{\code{CRMetrics$plotUmap()}}
+\item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
+\item \href{#method-CRMetrics-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
+\item \href{#method-CRMetrics-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
+\item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
+\item \href{#method-CRMetrics-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
+\item \href{#method-CRMetrics-createEmbedding}{\code{CRMetrics$createEmbedding()}}
+\item \href{#method-CRMetrics-filterCms}{\code{CRMetrics$filterCms()}}
+\item \href{#method-CRMetrics-selectMetrics}{\code{CRMetrics$selectMetrics()}}
+\item \href{#method-CRMetrics-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
+\item \href{#method-CRMetrics-getConosDepth}{\code{CRMetrics$getConosDepth()}}
+\item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
+\item \href{#method-CRMetrics-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
+\item \href{#method-CRMetrics-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
+\item \href{#method-CRMetrics-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
+\item \href{#method-CRMetrics-getTotalDroplets}{\code{CRMetrics$getTotalDroplets()}}
+\item \href{#method-CRMetrics-addCms}{\code{CRMetrics$addCms()}}
+\item \href{#method-CRMetrics-plotCbTraining}{\code{CRMetrics$plotCbTraining()}}
+\item \href{#method-CRMetrics-plotCbCellProbs}{\code{CRMetrics$plotCbCellProbs()}}
+\item \href{#method-CRMetrics-plotCbAmbExp}{\code{CRMetrics$plotCbAmbExp()}}
+\item \href{#method-CRMetrics-plotCbAmbGenes}{\code{CRMetrics$plotCbAmbGenes()}}
+\item \href{#method-CRMetrics-addSummaryFromCms}{\code{CRMetrics$addSummaryFromCms()}}
+\item \href{#method-CRMetrics-runSoupX}{\code{CRMetrics$runSoupX()}}
+\item \href{#method-CRMetrics-plotSoupX}{\code{CRMetrics$plotSoupX()}}
+\item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-CRMetrics-new"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-new}{}}}
 \subsection{Method \code{new()}}{
 To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
 \subsection{Usage}{
@@ -250,8 +250,8 @@ Add detailed metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-addDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-CRMetrics-addDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-addDetailedMetrics}{}}}
 \subsection{Method \code{addDetailedMetrics()}}{
 Function to read in detailed metrics. This is not done upon initialization for speed.
 \subsection{Usage}{
@@ -299,8 +299,8 @@ Add comparison group
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addComparison"></a>}}
-\if{latex}{\out{\hypertarget{method-addComparison}{}}}
+\if{html}{\out{<a id="method-CRMetrics-addComparison"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-addComparison}{}}}
 \subsection{Method \code{addComparison()}}{
 Add comparison group for statistical testing.
 \subsection{Usage}{
@@ -330,8 +330,8 @@ Plot samples
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotSamples"></a>}}
-\if{latex}{\out{\hypertarget{method-plotSamples}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotSamples"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotSamples}{}}}
 \subsection{Method \code{plotSamples()}}{
 Plot the number of samples.
 \subsection{Usage}{
@@ -373,8 +373,8 @@ Plot summary metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotSummaryMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-plotSummaryMetrics}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotSummaryMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotSummaryMetrics}{}}}
 \subsection{Method \code{plotSummaryMetrics()}}{
 Plot all summary stats or a selected list.
 \subsection{Usage}{
@@ -441,8 +441,8 @@ Plot detailed metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-plotDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotDetailedMetrics}{}}}
 \subsection{Method \code{plotDetailedMetrics()}}{
 Plot detailed metrics from the detailed_metrics object
 \subsection{Usage}{
@@ -491,8 +491,8 @@ Plot UMAP
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotUmap"></a>}}
-\if{latex}{\out{\hypertarget{method-plotUmap}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotUmap"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotUmap}{}}}
 \subsection{Method \code{plotUmap()}}{
 Plot cells in a UMAP using Conos and color by depth and doublets.
 \subsection{Usage}{
@@ -547,8 +547,8 @@ Plot depth
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotDepth"></a>}}
-\if{latex}{\out{\hypertarget{method-plotDepth}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotDepth}{}}}
 \subsection{Method \code{plotDepth()}}{
 Plot the sequencing depth in histogram.
 \subsection{Usage}{
@@ -578,8 +578,8 @@ Save summary metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-saveSummaryMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-saveSummaryMetrics}{}}}
+\if{html}{\out{<a id="method-CRMetrics-saveSummaryMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-saveSummaryMetrics}{}}}
 \subsection{Method \code{saveSummaryMetrics()}}{
 Save summary metrics to text file.
 \subsection{Usage}{
@@ -615,8 +615,8 @@ Save detailed metrics
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-saveDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-saveDetailedMetrics}{}}}
+\if{html}{\out{<a id="method-CRMetrics-saveDetailedMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-saveDetailedMetrics}{}}}
 \subsection{Method \code{saveDetailedMetrics()}}{
 Save detailed metrics to text file.
 \subsection{Usage}{
@@ -652,8 +652,8 @@ Detect doublets
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-detectDoublets"></a>}}
-\if{latex}{\out{\hypertarget{method-detectDoublets}{}}}
+\if{html}{\out{<a id="method-CRMetrics-detectDoublets"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-detectDoublets}{}}}
 \subsection{Method \code{detectDoublets()}}{
 Detect doublet cells.
 \subsection{Usage}{
@@ -695,8 +695,8 @@ Conos preprocessing
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-doPreprocessing"></a>}}
-\if{latex}{\out{\hypertarget{method-doPreprocessing}{}}}
+\if{html}{\out{<a id="method-CRMetrics-doPreprocessing"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-doPreprocessing}{}}}
 \subsection{Method \code{doPreprocessing()}}{
 Perform conos preprocessing.
 \subsection{Usage}{
@@ -735,8 +735,8 @@ Create Conos embedding
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-createEmbedding"></a>}}
-\if{latex}{\out{\hypertarget{method-createEmbedding}{}}}
+\if{html}{\out{<a id="method-CRMetrics-createEmbedding"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-createEmbedding}{}}}
 \subsection{Method \code{createEmbedding()}}{
 Create conos UMAP embedding.
 \subsection{Usage}{
@@ -772,8 +772,8 @@ Filter count matrices
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-filterCms"></a>}}
-\if{latex}{\out{\hypertarget{method-filterCms}{}}}
+\if{html}{\out{<a id="method-CRMetrics-filterCms"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-filterCms}{}}}
 \subsection{Method \code{filterCms()}}{
 Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
 \subsection{Usage}{
@@ -824,8 +824,8 @@ Select summary metrics.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-selectMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-selectMetrics}{}}}
+\if{html}{\out{<a id="method-CRMetrics-selectMetrics"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-selectMetrics}{}}}
 \subsection{Method \code{selectMetrics()}}{
 Select metrics from summary_metrics
 \subsection{Usage}{
@@ -854,8 +854,8 @@ Plot filtered cells
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotFilteredCells"></a>}}
-\if{latex}{\out{\hypertarget{method-plotFilteredCells}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotFilteredCells"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotFilteredCells}{}}}
 \subsection{Method \code{plotFilteredCells()}}{
 Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
 \subsection{Usage}{
@@ -904,8 +904,8 @@ Get Conos sequencing depth
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-getConosDepth"></a>}}
-\if{latex}{\out{\hypertarget{method-getConosDepth}{}}}
+\if{html}{\out{<a id="method-CRMetrics-getConosDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getConosDepth}{}}}
 \subsection{Method \code{getConosDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
@@ -926,8 +926,8 @@ Get fraction of mitochondrial genes
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-getMitoFraction"></a>}}
-\if{latex}{\out{\hypertarget{method-getMitoFraction}{}}}
+\if{html}{\out{<a id="method-CRMetrics-getMitoFraction"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getMitoFraction}{}}}
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
@@ -955,8 +955,8 @@ Prepare CellBender correction
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-prepareCellbender"></a>}}
-\if{latex}{\out{\hypertarget{method-prepareCellbender}{}}}
+\if{html}{\out{<a id="method-CRMetrics-prepareCellbender"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-prepareCellbender}{}}}
 \subsection{Method \code{prepareCellbender()}}{
 Create plots and script call for CellBender
 \subsection{Usage}{
@@ -1005,8 +1005,8 @@ Save CellBender script
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-saveCellbenderScript"></a>}}
-\if{latex}{\out{\hypertarget{method-saveCellbenderScript}{}}}
+\if{html}{\out{<a id="method-CRMetrics-saveCellbenderScript"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-saveCellbenderScript}{}}}
 \subsection{Method \code{saveCellbenderScript()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveCellbenderScript(
@@ -1046,8 +1046,8 @@ bash script
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-getExpectedCells"></a>}}
-\if{latex}{\out{\hypertarget{method-getExpectedCells}{}}}
+\if{html}{\out{<a id="method-CRMetrics-getExpectedCells"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getExpectedCells}{}}}
 \subsection{Method \code{getExpectedCells()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getExpectedCells(samples = self$metadata$sample)}\if{html}{\out{</div>}}
@@ -1055,8 +1055,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-getTotalDroplets"></a>}}
-\if{latex}{\out{\hypertarget{method-getTotalDroplets}{}}}
+\if{html}{\out{<a id="method-CRMetrics-getTotalDroplets"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getTotalDroplets}{}}}
 \subsection{Method \code{getTotalDroplets()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getTotalDroplets(samples = self$metadata$sample)}\if{html}{\out{</div>}}
@@ -1064,8 +1064,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addCms"></a>}}
-\if{latex}{\out{\hypertarget{method-addCms}{}}}
+\if{html}{\out{<a id="method-CRMetrics-addCms"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-addCms}{}}}
 \subsection{Method \code{addCms()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
@@ -1079,8 +1079,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotCbTraining"></a>}}
-\if{latex}{\out{\hypertarget{method-plotCbTraining}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotCbTraining"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotCbTraining}{}}}
 \subsection{Method \code{plotCbTraining()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbTraining(
@@ -1091,8 +1091,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotCbCellProbs"></a>}}
-\if{latex}{\out{\hypertarget{method-plotCbCellProbs}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotCbCellProbs"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotCbCellProbs}{}}}
 \subsection{Method \code{plotCbCellProbs()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCellProbs(
@@ -1103,8 +1103,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotCbAmbExp"></a>}}
-\if{latex}{\out{\hypertarget{method-plotCbAmbExp}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotCbAmbExp"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotCbAmbExp}{}}}
 \subsection{Method \code{plotCbAmbExp()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbExp(
@@ -1116,8 +1116,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotCbAmbGenes"></a>}}
-\if{latex}{\out{\hypertarget{method-plotCbAmbGenes}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotCbAmbGenes"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotCbAmbGenes}{}}}
 \subsection{Method \code{plotCbAmbGenes()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbGenes(
@@ -1129,8 +1129,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addSummaryFromCms"></a>}}
-\if{latex}{\out{\hypertarget{method-addSummaryFromCms}{}}}
+\if{html}{\out{<a id="method-CRMetrics-addSummaryFromCms"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-addSummaryFromCms}{}}}
 \subsection{Method \code{addSummaryFromCms()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addSummaryFromCms(
@@ -1142,8 +1142,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-runSoupX"></a>}}
-\if{latex}{\out{\hypertarget{method-runSoupX}{}}}
+\if{html}{\out{<a id="method-CRMetrics-runSoupX"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-runSoupX}{}}}
 \subsection{Method \code{runSoupX()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$runSoupX(
@@ -1157,8 +1157,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotSoupX"></a>}}
-\if{latex}{\out{\hypertarget{method-plotSoupX}{}}}
+\if{html}{\out{<a id="method-CRMetrics-plotSoupX"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotSoupX}{}}}
 \subsection{Method \code{plotSoupX()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSoupX(plot.df = self$soupx$plot.df)}\if{html}{\out{</div>}}
@@ -1166,8 +1166,8 @@ bash script
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-CRMetrics-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

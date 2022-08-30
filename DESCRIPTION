@@ -33,7 +33,7 @@ Suggests:
     Seurat
 Remotes: const-ae/sparseMatrixStats
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.1
 URL: https://github.com/khodosevichlab/CRMetrics
 BugReports: https://github.com/khodosevichlab/CRMetrics/issues
 Author: Rasmus Rydbirk [cre, aut], Henrietta [aut], Fabienne [aut], Xian [aut]
