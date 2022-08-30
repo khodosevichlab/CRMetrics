@@ -614,7 +614,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         pagoda2::basicP2proc,
         get.largevis = FALSE,
         get.tsne = FALSE,
-        make.geneknn = FALSE, 
+        make.geneknn = FALSE,
+        min.transcripts.per.cell = 0,
         n.cores = n.cores
       )
     } else if (preprocess == "seurat") {
