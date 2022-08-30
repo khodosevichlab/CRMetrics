@@ -20,6 +20,7 @@ Imports:
     Matrix,
     readr,
     R6,
+    scales,
     sccore,
     sparseMatrixStats,
     stats,

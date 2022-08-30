@@ -140,6 +140,7 @@ Get fraction of mitochondrial genes
 ## ------------------------------------------------
 
 crm$getMitoFraction(species = c("human", "mouse"))
+Prepare CellBender correction
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -184,6 +185,18 @@ Initialize a CRMetrics object}
 \item \href{#method-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
 \item \href{#method-getConosDepth}{\code{CRMetrics$getConosDepth()}}
 \item \href{#method-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
+\item \href{#method-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
+\item \href{#method-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
+\item \href{#method-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
+\item \href{#method-getTotalDroplets}{\code{CRMetrics$getTotalDroplets()}}
+\item \href{#method-addCms}{\code{CRMetrics$addCms()}}
+\item \href{#method-plotCbTraining}{\code{CRMetrics$plotCbTraining()}}
+\item \href{#method-plotCbCellProbs}{\code{CRMetrics$plotCbCellProbs()}}
+\item \href{#method-plotCbAmbExp}{\code{CRMetrics$plotCbAmbExp()}}
+\item \href{#method-plotCbAmbGenes}{\code{CRMetrics$plotCbAmbGenes()}}
+\item \href{#method-addSummaryFromCms}{\code{CRMetrics$addSummaryFromCms()}}
+\item \href{#method-runSoupX}{\code{CRMetrics$runSoupX()}}
+\item \href{#method-plotSoupX}{\code{CRMetrics$plotSoupX()}}
 \item \href{#method-clone}{\code{CRMetrics$clone()}}
 }
 }
@@ -197,7 +210,6 @@ To initialize new object, data_path is needed. metadata_file is also recommended
   data_path,
   metadata = NULL,
   comp_group = NULL,
-  detailed_metrics = FALSE,
   verbose = TRUE,
   theme = theme_bw(),
   n.cores = 1,
@@ -210,11 +222,9 @@ To initialize new object, data_path is needed. metadata_file is also recommended
 \describe{
 \item{\code{data_path}}{Path to cellranger count data (default = NULL).}
 
-\item{\code{metadata}}{Path to metadata file or name of metadata object (default = NULL).}
+\item{\code{metadata}}{Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data_path' (default = NULL).}
 
 \item{\code{comp_group}}{A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).}
-
-\item{\code{detailed_metrics}}{Object containing a data frame with the detailed metrics, can be added with addDetailedMetrics (default = NULL).}
 
 \item{\code{verbose}}{Print messages or not (default = TRUE).}
 
@@ -247,9 +257,10 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
   data_path = self$data_path,
-  samples = self$metadata$sample,
-  transcript = "SYMBOL",
+  sample.names = self$metadata$sample,
+  symbol = TRUE,
   sep = "!!",
+  cellbender = FALSE,
   n.cores = self$n.cores,
   verbose = self$verbose
 )}\if{html}{\out{</div>}}
@@ -260,11 +271,13 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \describe{
 \item{\code{data_path}}{Path to cellranger count data (default = self$data_path).}
 
-\item{\code{samples}}{Vector containing samples (default = self$metadata$sample).}
+\item{\code{sample.names}}{Vector containing sample names (default = self$metadata$sample).}
 
-\item{\code{transcript}}{The type of transcript, SYMBOL or ENSEMBLE (default = "SYMBOL").}
+\item{\code{symbol}}{The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
 
 \item{\code{sep}}{Separator for cell names (default = "!!").}
+
+\item{\code{cellbender}}{Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
 
 \item{\code{n.cores}}{Number of cores for the calculations (default = self$n.cores).}
 
@@ -438,7 +451,7 @@ Plot detailed metrics from the detailed_metrics object
   detailed_metrics = self$detailed_metrics,
   metadata = self$metadata,
   metrics = NULL,
-  plot_geom = NULL,
+  plot_geom = "violin",
   data_path = self$data_path,
   hline = TRUE
 )}\if{html}{\out{</div>}}
@@ -453,9 +466,9 @@ Plot detailed metrics from the detailed_metrics object
 
 \item{\code{metadata}}{Metadata for samples (default = self$metadata).}
 
-\item{\code{metrics}}{Metrics to plot (default = NULL).}
+\item{\code{metrics}}{Metrics to plot. NULL plots both plots (default = NULL).}
 
-\item{\code{plot_geom}}{How to plot the data (default = NULL).}
+\item{\code{plot_geom}}{How to plot the data (default = "violin").}
 
 \item{\code{data_path}}{Path to cellranger count data (default = self$data_path).}
 
@@ -646,7 +659,7 @@ Detect doublet cells.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
   method = c("scrublet", "doubletdetection"),
-  cms = self$cms,
+  cms = self$cms.filtered,
   env = "r-reticulate",
   conda.path = system("whereis conda"),
   verbose = self$verbose
@@ -658,7 +671,7 @@ Detect doublet cells.
 \describe{
 \item{\code{method}}{Which method to use, either \code{scrublet} or \code{doubletdetection} (default="scrublet").}
 
-\item{\code{cms}}{List containing the count matrices (default=self$cms).}
+\item{\code{cms}}{List containing the count matrices (default=self$cms.filtered).}
 
 \item{\code{env}}{Environment to run python in (default="r-reticulate").}
 
@@ -688,7 +701,7 @@ Conos preprocessing
 Perform conos preprocessing.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$doPreprocessing(
-  cms = self$cms,
+  cms = self$cms.filtered,
   preprocess = c("pagoda2", "seurat"),
   verbose = self$verbose,
   n.cores = self$n.cores
@@ -698,7 +711,7 @@ Perform conos preprocessing.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{List containing the count matrices (default = self$cms).}
+\item{\code{cms}}{List containing the count matrices (default = self$cms.filtered).}
 
 \item{\code{preprocess}}{Method to use for preprocessing (default = c("pagoda2","seurat")).}
 
@@ -737,7 +750,7 @@ Create conos UMAP embedding.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{List containing the count matrices (default = self$cms).}
+\item{\code{cms}}{List containing the preprocessed count matrices (default = self$cms.preprocessed).}
 
 \item{\code{verbose}}{Print messages or not (default = self$verbose).}
 
@@ -766,7 +779,7 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
   file = "cms_filtered.rds",
-  raw = TRUE,
+  raw = FALSE,
   depth_cutoff = NULL,
   mito_cutoff = NULL,
   doublets = NULL,
@@ -934,9 +947,221 @@ data frame
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{crm$getMitoFraction(species = c("human", "mouse"))
+Prepare CellBender correction
 }
 \if{html}{\out{</div>}}
 
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-prepareCellbender"></a>}}
+\if{latex}{\out{\hypertarget{method-prepareCellbender}{}}}
+\subsection{Method \code{prepareCellbender()}}{
+Create plots and script call for CellBender
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$prepareCellbender(
+  shrinkage = 100,
+  show_expected_cells = TRUE,
+  show_total_droplets = TRUE,
+  expected_cells = NULL,
+  total_droplets = NULL,
+  cms.raw = self$cms.raw,
+  umi.counts = self$cellbender$umi.counts,
+  data_path = self$data_path,
+  samples = self$metadata$sample,
+  verbose = self$verbose,
+  n.cores = self$n.cores,
+  unique_names = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{shrinkage}}{Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)}
+
+\item{\code{show_expected_cells}}{Plot line depicting expected number of cells (default = TRUE)}
+
+\item{\code{show_total_droplets}}{Plot line depicting total droplets included for CellBender run (default = TRUE)}
+
+\item{\code{expected_cells}}{If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)}
+
+\item{\code{total_droplets}}{If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)}
+
+\item{\code{umi.counts}}{UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)}
+
+\item{\code{verbose}}{Show progress (default: stored vector)}
+
+\item{\code{n.cores}}{Number of cores (default: stored vector)}
+
+\item{\code{cms.h5}}{Raw count matrices from HDF5 Cell Ranger outputs (default: stored list)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+ggplot2 object and bash script
+Save CellBender script
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-saveCellbenderScript"></a>}}
+\if{latex}{\out{\hypertarget{method-saveCellbenderScript}{}}}
+\subsection{Method \code{saveCellbenderScript()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveCellbenderScript(
+  file = "cellbender_script.sh",
+  fpr = 0.01,
+  epochs = 150,
+  use_gpu = TRUE,
+  expected_cells = NULL,
+  total_droplets = NULL,
+  data_path = self$data_path,
+  samples = self$metadata$sample,
+  args = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{file}}{File name for CellBender script (default: cellbender_script.sh)}
+
+\item{\code{fpr}}{False positive rate for CellBender (default = 0.01)}
+
+\item{\code{epochs}}{Number of epochs for CellBender (default = 150)}
+
+\item{\code{use_gpu}}{Use CUDA capable GPU (default = TRUE)}
+
+\item{\code{expected_cells}}{If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)}
+
+\item{\code{total_droplets}}{If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)}
+
+\item{\code{args}}{(optional) Additional parameters for CellBender}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+bash script
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-getExpectedCells"></a>}}
+\if{latex}{\out{\hypertarget{method-getExpectedCells}{}}}
+\subsection{Method \code{getExpectedCells()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getExpectedCells(samples = self$metadata$sample)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-getTotalDroplets"></a>}}
+\if{latex}{\out{\hypertarget{method-getTotalDroplets}{}}}
+\subsection{Method \code{getTotalDroplets()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getTotalDroplets(samples = self$metadata$sample)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-addCms"></a>}}
+\if{latex}{\out{\hypertarget{method-addCms}{}}}
+\subsection{Method \code{addCms()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
+  cms,
+  sample.names = NULL,
+  unique.names = TRUE,
+  sep = "!!",
+  n.cores = self$n.cores
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plotCbTraining"></a>}}
+\if{latex}{\out{\hypertarget{method-plotCbTraining}{}}}
+\subsection{Method \code{plotCbTraining()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbTraining(
+  data_path = self$data_path,
+  samples = self$metadata$sample
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plotCbCellProbs"></a>}}
+\if{latex}{\out{\hypertarget{method-plotCbCellProbs}{}}}
+\subsection{Method \code{plotCbCellProbs()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCellProbs(
+  data_path = self$data_path,
+  samples = self$metadata$sample
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plotCbAmbExp"></a>}}
+\if{latex}{\out{\hypertarget{method-plotCbAmbExp}{}}}
+\subsection{Method \code{plotCbAmbExp()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbExp(
+  cutoff = 0.005,
+  data_path = self$data_path,
+  samples = self$metadata$sample
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plotCbAmbGenes"></a>}}
+\if{latex}{\out{\hypertarget{method-plotCbAmbGenes}{}}}
+\subsection{Method \code{plotCbAmbGenes()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbGenes(
+  cutoff = 0.005,
+  data_path = self$data_path,
+  samples = self$metadata$sample
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-addSummaryFromCms"></a>}}
+\if{latex}{\out{\hypertarget{method-addSummaryFromCms}{}}}
+\subsection{Method \code{addSummaryFromCms()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addSummaryFromCms(
+  cms = self$cms.filtered,
+  n.cores = self$n.cores,
+  verbose = self$verbose
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-runSoupX"></a>}}
+\if{latex}{\out{\hypertarget{method-runSoupX}{}}}
+\subsection{Method \code{runSoupX()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$runSoupX(
+  cms.raw = self$cms.raw,
+  data_path = self$data_path,
+  samples = self$metadata$sample,
+  n.cores = self$n.cores,
+  verbose = self$verbose
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plotSoupX"></a>}}
+\if{latex}{\out{\hypertarget{method-plotSoupX}{}}}
+\subsection{Method \code{plotSoupX()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSoupX(plot.df = self$soupx$plot.df)}\if{html}{\out{</div>}}
 }
 
 }

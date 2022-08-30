@@ -82,10 +82,10 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", u
         data.table::fread(header = FALSE)
       colnames(mat) <- barcodes %>% pull(V1)
       return(mat)
-    }, n.cores = n.cores, progress = FALSE) %>%
+    }, n.cores = n.cores) %>%
     setNames(sample.names)
   
-  if (unique_names) tmp %<>% createUniqueCellNames(sample.names, sep, n.cores)
+  if (unique_names) tmp %<>% createUniqueCellNames(sample.names, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -126,7 +126,7 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
       
       metricsDetailedSample <- rbind(totalUMI, totalGenes)
       return(metricsDetailedSample)
-    }, n.cores = n.cores, progress = FALSE) %>% 
+    }, n.cores = n.cores) %>% 
     setNames(samples)
   
   if (verbose) message(paste0(Sys.time()," Creating table"))
@@ -236,7 +236,7 @@ addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) 
         pivot_longer(cols = -c(sample),
                      names_to = "metric",
                      values_to = "value")
-    }, n.cores = n.cores, progress = FALSE) %>% 
+    }, n.cores = n.cores) %>% 
     bind_rows()
   if (verbose) message(paste0(Sys.time()," Done!"))
   return(metrics)
@@ -365,20 +365,19 @@ read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered",
     }, n.cores = n.cores) %>% 
     setNames(sample.names)
   
-  if (unique_names) out %<>% createUniqueCellNames(sample.names, sep, n.cores, verbose)
+  if (unique_names) out %<>% createUniqueCellNames(sample.names, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
   return(out)
 }
 
-createUniqueCellNames <- function(cms, sample.names, sep = "!!", n.cores = 1, verbose = TRUE) {
-  if (verbose) message(paste0(Sys.time()," Creating unique cell names"))
+createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
   sample.names %>%
-    plapply(\(sample) {
+    lapply(\(sample) {
       cms[[sample]] %>% 
         `colnames<-`(., paste0(sample,sep,colnames(.)))
-    }, n.cores = n.cores) %>%
+    }) %>%
     setNames(sample.names)
 }
 

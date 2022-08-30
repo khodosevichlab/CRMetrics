@@ -10,6 +10,7 @@
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom sparseMatrixStats rowSums2 colSums2
+#' @importFrom scales comma
 NULL
 
 # R6 class
@@ -72,7 +73,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Initialize a CRMetrics object
   #' @description To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
   #' @param data_path Path to cellranger count data (default = NULL).
-  #' @param metadata Path to metadata file or name of metadata object (default = NULL).
+  #' @param metadata Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data_path' (default = NULL).
   #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
   #' @param verbose Print messages or not (default = TRUE).
   #' @param theme Ggplot2 theme (default: theme_bw()).
@@ -99,10 +100,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
     } else {
       if (class(metadata) == "data.frame") {
-        self$metadata <- metadata
+        self$metadata <- metadata %>% 
+          arrange(sample)
       } else {
         stopifnot(file.exists(metadata))
-        self$metadata <- read.csv(metadata, header = TRUE, colClasses = "character")
+        self$metadata <- read.csv(metadata, header = TRUE, colClasses = "character") %>% 
+          arrange(sample)
       }
     }
     
@@ -956,15 +959,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     g <- ggplot(data.df, aes(x, y)) + 
       geom_line(color = "red") + 
-      scale_x_log10(labels = comma) +
-      scale_y_log10(labels = comma) +
+      scale_x_log10(labels = scales::comma) +
+      scale_y_log10(labels = scales::comma) +
       theme_bw() +
       labs(x = "Droplet ID ranked by count", y = "UMI count per droplet", col = "")
     
     if (show_expected_cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
     if (show_total_droplets) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total droplets included"))
     
-    g <- g + facet_wrap(~ sample)
+    g <- g + facet_wrap(~ sample, scales = "free")
     
     if (verbose) message(paste0(Sys.time()," Done!"))
     return(g)
@@ -1021,11 +1024,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (is.null(sample.names)) sample.names <- names(cms)
     if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
     
-    if (unique_names) cms %<>% createUniqueCellNames(sample.names, sep, n.cores)
+    if (unique.names) cms %<>% createUniqueCellNames(sample.names, sep)
     
     self$cms.filtered <- cms
     
-    if (length(cms != nrow(self$metadata))) {
+    if (length(cms) != nrow(self$metadata)) {
       warning("Overwriting metadata")
       self$metadata <- data.frame(sample = sample.names)
     }
@@ -1036,11 +1039,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   plotCbTraining = function(data_path = self$data_path, samples = self$metadata$sample) {
+    requireNamespace("rhdf5")
     paths <- getH5Paths(data_path, samples, "cellbender")
     
     train.df <- samples %>% 
       lapply(\(id) {
-        h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
+        rhdf5::h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
           {data.frame(ELBO = ., 
                       Epoch = 1:length(.), 
                       sample = id)}
@@ -1051,8 +1055,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     test.df <- samples %>%
       lapply(\(id) {
         path <- paths[id]
-        data.frame(ELBO = h5read(path, "matrix/test_elbo"), 
-                   Epoch = h5read(path, "matrix/test_epoch"), 
+        data.frame(ELBO = rhdf5::h5read(path, "matrix/test_elbo"), 
+                   Epoch = rhdf5::h5read(path, "matrix/test_epoch"), 
                    sample = id)
       }) %>% 
       setNames(samples) %>% 
@@ -1071,11 +1075,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   plotCbCellProbs = function(data_path = self$data_path, samples = self$metadata$sample) {
+    requireNamespace("rhdf5")
     paths <- getH5Paths(data_path, samples, "cellbender")
     
     cell.prob <- samples %>%
       lapply(\(id) {
-        h5read(paths[id], "matrix/latent_cell_probability") %>%
+        rhdf5::h5read(paths[id], "matrix/latent_cell_probability") %>%
           {data.frame(prob = ., 
                       cell = 1:length(.), 
                       sample = id)}
@@ -1092,14 +1097,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   plotCbAmbExp = function(cutoff = 0.005, data_path = self$data_path, samples = self$metadata$sample) {
+    requireNamespace("rhdf5")
     paths <- getH5Paths(data_path, samples, "cellbender")
     
     amb <- samples %>% 
       lapply(\(id) {
-        h5read(paths[id], "matrix/ambient_expression") %>% 
+        rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
           {data.frame(exp = ., 
                       cell = 1:length(.), 
-                      gene.names = h5read(paths[id], "matrix/features/name") %>% as.character(), 
+                      gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
                       sample = id)}
       }) %>% 
       setNames(samples) %>% 
@@ -1117,14 +1123,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   plotCbAmbGenes = function(cutoff = 0.005, data_path = self$data_path, samples = self$metadata$sample) {
+    requireNamespace("rhdf5")
     paths <- getH5Paths(data_path, samples, "cellbender")
     
     amb <- samples %>% 
       lapply(\(id) {
-        h5read(paths[id], "matrix/ambient_expression") %>% 
+        rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
           {data.frame(exp = ., 
                       cell = 1:length(.), 
-                      gene.names = h5read(paths[id], "matrix/features/name") %>% as.character(), 
+                      gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
                       sample = id)} %>% 
           filter(exp >= cutoff)
       }) %>% 
@@ -1160,7 +1167,7 @@ addSummaryFromCms = function(cms = self$cms.filtered, n.cores = self$n.cores, ve
                median.umi = sparseMatrixStats::colSums2(cm) %>% median(),
                total.genes = sum(sparseMatrixStats::rowSums2(cm.bin) > 0),
                sample = id)
-  }, n.cores = n.cores, progress = FALSE) %>% 
+  }, n.cores = n.cores) %>% 
     bind_rows() %>% 
     pivot_longer(cols = -c(sample),
                  names_to = "metric",
@@ -1192,7 +1199,7 @@ runSoupX = function(cms.raw = self$cms.raw, data_path = self$data_path, samples 
   tmp <- soupx.list %>% 
     plapply(\(soupx.obj) {
       SoupX::autoEstCont(soupx.obj)
-    }, n.cores = n.cores, progress = FALSE) %>% 
+    }, n.cores = n.cores) %>% 
     setNames(samples)
   
   # Save plot data
@@ -1213,13 +1220,10 @@ runSoupX = function(cms.raw = self$cms.raw, data_path = self$data_path, samples 
       df <- data.frame(rhoProbes = rhoProbes, 
                        post_rho = post_rho, 
                        prior_rho = prior_rho) %>% 
-        pivot_longer(cols = -c("rhoProbes"),
+        tidyr::pivot_longer(cols = -c("rhoProbes"),
                      names_to = "variable",
                      values_to = "value") %>%
-        mutate(variable = as.character(variable)) %>% 
-        rbind(., c(rhoProbes = rhoProbes[which.max(.$value)], variable = "rho_max", value = 1)) %>% 
-        mutate(variable = factor(variable), 
-               rhoProbes = as.numeric(rhoProbes), 
+        mutate(rhoProbes = as.numeric(rhoProbes), 
                value = as.numeric(value),
                sample = id)
     }, n.cores = n.cores) %>% 
@@ -1228,11 +1232,12 @@ runSoupX = function(cms.raw = self$cms.raw, data_path = self$data_path, samples 
   
   # Adjust counts
   if (verbose) message(paste0(Sys.time()," Adjusting counts"))
-  out <- tmp %>% 
-    plapply(SoupX::adjustCounts, n.cores = n.cores) %>% 
+  self$soupx$cms.adj <- tmp %>% 
+    plapply(\(sample) {
+      tmp.sx <- SoupX::adjustCounts(sample)
+      return(tmp.sx)
+      }, n.cores = n.cores) %>% 
     setNames(samples)
-  
-  self$soupx$cms.adj <- out
   
   if (verbose) message(paste0(Sys.time()," Done!"))
 },
@@ -1240,13 +1245,21 @@ runSoupX = function(cms.raw = self$cms.raw, data_path = self$data_path, samples 
 plotSoupX = function(plot.df = self$soupx$plot.df) {
   if(is.null(plot.df)) stop("No plot data found. Please run $runSoupX first.")
   
+  line.df <- plot.df %>% 
+    split(., .$sample) %>% 
+    lapply(\(x) x$rhoProbes[x$value == max(x$value)]) %>% 
+    {lapply(names(.), \(x) data.frame(value = .[[x]], sample = x))} %>% 
+    do.call(rbind, .)
+  
   ggplot(plot.df, aes(rhoProbes, value, linetype = variable, col = variable)) + 
-    geom_line() +
-    geom_vline(aes(xintercept = priorRho), col = "red") +
-    scale_color_manual(name = "", values = c("post_rho" = "black", "prior_rho" = "black", "rho_max" = "red")) +
-    scale_linetype_manual(name = "", values = c("post_rho" = "solid", "prior_rho" = "longdash", "rho_max" = "solid")) +
+    geom_line(show.legend = FALSE) +
+    geom_vline(data = line.df, aes(xintercept = value, col = "rho_max", linetype = "rho_max")) +
+    scale_color_manual(name = "", values = c("post_rho" = "black", "rho_max" = "red", "prior_rho" = "black")) +
+    scale_linetype_manual(name = "", values = c("post_rho" = "solid", "rho_max" = "solid", "prior_rho" = "dashed")) +
     theme_bw() +
     labs(x = "Contamination fraction", y = "Probability density") +
-    facet_wrap(~sample)
+    facet_wrap(~sample, scales = "free_y") +
+    theme(legend.spacing.y = unit(3, "pt")) +
+    guides(linetype = guide_legend(byrow = TRUE), col = guide_legend(byrow = TRUE))
 }
  ))
