@@ -5,7 +5,7 @@
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom cowplot plot_grid
 #' @importFrom stats setNames relevel
-#' @importFrom tidyr pivot_longer
+#' @importFrom tidyr pivot_longer replace_na
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
@@ -714,8 +714,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
         } else if (names(cutoff_list)[i] == "doublets"){
           if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
-          doub <- self$doublets[[cutoff_list[[i]]]]$result["labels"]
-          filters_list[[length(filters_list)+1]] <- data.frame(doub == FALSE)
+          doub <- self$doublets[[cutoff_list[[i]]]]$result$labels %>% replace_na(0)
+          filters_list[[length(filters_list)+1]] <- data.frame(ifelse(doub, FALSE, TRUE))
         }
       }
     }
