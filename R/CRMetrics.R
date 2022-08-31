@@ -127,10 +127,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return Count matrices
   #' @examples 
   #' crm$addDetailedMetrics()
-  addDetailedMetrics = function(data_path = self$data_path, sample.names = self$metadata$sample, symbol = TRUE, sep = "!!", cellbender = FALSE, n.cores = self$n.cores, verbose = self$verbose) {
+  addDetailedMetrics = function(data_path = self$data_path, sample.names = self$metadata$sample, symbol = TRUE, sep = "!!", cellbender = FALSE, n.cores = self$n.cores, verbose = self$verbose, unique_names = TRUE) {
     if (is.null(self$cms.filtered)) {
       if (cellbender) {
-        self$cms.filtered <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose)
+        self$cms.filtered <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique_names = unique_names) %>% 
+          lapply(\(cm) cm[,sparseMatrixStats::colSums2(x) > 0]) # CellBender creates empty cells, so we remove them
       } else {
         self$cms.filtered <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
@@ -459,7 +460,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return ggplot2 object
   #' @examples 
   #' crm$plotDepth()
-  plotDepth = function(cutoff = 1e3){
+  plotDepth = function(cutoff = 1e3, samples = self$metadata$sample){
     # Checks
     if (is.null(self$con)) {
       message("No Conos object found, running createEmbedding.")
@@ -475,6 +476,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       {data.frame(depth = unname(.), sample = names(.))} %>% 
       mutate(sample = sample %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1)) %>%
       split(., .$sample) %>% 
+      .[samples] %>% 
       lapply(\(z) with(density(z$depth, adjust = 1/10), data.frame(x,y))) %>% 
       {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
       bind_rows()
@@ -890,7 +892,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
       tmp <- self$con$samples %>% 
         lapply(`[[`, "counts") %>% 
-        lapply(\(cm) sparseMatrixStats::rowSums2(cm[,grep(symb, colnames(cm))]) / sparseMatrixStats::rowSums2(cm)) %>% 
+        lapply(\(cm) (sparseMatrixStats::rowSums2(cm[,grep(symb, colnames(cm))]) / sparseMatrixStats::rowSums2(cm)) %>% setNames(cm %>% colnames())) %>% 
         Reduce(c, .)
       self$mito.frac <- tmp
     } else {
@@ -962,7 +964,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       geom_line(color = "red") + 
       scale_x_log10(labels = scales::comma) +
       scale_y_log10(labels = scales::comma) +
-      theme_bw() +
+      self$theme +
       labs(x = "Droplet ID ranked by count", y = "UMI count per droplet", col = "")
     
     if (show_expected_cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
@@ -1068,7 +1070,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       geom_line(data = train.df, aes(Epoch, ELBO, col = "Train")) +
       geom_point(data = test.df, aes(Epoch, ELBO, col = "Test")) +
       geom_line(data = test.df, aes(Epoch, ELBO, col = "Test")) +
-      theme_bw() +
+      self$theme +
       labs(col = "") +
       facet_wrap(~sample, scales = "free_y")
     
@@ -1092,7 +1094,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     ggplot(cell.prob, aes(cell, prob, col = prob)) + 
       geom_point() +
       scale_color_gradient(low="gray", high="red") +
-      theme_bw() +
+      self$theme +
       labs(x = "Cells", y = "Cell probability", col = "") +
       facet_wrap(~sample, scales = "free_x")
   },
@@ -1116,7 +1118,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       geom_point() + 
       geom_hline(yintercept = cutoff) +
       geom_label_repel(data = amb[amb$exp > cutoff,], aes(cell, exp, label = gene.names)) +
-      theme_bw() +
+      self$theme +
       labs(y = "Ambient expression", x = "Genes") + 
       facet_wrap(~sample, scales = "free_y")
     
@@ -1146,7 +1148,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
 
 ggplot(amb, aes(Var1, Freq, fill = Var1)) +
   geom_bar(stat = "identity") +
-  theme_bw() +
+  self$theme +
   labs(x = "", y = "Proportion") +
   theme(axis.text.x = element_text(angle = 90)) + 
   guides(fill = "none")
@@ -1227,6 +1229,8 @@ runSoupX = function(cms.raw = self$cms.raw, data_path = self$data_path, samples 
         mutate(rhoProbes = as.numeric(rhoProbes), 
                value = as.numeric(value),
                sample = id)
+      
+      return(df)
     }, n.cores = n.cores) %>% 
     setNames(samples) %>% 
     bind_rows()
@@ -1257,10 +1261,39 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
     geom_vline(data = line.df, aes(xintercept = value, col = "rho_max", linetype = "rho_max")) +
     scale_color_manual(name = "", values = c("post_rho" = "black", "rho_max" = "red", "prior_rho" = "black")) +
     scale_linetype_manual(name = "", values = c("post_rho" = "solid", "rho_max" = "solid", "prior_rho" = "dashed")) +
-    theme_bw() +
+    self$theme +
     labs(x = "Contamination fraction", y = "Probability density") +
     facet_wrap(~sample, scales = "free_y") +
     theme(legend.spacing.y = unit(3, "pt")) +
     guides(linetype = guide_legend(byrow = TRUE), col = guide_legend(byrow = TRUE))
+},
+
+plotCbCells = function(data_path = self$data_path, samples = self$metadata$sample) {
+  requireNamespace("rhdf5")
+  paths <- getH5Paths(data_path, samples, "cellbender_filtered")
+  
+  df <- samples %>% 
+    sapply(\(id) rhdf5::h5read(paths[id], "matrix/shape")[2]) %>% 
+    {data.frame(exp = self$getExpectedCells(samples),
+                cb.cells = .,
+                sample = samples)} %>% 
+    mutate(diff = cb.cells - exp,
+           rel = diff / exp) %>% 
+    pivot_longer(cols = c(-sample), 
+                 names_to = "variable", 
+                 values_to = "value") %>% 
+    mutate(variable = factor(variable, 
+                             labels = c("CellBender cells",
+                                        "Difference to exp. cells",
+                                        "Expected cells",
+                                        "Relative difference to exp. cells")))
+  
+  ggplot(df, aes(sample, value, fill = sample)) +
+    geom_bar(stat = "identity") +
+    self$theme + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    guides(fill = "none") +
+    labs(x = "", y = "") +
+    facet_wrap(~variable, scales = "free_y", nrow = 2, ncol = 2)
 }
  ))
