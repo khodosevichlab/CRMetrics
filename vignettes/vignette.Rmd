@@ -105,7 +105,7 @@ conda_install("cellbender", pip = TRUE, pip_options = "-e", packages = "/apps/Ce
 For `CellBender`, we need to specify expected number of cells and total droplets included (please see the [manual](https://cellbender.readthedocs.io/en/latest/usage/index.html) for additional information). As hinted in the manual, the number of total droplets included could be expected number of cells multiplied by 3 (which we set as default). First, we plot these measures:
 
 ```{r}
-crm$prepareCellbender(shrinkage = 100, 
+crm$prepareCellbender(shrinkage = 100, # Subsamples every 100th datapoint for faster plotting
                       show_expected_cells = TRUE, 
                       show_total_droplets = TRUE)
 ```
@@ -141,15 +141,32 @@ crm$cellbender$total.droplets <- crm$cellbender$expected.cells * 4
 Finally, we save a script for running `CellBender` on all our samples. Here, we use our modified total droplet vector.
 
 ```{r}
-crm$saveCellbenderScript(file = "/apps/cellbender_script.sh", fpr = 0.01, epochs = 150, use_gpu = TRUE)
+crm$saveCellbenderScript(file = "/apps/cellbender_script.sh", 
+                         fpr = 0.01, 
+                         epochs = 150, 
+                         use_gpu = TRUE)
 ```
 
 We can run this script in the terminal. Here, we load our miniconda module: `module load miniconda\4.12.0`, we activate the environment: `conda activate cellbender` and we run the bash script: `sh /apps/cellbender_script.sh`
 
 ## SoupX
 
-```{r}
+Running SoupX uses the automated estimation of contamination and correction.
 
+```{r}
+crm$runSoupX()
+```
+
+Then, we can plot the corrections.
+
+```{r}
+crm$plotSoupX()
+```
+
+In the end, we add the SoupX adjusted CMs to our object.
+
+```{r}
+crm$addCms(crm$soupx$cms.adj)
 ```
 
 # Plot summary statistics
@@ -238,13 +255,13 @@ We see that there is no significant effect of the numeric vector on neither of t
 
 # Add detailed metrics
 
-We can read in count matrices to assess detailed metrics.
+We can read in count matrices to assess detailed metrics. Otherwise, if count matrices have already been added earlier, this step prepares data for plotting UMI and gene counts.
 
 ```{r}
 crm$addDetailedMetrics()
 ```
 
-The horizontal lines indicates the median values for all samples.
+We plot the detailed metrics. The horizontal lines indicates the median values for all samples.
 
 ```{r}
 metrics.to.plot <- crm$detailed_metrics$metric %>%
@@ -324,7 +341,8 @@ conda_install("r-reticulate",
 `scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we use `scrublet`.
 
 ```{r}
-crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
+                   method = "scrublet")
 ```
 
 We can plot the estimated doublets in the UMAP embedding.
