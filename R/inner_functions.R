@@ -4,38 +4,38 @@
 #' @importFrom sparseMatrixStats colSums2
 NULL
 
-#' Set correct 'comp_group' parameter
-#' @description Set comp_group to 'category' if null.
-#' @param comp_group Comparison metric.
-#' @param category Comparison metric to use if comp_group is not provided.
+#' Set correct 'comp.group' parameter
+#' @description Set comp.group to 'category' if null.
+#' @param comp.group Comparison metric.
+#' @param category Comparison metric to use if comp.group is not provided.
 #' @param verbose Print messages (default = TRUE).
 #' @keywords internal
 #' @return vector
 #' @examples 
-#' comp_group <- checkCompGroup(comp_group = "sex")
-checkCompGroup <- function(comp_group, category, verbose = TRUE) {
-  if (is.null(comp_group)) {
-    if (verbose) message(paste0("Using '",category,"' for 'comp_group'"))
-    comp_group <- category
+#' comp.group <- checkCompGroup(comp.group = "sex")
+checkCompGroup <- function(comp.group, category, verbose = TRUE) {
+  if (is.null(comp.group)) {
+    if (verbose) message(paste0("Using '",category,"' for 'comp.group'"))
+    comp.group <- category
   }
-  return(comp_group)
+  return(comp.group)
 }
 
-#' Check whether 'comp_group' is in metadata
-#' @description Checks whether 'comp_group' is any of the column names in metadata.
-#' @param comp_group Comparison metric.
+#' Check whether 'comp.group' is in metadata
+#' @description Checks whether 'comp.group' is any of the column names in metadata.
+#' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
 #' @keywords internal
 #' @return nothing or stop
 #' @examples 
-#' checkCompMeta(comp_group = "sex", metadata = crm$metadata)
-checkCompMeta <- function(comp_group, metadata) {
-  if (!is.null(comp_group) && (!comp_group %in% colnames(metadata))) stop("'comp_group' doesn't match any column name in metadata.")
+#' checkCompMeta(comp.group = "sex", metadata = crm$metadata)
+checkCompMeta <- function(comp.group, metadata) {
+  if (!is.null(comp.group) && (!comp.group %in% colnames(metadata))) stop("'comp.group' doesn't match any column name in metadata.")
 }
 
 #' Load 10x count matrices
 #' @description Load gene expression count data
-#' @param data_path Path to cellranger count data.
+#' @param data.path Path to cellranger count data.
 #' @param sample.names Vector of sample names (default = NULL)
 #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
 #' @param sep Separator for cell names (default = "!!").
@@ -44,40 +44,40 @@ checkCompMeta <- function(comp_group, metadata) {
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' cms <- read10x(data_path = crm$data_path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
+#' cms <- read10x(data.path = crm$data.path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
 #' @export
-read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", unique_names = TRUE, n.cores = 1, verbose = TRUE) {
+read10x <- function(data.path, sample.names = NULL, symbol = TRUE, sep = "!!", unique.names = TRUE, n.cores = 1, verbose = TRUE) {
   requireNamespace("data.table")
-  if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
+  if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full_path <- sample.names %>% 
+  full.path <- sample.names %>% 
     sapply(\(sample) {
-      dir(paste(data_path,sample,"outs", sep = "/"), pattern = glob2rx("filtered_*_bc_matri*"), full.names = TRUE) %>% 
+      dir(paste(data.path,sample,"outs", sep = "/"), pattern = glob2rx("filtered_*_bc_matri*"), full.names = TRUE) %>% 
         .[!grepl(".h5", .)]
     })
   
-  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices using ", if (n.cores > length(full_path)) length(full_path) else n.cores," cores"))
-  tmp <- full_path %>%
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores > length(full.path)) length(full.path) else n.cores," cores"))
+  tmp <- full.path %>%
     plapply(\(sample) {
-      tmp_dir <- dir(sample, full.names = TRUE)
+      tmp.dir <- dir(sample, full.names = TRUE)
 
       # Read matrix
-      mat_path <- tmp_dir %>%
+      mat.path <- tmp.dir %>%
         .[grepl("mtx", .)]
-      if (grepl("gz", mat_path)) {
-        mat <- as(Matrix::readMM(gzcon(file(mat_path, "rb"))), "dgCMatrix")
+      if (grepl("gz", mat.path)) {
+        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "dgCMatrix")
       } else {
-        mat <- as(Matrix::readMM(mat_path), "dgCMatrix")
+        mat <- as(Matrix::readMM(mat.path), "dgCMatrix")
       }
 
       # Add features
-      feat <- tmp_dir %>%
+      feat <- tmp.dir %>%
         .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>%
         data.table::fread(header = FALSE)
       if (symbol) rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
 
       # Add barcodes
-      barcodes <- tmp_dir %>%
+      barcodes <- tmp.dir %>%
         .[grepl("barcodes.tsv", .)] %>%
         data.table::fread(header = FALSE)
       colnames(mat) <- barcodes %>% pull(V1)
@@ -85,7 +85,7 @@ read10x <- function(data_path, sample.names = NULL, symbol = TRUE, sep = "!!", u
     }, n.cores = n.cores) %>%
     setNames(sample.names)
   
-  if (unique_names) tmp %<>% createUniqueCellNames(sample.names, sep)
+  if (unique.names) tmp %<>% createUniqueCellNames(sample.names, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -148,32 +148,32 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
 #' Add statistics to plot
 #' @description Use ggpubr to add statistics to plots.
 #' @param p Plot to add statistics to. 
-#' @param comp_group Comparison metric.
+#' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
 #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
-#' @param stat_test Statistical test to perform to compare means.
+#' @param stat.test Statistical test to perform to compare means.
 #' @param exact Whether to calculate exact p values (default = FALSE).
 #' @keywords internal
 #' @return ggplot2 object
 #' @examples 
-#' addPlotStats(p, comp_group = "sex", metadata = crm$metadata, stat_test = "kurskal.test")
-addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, primary_test, secondary_test, exact = FALSE) {
-  checkCompMeta(comp_group, metadata)
+#' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kurskal.test")
+addPlotStats <- function(p, comp.group, metadata, h.adj = 0.05, primary.test, secondary.test, exact = FALSE) {
+  checkCompMeta(comp.group, metadata)
   g <- p
   
-  if (!is.null(secondary_test)) {
-    comp <- metadata[[comp_group]] %>% 
+  if (!is.null(secondary.test)) {
+    comp <- metadata[[comp.group]] %>% 
       unique() %>% 
       as.character() %>% 
       combn(2) %>%
       data.frame() %>% 
       as.list()
     
-    g <- g + stat_compare_means(comparisons = comp, method = secondary_test, exact = exact)
+    g <- g + stat_compare_means(comparisons = comp, method = secondary.test, exact = exact)
   } 
   y.upper <- layer_scales(g, 1)$y$range$range[2]
   
-  g <- g + stat_compare_means(method = primary_test, label.y = y.upper * (1 + h.adj))
+  g <- g + stat_compare_means(method = primary.test, label.y = y.upper * (1 + h.adj))
   
   return(g)
 }
@@ -181,24 +181,24 @@ addPlotStats <- function(p, comp_group, metadata, h.adj = 0.05, primary_test, se
 #' Add statistics to plot
 #' @description Use ggpubr to add statistics to samples ar plot
 #' @param p Plot to add statistics to. 
-#' @param comp_group Comparison metric.
+#' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
 #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
 #' @param exact Whether to calculate exact p values (default = FALSE).
-#' @param second_comp_group Second comparison metric.
+#' @param second.comp.group Second comparison metric.
 #' @keywords internal
 #' @return ggplot2 object
 #' @examples 
-#' addPlotStats(p, comp_group = "sex", metadata = crm$metadata, second_comp_group = "condition")
-addPlotStatsSamples <- function(p, comp_group, metadata, h.adj = 0.05, exact = FALSE, second_comp_group) {
-  checkCompMeta(comp_group, metadata)
-  checkCompMeta(second_comp_group, metadata)
-  if (comp_group == second_comp_group) { 
-    stat <- metadata %>% select(comp_group, second_comp_group) %>% table(dnn = comp_group) %>% chisq.test()
-  } else if (length(unique(metadata[[comp_group]])) == 2 && length(unique(metadata[[second_comp_group]])) == 2) {
-    stat <- metadata %>% select(comp_group, second_comp_group) %>% table(dnn = comp_group) %>% chisq.test()
+#' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, second.comp.group = "condition")
+addPlotStatsSamples <- function(p, comp.group, metadata, h.adj = 0.05, exact = FALSE, second.comp.group) {
+  checkCompMeta(comp.group, metadata)
+  checkCompMeta(second.comp.group, metadata)
+  if (comp.group == second.comp.group) { 
+    stat <- metadata %>% select(comp.group, second.comp.group) %>% table(dnn = comp.group) %>% chisq.test()
+  } else if (length(unique(metadata[[comp.group]])) == 2 && length(unique(metadata[[second.comp.group]])) == 2) {
+    stat <- metadata %>% select(comp.group, second.comp.group) %>% table(dnn = comp.group) %>% chisq.test()
   } else {
-    stat <- metadata %>% select(comp_group, second_comp_group) %>% table(dnn = comp_group) %>% fisher.test()
+    stat <- metadata %>% select(comp.group, second.comp.group) %>% table(dnn = comp.group) %>% fisher.test()
   }
   if (exact){
     g <- p + labs(subtitle = paste0(stat$method, ": ", stat$p.value), h.adj = h.adj)
@@ -211,25 +211,25 @@ addPlotStatsSamples <- function(p, comp_group, metadata, h.adj = 0.05, exact = F
 
 #' Add summary metrics
 #' @description Add summary metrics by reading Cell Ranger metrics summary files.
-#' @param data_path Path to cellranger count data.
+#' @param data.path Path to cellranger count data.
 #' @param metadata Metadata for samples.
 #' @param n.cores Number of cores for the calculations (default = 1).
 #' @param verbose Print messages (default = TRUE).
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' summary.metrics <- addSummaryMetrics(data_path = crm$data_path, metadata = crm$metadata, n.cores = crm$n.cores)
-addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) {
-  samples.tmp <- list.dirs(data_path, recursive = FALSE, full.names = FALSE)
+#' summary.metrics <- addSummaryMetrics(data.path = crm$data.path, metadata = crm$metadata, n.cores = crm$n.cores)
+addSummaryMetrics <- function(data.path, metadata, n.cores = 1, verbose = TRUE) {
+  samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample %>% unique())
   
-  if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data_path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
+  if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data.path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
   if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
   metrics <- samples %>% 
     plapply(\(s) {
-      read_csv(paste(data_path,s,"/outs/metrics_summary.csv", sep = "/"), col_types = cols()) %>% 
+      read_csv(paste(data.path,s,"/outs/metrics_summary.csv", sep = "/"), col_types = cols()) %>% 
         mutate(sample = s) %>% 
         mutate_at(.vars = vars(`Valid Barcodes`:`Fraction Reads in Cells`),
                   ~ as.numeric(gsub("%", "", .x)) / 100) %>%
@@ -244,19 +244,19 @@ addSummaryMetrics <- function(data_path, metadata, n.cores = 1, verbose = TRUE) 
 
 #' Plot the data as points, as bars as a histogram, or as a violin
 #' @description Plot the data as points, barplot, histogram or violin
-#' @param plot_geom The plot_geom to use, "point", "bar", "histogram", or "violin".
+#' @param plot.geom The plot.geom to use, "point", "bar", "histogram", or "violin".
 #' @keywords internal
 #' @return geom
 #' @examples 
-#' plot.geom <- plotGeom(plot_geom = "point")
-plotGeom = function(plot_geom, col){
-  if (plot_geom == "point"){
+#' plot.geom <- plotGeom(plot.geom = "point")
+plotGeom = function(plot.geom, col){
+  if (plot.geom == "point"){
     geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
-  } else if (plot_geom == "bar"){
+  } else if (plot.geom == "bar"){
     geom <- geom_bar(stat = "identity", position = "dodge", aes(fill = !!sym(col)))
-  } else if (plot_geom == "histogram"){
+  } else if (plot.geom == "histogram"){
     geom <- geom_histogram(binwidth = 25, aes(fill = !!sym(col)))
-  } else if (plot_geom == "violin"){
+  } else if (plot.geom == "violin"){
     geom <- geom_violin(show.legend = TRUE, aes(fill = !!sym(col)))
   }
   return(geom)
@@ -323,15 +323,15 @@ labelsFilter <- function(filter.data) {
 #' @param sample.names character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
 #' @export
-read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered","cellbender","cellbender_filtered"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE, unique_names = FALSE) {
+read10xH5 <- function(data.path, sample.names = NULL, type = c("raw","filtered","cellbender","cellbender_filtered"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE, unique.names = FALSE) {
   requireNamespace("rhdf5")
   
-  if (is.null(sample.names)) sample.names <- list.dirs(data_path, full.names = FALSE, recursive = FALSE)
+  if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full_path <- getH5Paths(data_path, sample.names, type)
+  full.path <- getH5Paths(data.path, sample.names, type)
   
-  if (verbose) message(paste0(Sys.time()," Loading ",length(full_path)," count matrices using ", if (n.cores <- length(full_path)) n.cores else length(full_path)," cores"))
-  out <- full_path %>%
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores <- length(full.path)) n.cores else length(full.path)," cores"))
+  out <- full.path %>%
     plapply(\(path) {
       h5 <- rhdf5::h5read(path, "matrix")
       
@@ -365,7 +365,7 @@ read10xH5 <- function(data_path, sample.names = NULL, type = c("raw","filtered",
     }, n.cores = n.cores) %>% 
     setNames(sample.names)
   
-  if (unique_names) out %<>% createUniqueCellNames(sample.names, sep)
+  if (unique.names) out %<>% createUniqueCellNames(sample.names, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -381,7 +381,7 @@ createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
     setNames(sample.names)
 }
 
-getH5Paths <- function(data_path, samples = NULL, type = NULL) {
+getH5Paths <- function(data.path, samples = NULL, type = NULL) {
   # Check input
   type %<>%
     tolower() %>% 
@@ -391,9 +391,9 @@ getH5Paths <- function(data_path, samples = NULL, type = NULL) {
   paths <- samples %>% 
     sapply(\(sample) {
       if (grepl("cellbender", type)) {
-        paste0(data_path,"/",sample,"/outs/",type,".h5")
+        paste0(data.path,"/",sample,"/outs/",type,".h5")
       } else {
-        dir(paste0(data_path,sample,"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
+        dir(paste0(data.path,sample,"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
       }
     }) %>% 
     setNames(samples)
@@ -408,11 +408,11 @@ getH5Paths <- function(data_path, samples = NULL, type = NULL) {
     miss <- miss.names %>% 
       sapply(\(sample) {
         if (type == "raw") {
-          paste0(data_path,sample,"/outs/raw_[feature/gene]_bc_matrix.h5")
+          paste0(data.path,sample,"/outs/raw_[feature/gene]_bc_matrix.h5")
         } else if (type == "filtered") {
-          paste0(data_path,sample,"/outs/filtered_[feature/gene]_bc_matrix.h5")
+          paste0(data.path,sample,"/outs/filtered_[feature/gene]_bc_matrix.h5")
         } else {
-          paste0(data_path,sample,"/outs/",type,".h5")
+          paste0(data.path,sample,"/outs/",type,".h5")
         }
       }) %>% 
       setNames(miss.names)

@@ -49,17 +49,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field metadata (default = NULL)
    metadata = NULL,
    
-   #' @field data_path (default = NULL)
-   data_path = NULL, 
+   #' @field data.path (default = NULL)
+   data.path = NULL, 
    
-   #' @field summary_metrics (default = NULL)
-   summary_metrics = NULL,
+   #' @field summary.metrics (default = NULL)
+   summary.metrics = NULL,
    
-   #' @field detailed_metrics (default = NULL)
-   detailed_metrics = NULL, 
+   #' @field detailed.metrics (default = NULL)
+   detailed.metrics = NULL, 
    
-   #' @field comp_group (default = NULL)
-   comp_group = NULL,
+   #' @field comp.group (default = NULL)
+   comp.group = NULL,
    
    #' @field verbose (default = TRUE)
    verbose = TRUE,
@@ -71,39 +71,47 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    n.cores = 1,
   
   #' Initialize a CRMetrics object
-  #' @description To initialize new object, data_path is needed. metadata_file is also recommended, but not required.
-  #' @param data_path Path to cellranger count data (default = NULL).
-  #' @param metadata Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data_path' (default = NULL).
-  #' @param comp_group A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
-  #' @param verbose Print messages or not (default = TRUE).
-  #' @param theme Ggplot2 theme (default: theme_bw()).
-  #' @param n.cores Number of cores for the calculations (default = self$n.cores).
-  #' @param raw.meta Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
+  #' @description To initialize new object, 'data.path' is needed. 'metadata' is also recommended, but not required.
+  #' @param data.path character Path to cellranger count data (default = NULL).
+  #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL).
+  #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
+  #' @param verbose logical Print messages or not (default = TRUE).
+  #' @param theme ggplot2 theme (default: theme_bw()).
+  #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
+  #' @param raw.meta logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
   #' @return CRMetrics object
   #' @examples 
-  #' crm <- CRMetrics$new(data_path = "data/CRMetrics_testdata")
-  initialize = function(data_path, 
+  #' crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
+  initialize = function(data.path, 
                         metadata = NULL, 
-                        comp_group = NULL, 
+                        comp.group = NULL, 
                         verbose = TRUE, 
                         theme = theme_bw(), 
                         n.cores = 1, 
                         raw.meta = FALSE) {
     
-    if ('CRMetrics' %in% class(data_path)) { # copy constructor
-      for (n in ls(data_path)) {
-        if (!is.function(get(n, data_path))) assign(n, get(n, data_path), self)
+    if ('CRMetrics' %in% class(data.path)) { # copy constructor
+      for (n in ls(data.path)) {
+        if (!is.function(get(n, data.path))) assign(n, get(n, data.path), self)
       }
       
       return(NULL)
     }
     
-    self$n.cores <- n.cores
-    self$data_path <- data_path
+    # Check that last character is slash
+    length.path <- nchar(data.path)
+    last.char <- data.path %>% 
+      substr(length.path, length.path)
+    
+    if (last.char != "/") data.path <- paste0(data.path,"/") else data.path <- data.path
+    
+    # Write stuff to object
+    self$n.cores <- as.integer(n.cores)
+    self$data.path <- data.path
     self$verbose <- verbose
     self$theme <- theme
     if (is.null(metadata)) {
-      self$metadata <- data.frame(sample = list.dirs(data_path, recursive = FALSE, full.names = FALSE))
+      self$metadata <- data.frame(sample = list.dirs(data.path, recursive = FALSE, full.names = FALSE))
     } else {
       if (class(metadata) == "data.frame") {
         self$metadata <- metadata %>% 
@@ -117,19 +125,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (!raw.meta) self$metadata %<>% lapply(type.convert, as.is = FALSE) %>% bind_cols()
     
-    checkCompMeta(comp_group, self$metadata)
-    self$summary_metrics <- addSummaryMetrics(data_path, self$metadata, verbose)
+    checkCompMeta(comp.group, self$metadata)
+    self$summary.metrics <- addSummaryMetrics(data.path, self$metadata, verbose)
   },
   
   #' Add detailed metrics
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
-  #' @param data_path Path to cellranger count data (default = self$data_path).
-  #' @param sample.names Vector containing sample names (default = self$metadata$sample).
-  #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
-  #' @param sep Separator for cell names (default = "!!").
-  #' @param cellbender Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
-  #' @param n.cores Number of cores for the calculations (default = self$n.cores).
-  #' @param verbose Print messages or not (default = self$verbose).
+  #' @param min.transcripts.per.cell numeric Minimal number of transcripts per cell (default = 100)
+  #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
+  #' @param sep character Separator for cell names (default = "!!").
+  #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
+  #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
+  #' @param data.path character Path to cellranger count data (default = self$data.path).
+  #' @param sample.names character Vector containing sample names (default = self$metadata$sample).
+  #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
+  #' @param verbose logical Print messages or not (default = self$verbose).
   #' @return Count matrices
   #' @examples 
   #' crm$addDetailedMetrics()
@@ -137,16 +147,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 symbol = TRUE, 
                                 sep = "!!", 
                                 cellbender = FALSE, 
-                                unique_names = TRUE, 
-                                data_path = self$data_path, 
+                                unique.names = TRUE, 
+                                data.path = self$data.path, 
                                 sample.names = self$metadata$sample, 
                                 n.cores = self$n.cores, 
                                 verbose = self$verbose) {
     if (is.null(self$cms.filtered)) {
       if (cellbender) {
-        cms.filtered <- read10xH5(data_path = data_path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique_names = unique_names)
+        cms.filtered <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       } else {
-        cms.filtered <- read10x(data_path = data_path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+        cms.filtered <- read10x(data.path = data.path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
     } else {
       message("Filtered CMs already present. To overwrite, set $cms.filtered = NULL and rerun this function.")
@@ -155,61 +165,61 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$cms.filtered <- cms.filtered %>% 
       lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
     
-    if (is.null(self$detailed_metrics)) {
-      self$detailed_metrics <- addDetailedMetricsInner(cms = self$cms.filtered, verbose = verbose, n.cores = n.cores)
+    if (is.null(self$detailed.metrics)) {
+      self$detailed.metrics <- addDetailedMetricsInner(cms = self$cms.filtered, verbose = verbose, n.cores = n.cores)
     } else {
-      message("Detailed metrics already present. To overwrite, set $detailed_metrics = NULL and rerun this function")
+      message("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
     }
   },
   
   #' Add comparison group
   #' @description Add comparison group for statistical testing.
-  #' @param comp_group Comparison metric (default = self$comp_group).
-  #' @param metadata Metadata for samples (default = self$metadata).
+  #' @param comp.group character Comparison metric (default = self$comp.group).
+  #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @return Vector
   #' @examples 
-  #' crm$addComparison(comp_group = "sex")
-  addComparison = function(comp_group, 
+  #' crm$addComparison(comp.group = "sex")
+  addComparison = function(comp.group, 
                            metadata = self$metadata) {
-    checkCompMeta(comp_group, metadata)
-    self$comp_group <- comp_group
+    checkCompMeta(comp.group, metadata)
+    self$comp.group <- comp.group
   },
   
   #' Plot samples
   #' @description Plot the number of samples.
-  #' @param comp_group Comparison metric (default = self$comp_group).
-  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
-  #' @param exact Whether to calculate exact p values (default = FALSE).
-  #' @param metadata Metadata for samples (default = self$metadata).
-  #' @param second_comp_group Second comparison metric (default = NULL).
+  #' @param comp.group character Comparison metric, must match a column name of metadata (default = self$comp.group).
+  #' @param h.adj numerical Position of statistics test p value as % of max(y) (default = 0.05).
+  #' @param exact logical Whether to calculate exact p values (default = FALSE).
+  #' @param metadata data.frame Metadata for samples (default = self$metadata).
+  #' @param second.comp.group character Second comparison metric, must match a column name of metadata (default = NULL).
   #' @return ggplot2 object
   #' @examples 
-  #' crm$plotSamples(comp_group = "sex", second_comp_group = "condition")
-  plotSamples = function(comp_group = self$comp_group, 
+  #' crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
+  plotSamples = function(comp.group = self$comp.group, 
                          h.adj = 0.05, 
                          exact = FALSE, 
                          metadata = self$metadata, 
-                         second_comp_group = NULL) {
-    comp_group %<>% checkCompGroup(comp_group, self$verbose)
-    if (!is.null(second_comp_group)) {
-      second_comp_group %<>% checkCompGroup(second_comp_group, self$verbose)
+                         second.comp.group = NULL) {
+    comp.group %<>% checkCompGroup(comp.group, self$verbose)
+    if (!is.null(second.comp.group)) {
+      second.comp.group %<>% checkCompGroup(second.comp.group, self$verbose)
     } else {
-      second_comp_group <- comp_group
+      second.comp.group <- comp.group
     }
-    plot_stats <- ifelse(comp_group == "sample", FALSE, TRUE)
+    plot.stats <- ifelse(comp.group == "sample", FALSE, TRUE)
 
     g <- metadata %>%
-      select(comp_group, second_comp_group) %>%
-      table(dnn = comp_group) %>%
+      select(comp.group, second.comp.group) %>%
+      table(dnn = comp.group) %>%
       data.frame() %>%
-      ggplot(aes(!!sym(comp_group), Freq, fill = !!sym(second_comp_group))) +
+      ggplot(aes(!!sym(comp.group), Freq, fill = !!sym(second.comp.group))) +
       geom_bar(stat = "identity", position = "dodge") +
       self$theme +
-      labs(x = comp_group, y = "Freq") +
+      labs(x = comp.group, y = "Freq") +
       theme(legend.position = "right")
     
-    if (plot_stats) {
-     g %<>% addPlotStatsSamples(comp_group, metadata, h.adj, exact, second_comp_group)
+    if (plot.stats) {
+     g %<>% addPlotStatsSamples(comp.group, metadata, h.adj, exact, second.comp.group)
     }
     
     return(g)
@@ -217,57 +227,57 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot summary metrics
   #' @description Plot all summary stats or a selected list.
-  #' @param comp_group Comparison metric (default = self$comp_group).
-  #' @param second_comp_group Second comparison metric, used for the metric "samples per group" or when "comp_group" is a numeric or an integer (default = NULL).
-  #' @param metrics Metrics to plot (default = NULL).
-  #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05)
-  #' @param plot_stat Show statistics in plot. Will be FALSE if "comp_group" = "sample" or if "comp_group" is a numeric or an integer (default = TRUE)
-  #' @param stat_test Statistical test to perform to compare means. Can either be "non_parametric" or "parametric" (default = "non_parametric").
-  #' @param exact Whether to calculate exact p values (default = FALSE).
-  #' @param metadata Metadata for samples (default = self$metadata).
-  #' @param summary_metrics Summary metrics (default = self$summary_metrics).
-  #' @param plot_geom Which geometric is used to plot the data (default = "point").
-  #' @param se For regression lines, show SE (default = FALSE)
-  #' @param group_reg_lines For regression lines, if FALSE show one line, if TRUE show line per group defined by second_comp_group (default = FALSE)
-  #' @param secondary_testing Whether to show post hoc testing (default = TRUE)
+  #' @param comp.group character Comparison metric (default = self$comp.group).
+  #' @param second.comp.group character Second comparison metric, used for the metric "samples per group" or when "comp.group" is a numeric or an integer (default = NULL).
+  #' @param metrics character Metrics to plot (default = NULL).
+  #' @param h.adj numerical Position of statistics test p value as % of max(y) (default = 0.05)
+  #' @param plot.stat logical Show statistics in plot. Will be FALSE if "comp.group" = "sample" or if "comp.group" is a numeric or an integer (default = TRUE)
+  #' @param stat.test character Statistical test to perform to compare means. Can either be "non-parametric" or "parametric" (default = "non-parametric").
+  #' @param exact logical Whether to calculate exact p values (default = FALSE).
+  #' @param metadata data.frame Metadata for samples (default = self$metadata).
+  #' @param summary.metrics data.frame Summary metrics (default = self$summary.metrics).
+  #' @param plot.geom character Which geometric is used to plot the data (default = "point").
+  #' @param se logical For regression lines, show SE (default = FALSE)
+  #' @param group.reg.lines logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)
+  #' @param secondary.testing logical Whether to show post hoc testing (default = TRUE)
   #' @return ggplot2 object
   #' @examples
   #' metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
-  #' crm$plotSummaryMetrics(metrics = metrics.to.plot, plot_geom = "point")
-  plotSummaryMetrics = function(comp_group = self$comp_group, 
-                                second_comp_group = NULL, 
+  #' crm$plotSummaryMetrics(metrics = metrics.to.plot, plot.geom = "point")
+  plotSummaryMetrics = function(comp.group = self$comp.group, 
+                                second.comp.group = NULL, 
                                 metrics = NULL, 
                                 h.adj = 0.05, 
-                                plot_stat = TRUE, 
-                                stat_test = c("non_parametric","parametric"), 
+                                plot.stat = TRUE, 
+                                stat.test = c("non-parametric","parametric"), 
                                 exact = FALSE, 
                                 metadata = self$metadata, 
-                                summary_metrics = self$summary_metrics, 
-                                plot_geom = "point", 
+                                summary.metrics = self$summary.metrics, 
+                                plot.geom = "point", 
                                 se = FALSE, 
-                                group_reg_lines = FALSE, 
-                                secondary_testing = TRUE) {
+                                group.reg.lines = FALSE, 
+                                secondary.testing = TRUE) {
     # Checks
-    comp_group %<>% checkCompGroup("sample", self$verbose)
-    if (is.null(plot_geom)) {
+    comp.group %<>% checkCompGroup("sample", self$verbose)
+    if (is.null(plot.geom)) {
       stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
     }
-    stat_test %<>% match.arg(c("non_parametric","parametric"))
+    stat.test %<>% match.arg(c("non-parametric","parametric"))
     
     # if no metrics selected, plot all
     if (is.null(metrics)) {
-      metrics <- summary_metrics$metric %>% 
+      metrics <- summary.metrics$metric %>% 
         unique()
     } else {
       # check if selected metrics are available
-      difs <- setdiff(metrics, self$summary_metrics$metric %>% unique())
+      difs <- setdiff(metrics, self$summary.metrics$metric %>% unique())
       if ("samples per group" %in% difs) difs <- difs[difs != "samples per group"]
       if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
     # if samples per group is one of the metrics to plot use the plotSamples function to plot
     if ("samples per group" %in% metrics){
-      sample_plot <- self$plotSamples(comp_group, h.adj, exact, metadata, second_comp_group)
+      sample.plot <- self$plotSamples(comp.group, h.adj, exact, metadata, second.comp.group)
       metrics <- metrics[metrics != "samples per group"]
     }
     
@@ -275,60 +285,60 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
       lapply(function (met) {
-        tmp <- summary_metrics %>%
+        tmp <- summary.metrics %>%
           filter(metric == met) %>%
           merge(metadata, by = "sample")
         
-        if (is.null(second_comp_group)) {
+        if (is.null(second.comp.group)) {
           g <- tmp %>%
-            ggplot(aes(x = !!sym(comp_group), y = value)) +
-            plotGeom(plot_geom, col = comp_group) + 
+            ggplot(aes(x = !!sym(comp.group), y = value)) +
+            plotGeom(plot.geom, col = comp.group) + 
             labs(y = met, x = element_blank()) +
             self$theme
         } else {
           g <- tmp %>% 
-            ggplot(aes(!!sym(comp_group), value)) +
-            plotGeom(plot_geom, col = second_comp_group) + 
-            labs(y = met, x = comp_group) +
+            ggplot(aes(!!sym(comp.group), value)) +
+            plotGeom(plot.geom, col = second.comp.group) + 
+            labs(y = met, x = comp.group) +
             self$theme
         }
         
-        if (is.numeric(metadata[[comp_group]])) {
-          if (!group_reg_lines) {
+        if (is.numeric(metadata[[comp.group]])) {
+          if (!group.reg.lines) {
             g <- g + 
               ggpmisc::stat_poly_eq(color = "black", aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))) +
               ggpmisc::stat_poly_line(color = "black", se = se)
           } else {
             g <- g + 
-              ggpmisc::stat_poly_eq(aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"), col = !!sym(second_comp_group))) +
-              ggpmisc::stat_poly_line(aes(col = !!sym(second_comp_group)), se = se)
+              ggpmisc::stat_poly_eq(aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"), col = !!sym(second.comp.group))) +
+              ggpmisc::stat_poly_line(aes(col = !!sym(second_comp.group)), se = se)
           }
         }
         
         # a legend only makes sense if the comparison is not the samples
-        if (comp_group != "sample") {
+        if (comp.group != "sample") {
           g <- g + theme(legend.position = "right")
         } else {
-          plot_stat <- FALSE
+          plot.stat <- FALSE
           g <- g + theme(legend.position = "none")
         }
         
         # Statistical testing
-        if (plot_stat & !is.numeric(metadata[[comp_group]])) {
-          if (stat_test == "non_parametric") {
-            primary_test <- "kruskal.test"
-            secondary_test <- "wilcox.test"
+        if (plot.stat & !is.numeric(metadata[[comp.group]])) {
+          if (stat.test == "non-parametric") {
+            primary.test <- "kruskal.test"
+            secondary.test <- "wilcox.test"
           } else {
-            primary_test <- "anova"
-            secondary_test <- "t.test"
+            primary.test <- "anova"
+            secondary.test <- "t.test"
           }
           
-          if (length(unique(metadata[[comp_group]])) < 3) {
-            primary_test <- secondary_test
-            secondary_test <- NULL
+          if (length(unique(metadata[[comp.group]])) < 3) {
+            primary.test <- secondary.test
+            secondary.test <- NULL
           }
-          if (!secondary_testing) secondary_test <- NULL
-          g %<>% addPlotStats(comp_group, metadata, h.adj, primary_test, secondary_test, exact)
+          if (!secondary.testing) secondary.test <- NULL
+          g %<>% addPlotStats(comp.group, metadata, h.adj, primary.test, secondary.test, exact)
         }
         
         g <- g + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
@@ -338,13 +348,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       {options(warn=0)}
     
     # To return the plots
-    if (exists("sample_plot")) {
+    if (exists("sample.plot")) {
       if (length("plotList") > 0){
         return(plot_grid(plotlist = plotList, 
-                         sample_plot, 
+                         sample.plot, 
                          ncol = min(length(plotList)+1, 3)))
       } else {
-        return(sample_plot)
+        return(sample.plot)
       }
     } else {
       if (length(plotList) == 1) {
@@ -357,38 +367,38 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' Plot detailed metrics
-  #' @description Plot detailed metrics from the detailed_metrics object
-  #' @param comp_group Comparison metric (default = self$comp_group).
-  #' @param detailed_metrics Object containing the count matrices (default = self$detailed_metrics).
-  #' @param metadata Metadata for samples (default = self$metadata).
-  #' @param metrics Metrics to plot. NULL plots both plots (default = NULL).
-  #' @param plot_geom How to plot the data (default = "violin").
-  #' @param data_path Path to cellranger count data (default = self$data_path).
-  #' @param hline Whether to show median as horizontal line (default = TRUE)
+  #' @description Plot detailed metrics from the detailed.metrics object
+  #' @param comp.group character Comparison metric (default = self$comp.group).
+  #' @param detailed.metrics data.frame Object containing the count matrices (default = self$detailed.metrics).
+  #' @param metadata data.frame Metadata for samples (default = self$metadata).
+  #' @param metrics character Metrics to plot. NULL plots both plots (default = NULL).
+  #' @param plot.geom character How to plot the data (default = "violin").
+  #' @param data.path character Path to cellranger count data (default = self$data.path).
+  #' @param hline logical Whether to show median as horizontal line (default = TRUE)
   #' @return ggplot2 object
   #' @examples 
-  #' metrics.to.plot <- crm$detailed_metrics$metric %>% unique()
+  #' metrics.to.plot <- crm$detailed.metrics$metric %>% unique()
   #' crm$plotDetailedMetrics()
-  plotDetailedMetrics = function(comp_group = self$com_group, 
-                                 detailed_metrics = self$detailed_metrics, 
+  plotDetailedMetrics = function(comp.group = self$comp.group, 
+                                 detailed.metrics = self$detailed.metrics, 
                                  metadata = self$metadata, 
                                  metrics = NULL, 
-                                 plot_geom = "violin", 
-                                 data_path = self$data_path, 
+                                 plot.geom = "violin", 
+                                 data.path = self$data.path, 
                                  hline = TRUE){
-    if (is.null(detailed_metrics)) detailed_metrics <- self$addDetailedMetrics(data_path = data_path, sample.names = metadata$sample, verbose = self$verbose)
-    comp_group %<>% checkCompGroup("sample", self$verbose)
+    if (is.null(detailed.metrics)) detailed.metrics <- self$addDetailedMetrics(data.path = data.path, sample.names = metadata$sample, verbose = self$verbose)
+    comp.group %<>% checkCompGroup("sample", self$verbose)
     
     if (is.null(metrics)) {
       metrics <- c("UMI_count","gene_count")
     }
     
     # check if selected metrics are available
-    difs <- setdiff(metrics, self$detailed_metrics$metric %>% unique())
+    difs <- setdiff(metrics, self$detailed.metrics$metric %>% unique())
     if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     
     # if no plot type is defined, return a list of options
-    if (is.null(plot_geom)) {
+    if (is.null(plot.geom)) {
       stop("A plot type needs to be defined, can be one of these: 'point', 'bar', 'histogram', 'violin'.")
     }
     
@@ -396,19 +406,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     plotList <- metrics %T>% 
       {options(warn = -1)} %>% 
       lapply(function (met) {
-        tmp <- detailed_metrics %>%
+        tmp <- detailed.metrics %>%
           filter(metric == met) %>%
           merge(metadata, by = "sample")
         
         g <- ggplot(tmp, aes(x = sample, y = value)) +
-          plotGeom(plot_geom, col = comp_group) +  
-          {if (plot_geom == "violin") scale_y_log10()} +
+          plotGeom(plot.geom, col = comp.group) +  
+          {if (plot.geom == "violin") scale_y_log10()} +
           {if (hline) geom_hline(yintercept = median(tmp$value))} +
           labs(y = met, x = element_blank()) +
           self$theme
         
         # a legend only makes sense if the comparison is not the samples
-        if (comp_group != "sample") {
+        if (comp.group != "sample") {
           g <- g + theme(legend.position = "right")
         } else {
           g <- g + theme(legend.position = "none")
@@ -434,14 +444,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot UMAP
   #' @description Plot cells in a UMAP using Conos and color by depth and doublets.
-  #' @param depth Plot depth or not (default = FALSE).
-  #' @param doublet_method Doublet detection method (default = NULL).
-  #' @param doublet_scores Plot doublet scores or not (default = FALSE).
-  #' @param depth.cutoff Depth cutoff (default = 1e33).
-  #' @param mito.frac Plot mitochondrial fraction or not (default = FALSE).
-  #' @param mito.cutoff Mitochondrial fraction cutoff (default = 0.05).
-  #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
-  #' @param ... Plotting parameters passed to `conos::embeddingPlot`.
+  #' @param depth logical Plot depth or not (default = FALSE).
+  #' @param doublet.method character Doublet detection method (default = NULL).
+  #' @param doublet.scores logical Plot doublet scores or not (default = FALSE).
+  #' @param depth.cutoff numerical Depth cutoff (default = 1e3).
+  #' @param mito.frac logical Plot mitochondrial fraction or not (default = FALSE).
+  #' @param mito.cutoff numerical Mitochondrial fraction cutoff (default = 0.05).
+  #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
+  #' @param size numerical Dot size (default = 0.3)
+  #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object
   #' @examples
   #' crm$doPreprocessing()
@@ -450,12 +461,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' # Color cells for low depth
   #' crm$plotUMAP(depth = TRUE, depth.cutoff = 1e3)
   plotUmap = function(depth = FALSE, 
-                      doublet_method = NULL, 
-                      doublet_scores = FALSE, 
+                      doublet.method = NULL, 
+                      doublet.scores = FALSE, 
                       depth.cutoff = 1e3, 
                       mito.frac = FALSE, 
                       mito.cutoff = 0.05, 
-                      species = c("human","mouse"), ...) {
+                      species = c("human","mouse"), 
+                      size = 0.3,
+                      ...) {
     species %<>% 
       tolower() %>% 
       match.arg(c("human","mouse"))
@@ -469,20 +482,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (depth) {
       depths <- self$getConosDepth()
       if (length(depth.cutoff) > 1) {
-        split_vec <- strsplit(names(depths), "!!") %>% sapply('[[',1)
-        depths_list <- split(depths, split_vec)
-        depths <- mapply(function(x,y) x >= y, x=depths_list, y=depth.cutoff) %>% unlist() %>% setNames(names(depths))
-        g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = "Cells with low depth with sample-specific cutoff", ...)
+        depths.list <- strsplit(names(depths), "!!") %>% 
+          sapply('[[',1) %>% 
+          {split(depths, .)}
+        depths <- mapply(function(x,y) x >= y, x=depths.list, y=depth.cutoff) %>% unlist() %>% setNames(names(depths))
+        g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = "Cells with low depth with sample-specific cutoff", size = size, ...)
       } else {
-        g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), ...)
+        g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), size = size, ...)
       }
     }
     
     # Doublets
-    if (!is.null(doublet_method)) {
-      dres <- self$doublets[[doublet_method]]$result
-      if (is.null(dres)) stop("No results found for doublet_method '",doublet_method,"'. Please run doubletDetection(method = '",doublet_method,"'.")
-      if (doublet_scores) {
+    if (!is.null(doublet.method)) {
+      dres <- self$doublets[[doublet.method]]$result
+      if (is.null(dres)) stop("No results found for doublet.method '",doublet.method,"'. Please run doubletDetection(method = '",doublet.method,"'.")
+      if (doublet.scores) {
         doublets <- dres$scores
         label = "scores"
       } else {
@@ -490,13 +504,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         label = "labels"
       } 
       doublets %<>% setNames(rownames(dres))
-      g <- self$con$plotGraph(colors = doublets, title = paste(doublet_method,label, collapse = " "), ...)
+      g <- self$con$plotGraph(colors = doublets, title = paste(doublet.method,label, collapse = " "), size = size, ...)
     }
     
     # Mitochondrial fraction
     if (mito.frac) {
       mf <- self$getMitoFraction(species = species)
-      g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"))
+      g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"), size = size, ...)
     }
     
     if (!exists("g")) g <- self$con$plotGraph(...)
@@ -505,8 +519,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot depth
   #' @description Plot the sequencing depth in histogram.
-  #' @param cutoff The depth cutoff to color the UMAP (default = 1e3).
-  #' @param per_sample Whether to plot the depth per sample or for all the samples (default = FALSE).
+  #' @param cutoff numeric The depth cutoff to color the UMAP (default = 1e3).
+  #' @param samples vector Sample names to include for plotting (default = $metadata$sample).
   #' @return ggplot2 object
   #' @examples 
   #' crm$plotDepth()
@@ -533,7 +547,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       bind_rows()
     
     # Plot
-    depth_plot <- tmp %>% 
+    depth.plot <- tmp %>% 
       pull(sample) %>% 
       unique() %>% 
       lapply(\(id) {
@@ -562,35 +576,35 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }) %>% 
       plot_grid(plotlist = ., ncol = 3,label_size = 5)
     
-    return(depth_plot)
+    return(depth.plot)
   },
   
   #' Save summary metrics
   #' @description Save summary metrics to text file.
-  #' @param file Output file (default = "Summary_metrics.txt").
-  #' @param dec How the decimals are defined (default = ".").
-  #' @param sep What separator to use (default = "\t").
+  #' @param file character Output file (default = "Summary_metrics.txt").
+  #' @param dec character How the decimals are defined (default = ".").
+  #' @param sep character What separator to use (default = `\t`).
   #' @return file
   #' @examples 
   #' crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
   saveSummaryMetrics = function(file = "Summary_metrics.tsv", 
                                 dec = ".", 
                                 sep = "\t") {
-    write.table(self$summary_metrics, file, sep = sep, dec = dec)
+    write.table(self$summary.metrics, file, sep = sep, dec = dec)
   },
   
   #' Save detailed metrics
   #' @description Save detailed metrics to text file.
-  #' @param file Output file (default = "Summary_metrics.tsv").
-  #' @param dec How the decimals are defined (default = ".").
-  #' @param sep What separator to use (default = "\t").
+  #' @param file character Output file (default = "Detailed_metrics.tsv").
+  #' @param dec character How the decimals are defined (default = ".").
+  #' @param sep character What separator to use (default = `\t`).
   #' @return file
   #' @examples 
   #' crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
   saveDetailedMetrics = function(file = "Detailed_metrics.tsv", 
                                  dec = ".", 
                                  sep = "\t") {
-    write.table(self$detailed_metrics, file, sep = sep, dec = dec)
+    write.table(self$detailed.metrics, file, sep = sep, dec = dec)
   },
   
   #' Detect doublets
@@ -599,6 +613,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cms List containing the count matrices (default=self$cms.filtered).
   #' @param env Environment to run python in (default="r-reticulate").
   #' @param conda.path Path to conda environment (default=system("whereis conda")).
+  #' @param n.cores integer Number of cores to use (default = self$n.cores)
   #' @param verbose Print messages or not (defeults = self$verbose).
   #' @return data frame
   #' @examples 
@@ -642,6 +657,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           `rownames<-`(cms[[name]] %>% colnames())
       }) %>% 
       bind_rows()
+    
+    df[is.na(df)] <- FALSE
+    
+    df %<>% mutate(labels = as.logical(labels))
     
     output <- tmp %>% lapply(`[[`, 3) %>% 
       setNames(tmp %>% names())
@@ -746,83 +765,102 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Filter count matrices
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
-  #' @param file File to save filtered count matrices to (default = "cms_filtered.rds").
+  #' @param prefix Prefix for file name (default = "cms.filtered")
+  #' @param method Method for saving, either `rds` or `qs` (default = `rds`)
   #' @param raw Save raw count matrices (TRUE) or normalized count matrices (default = TRUE).
-  #' @param depth_cutoff Depth cutoff (default = NULL).
-  #' @param mito_cutoff Mitochondrial fraction cutoff (default = NULL).
+  #' @param depth.cutoff Depth cutoff (default = NULL).
+  #' @param mito.cutoff Mitochondrial fraction cutoff (default = NULL).
   #' @param doublets Doublet detection method to use (default = NULL).
-  #' @param compress Compress the file or not (default = FALSE).
+  #' @param compress Only for `method = 'rds'`: Compress the file or not (default = FALSE).
+  #' @param n.cores Only for `method = 'qs'`: Number of cores (default = stored vector)
   #' @param species Species to calculate the mitochondrial fraction for (default = "human").
-  #' @param ... Parameters for saving R object passed to `saveRDS`.
+  #' @param ... Parameters for saving R object passed to `saveRDS` or `qsave` depending on `method`
   #' @return file
   #' @examples 
-  #' crm$filterCMS(file = "cms_filtered.rds", depth_cutoff = 1e3, mito_cutoff = 0.05, doublets = "scrublet")
-  filterCms = function(file = "cms_filtered.rds", 
+  #' crm$filterCMS(file = "cms_filtered.rds", depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+  filterCms = function(prefix = "cms_filtered", 
+                       method = c("rds","qs"),
                        raw = FALSE, 
-                       depth_cutoff = NULL, 
-                       mito_cutoff = NULL, 
+                       depth.cutoff = NULL, 
+                       mito.cutoff = NULL, 
                        doublets = NULL, 
                        compress = FALSE, 
-                       species = c("human","mouse"), ...) {
+                       n.cores = self$n.cores,
+                       species = c("human","mouse"), 
+                       ...) {
     species %<>%
       tolower() %>% 
       match.arg(c("human","mouse"))
     
+    method %<>%
+      tolower() %>% 
+      match.arg(c("rds","qs"))
+    
     if (raw) cms <- self$cms.raw else cms <- self$cms.filtered
     
+    if (method == "rds") {
+      file = paste0(prefix,".rds")
+    } else {
+      requireNamespace("qs")
+      file = paste0(prefix,".qs")
+    }
     # Create list of cutoff values and doublets method and create empty list for filtered cells
-    cutoff_list = list(depth=depth_cutoff, mito=mito_cutoff, doublets=doublets)
-    filters_list = list()
+    cutoff.list = list(depth=depth.cutoff, mito=mito.cutoff, doublets=doublets)
+    filters.list = list()
     
     # Write logical data frame to list for each filter type
     for (i in 1:3) {
-      if (!is.null(cutoff_list[[i]])) {
-        if (names(cutoff_list)[i] == "depth") {
-          if (!is.numeric(cutoff_list[[i]])) stop("'depth_cutoff' must be numeric.")
+      if (!is.null(cutoff.list[[i]])) {
+        if (names(cutoff.list)[i] == "depth") {
+          if (!is.numeric(cutoff.list[[i]])) stop("'depth.cutoff' must be numeric.")
           depth <- self$getConosDepth() %>% 
             as.data.frame() %>% 
             setNames("depth")
-          if (length(cutoff_list[[i]] > 1)) {
-            split_vec <- strsplit(rownames(depth), "!!") %>% 
+          if (length(cutoff.list[[i]] > 1)) {
+            split.vec <- strsplit(rownames(depth), "!!") %>% 
               sapply('[[', 1)
-            depth_list <- split(depth, split_vec)
-            test <- mapply(function(x, y) x >= y, x = depth_list, y = cutoff_list[[i]])
-            filters_list[[length(filters_list)+1]] <- data.frame(do.call(rbind, test))
+            depth.list <- split(depth, split.vec)
+            test <- mapply(function(x, y) x >= y, x = depth.list, y = cutoff.list[[i]])
+            filters.list[[length(filters.list)+1]] <- data.frame(do.call(rbind, test))
           } else {
-            filters_list[[length(filters_list)+1]] <- data.frame(depth >= cutoff_list[[i]])
+            filters.list[[length(filters.list)+1]] <- data.frame(depth >= cutoff.list[[i]])
           }
-        } else if (names(cutoff_list)[i] == "mito") {
-          if (!is.numeric(cutoff_list[[i]])) stop("'mito_cutoff' must be numeric.")
+        } else if (names(cutoff.list)[i] == "mito") {
+          if (!is.numeric(cutoff.list[[i]])) stop("'mito.cutoff' must be numeric.")
           mf <- self$getMitoFraction() %>% 
             as.data.frame() %>% 
             setNames("mf")
-          filters_list[[length(filters_list)+1]] <- data.frame(mf <= cutoff_list[[i]])
-        } else if (names(cutoff_list)[i] == "doublets"){
-          if (!cutoff_list[[i]] %in% names(crm$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
-          doub <- self$doublets[[cutoff_list[[i]]]]$result$labels %>% replace_na(0)
-          filters_list[[length(filters_list)+1]] <- data.frame(ifelse(doub, FALSE, TRUE))
+          filters.list[[length(filters.list)+1]] <- data.frame(mf <= cutoff.list[[i]])
+        } else if (names(cutoff.list)[i] == "doublets"){
+          if (!cutoff.list[[i]] %in% names(self$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
+          doub <- self$doublets[[cutoff.list[[i]]]]$result$labels %>% replace_na(0)
+          filters.list[[length(filters.list)+1]] <- data.frame(ifelse(doub, FALSE, TRUE))
         }
       }
     }
-    filters <- do.call(cbind, filters_list)
+    filters <- do.call(cbind, filters.list)
     log <- apply(filters,1,all) #Logical of which cell to keep
-    log_list <- split(log, split_vec)
-    log_list <- log_list[order(match(names(log_list),self$metadata$sample))]
-    cms <- mapply(function(x,y) x[,y], x = cms, y = log_list) #Filter count matrices
+    log.list <- split(log, split.vec)
+    log.list <- log.list[order(match(names(log.list),self$metadata$sample))]
+    cms <- mapply(function(x,y) x[,y], x = cms, y = log.list) #Filter count matrices
     
     # Save filtered CMs
-    saveRDS(cms, file = file, compress = compress, ...)
+    if (method == "rds") {
+      saveRDS(cms, file = file, compress = compress, ...)
+    } else {
+      qsave(cms, file = file, nthreads = n.cores, ...)
+    }
   },
   
   #' Select summary metrics.
-  #' @description Select metrics from summary_metrics
+  #' @description Select metrics from summary.metrics
   #' @param ids Metric id to select (default = NULL).
   #' @return vector
   #' @examples
   #' crm$selectMetrics()
   #' selection.metrics <- crm$selectMetrics(c(1:4))
   selectMetrics = function(ids = NULL) {
-    metrics <- self$summary_metrics$metric %>% 
+    metrics <- self$summary.metrics$metric %>% 
       unique()
     
     if(is.null(ids)) tmp <- data.frame(no = 1:length(metrics),metrics = metrics) else tmp <- metrics[ids]
@@ -835,21 +873,25 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param type The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export")).
   #' @param depth Plot the depth or not (default = TRUE).
   #' @param depth.cutoff Depth cutoff (default = 1e3).
-  #' @param doublet_method Method to detect doublets (default = NULL).
+  #' @param doublet.method Method to detect doublets (default = NULL).
   #' @param mito.frac Plot the mitochondrial fraction or not (default = TRUE).
   #' @param mito.cutoff Mitochondrial fraction cutoff (default = 0.05).
   #' @param species Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
+  #' @param size Dot size (default = 0.3)
+  #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object or data frame
   #' @examples 
-  #' crm$plotFilteredCells(type = "umap", doublet_method = "scrublet")
-  #' filtered.cells <- crm$plotFilteredCells(type = "export", doublet_method = "scrublet")
+  #' crm$plotFilteredCells(type = "umap", doublet.method = "scrublet")
+  #' filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
   plotFilteredCells = function(type = c("umap","bar","tile","export"), 
                                depth = TRUE, 
                                depth.cutoff = 1e3, 
-                               doublet_method = NULL, 
+                               doublet.method = NULL, 
                                mito.frac = TRUE, 
                                mito.cutoff = 0.05, 
-                               species = c("human","mouse")) {
+                               species = c("human","mouse"),
+                               size = 0.3,
+                               ...) {
     type %<>% 
       tolower() %>% 
       match.arg(c("umap","bar","tile","export"))
@@ -860,9 +902,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Prepare data
     if (length(depth.cutoff) > 1){
       depth <- self$getConosDepth()
-      split_vec <- strsplit(names(depth), "!!") %>% sapply('[[',1)
-      depth_list <- split(depth, split_vec)
-      depth <- mapply(function(x,y) x >= y, x = depth_list, y = depth.cutoff) %>% unlist() %>% setNames(names(depth))
+      depth.list <- strsplit(names(depth), "!!") %>% 
+        sapply('[[',1) %>% 
+        {split(depth, .)}
+      depth <- mapply(function(x,y) x >= y, x = depth.list, y = depth.cutoff) %>% unlist() %>% setNames(names(depth))
       tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito", ""),
                   ifelse(!depth, "depth", ""))
     } else {
@@ -870,8 +913,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                   ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
     }
     
-    if (!is.null(doublet_method)) {
-      tmp.doublets <- self$doublets[[doublet_method]]$result
+    if (!is.null(doublet.method)) {
+      tmp.doublets <- self$doublets[[doublet.method]]$result
       doublets <- tmp.doublets$labels %>% 
         ifelse("doublet","") %>% 
         setNames(rownames(tmp.doublets))
@@ -910,12 +953,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         apply(2, \(x) x != "") %>% 
         {data.frame(. * 1)} %>% 
         mutate(., sample = rownames(.) %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1),
-               cell = rownames(.)) %>% 
-        reshape2::melt(., id.vars = c("sample","cell"), measure.vars = colnames(.)[!colnames(.) %in% c("sample","cell")])
+               cell = rownames(.)) %>%
+        pivot_longer(cols = -c(sample,cell),
+                     names_to = "variable",
+                     values_to = "value")
     }
     
     if (type == "umap"){
-      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter") +
+      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
         scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     }
     
@@ -989,38 +1034,38 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Prepare CellBender correction
   #' @description Create plots and script call for CellBender
   #' @param shrinkage Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
-  #' @param show_expected_cells Plot line depicting expected number of cells (default = TRUE)
-  #' @param show_total_droplets Plot line depicting total droplets included for CellBender run (default = TRUE)
-  #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
-  #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param show.expected.cells Plot line depicting expected number of cells (default = TRUE)
+  #' @param show.total.droplets Plot line depicting total droplets included for CellBender run (default = TRUE)
+  #' @param expected.cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
+  #' @param total.droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
   #' @param cms.h5 Raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
   #' @param umi.counts UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
   #' @param verbose Show progress (default: stored vector)
   #' @param n.cores Number of cores (default: stored vector)
   #' @return ggplot2 object and bash script
   prepareCellbender = function(shrinkage = 100, 
-                               show_expected_cells = TRUE, 
-                               show_total_droplets = TRUE, 
-                               expected_cells = NULL, 
-                               total_droplets = NULL, 
+                               show.expected.cells = TRUE, 
+                               show.total.droplets = TRUE, 
+                               expected.cells = NULL, 
+                               total.droplets = NULL, 
                                cms.raw = self$cms.raw, 
                                umi.counts = self$cellbender$umi.counts, 
-                               data_path = self$data_path, 
+                               data.path = self$data.path, 
                                samples = self$metadata$sample, 
                                verbose = self$verbose, 
                                n.cores = self$n.cores, 
-                               unique_names = FALSE) {
+                               unique.names = FALSE) {
     # Preparations
     if (verbose) message(paste0(Sys.time()," Started run using ", if(n.cores < length(samples)) n.cores else length(samples)," cores"))
-    if (is.null(expected_cells)) expected_cells <- self$getExpectedCells(samples)
-    if (is.null(total_droplets)) total_droplets <- self$getTotalDroplets(samples)
+    if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
+    if (is.null(total.droplets)) total.droplets <- self$getTotalDroplets(samples)
     
     # Read CMs from HDF5 files
     if (!is.null(cms.raw)) {
       if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set $cms.raw <- NULL"))
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
-      cms.raw <- read10xH5(data_path, samples, "raw", n.cores = n.cores, verbose = verbose, unique_names = unique_names)
+      cms.raw <- read10xH5(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       self$cms.raw <- cms.raw
     }
     
@@ -1052,9 +1097,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }) %>% 
       bind_rows()
     
-    line.df <- expected_cells %>% 
+    line.df <- expected.cells %>% 
       {data.frame(sample = names(.), exp = .)} %>% 
-      mutate(total = total_droplets %>% unname())
+      mutate(total = total.droplets %>% unname())
     
     g <- ggplot(data.df, aes(x, y)) + 
       geom_line(color = "red") + 
@@ -1063,8 +1108,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$theme +
       labs(x = "Droplet ID ranked by count", y = "UMI count per droplet", col = "")
     
-    if (show_expected_cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
-    if (show_total_droplets) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total droplets included"))
+    if (show.expected.cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
+    if (show.total.droplets) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total droplets included"))
     
     g <- g + facet_wrap(~ sample, scales = "free")
     
@@ -1076,32 +1121,32 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param file File name for CellBender script (default: cellbender_script.sh)
   #' @param fpr False positive rate for CellBender (default = 0.01)
   #' @param epochs Number of epochs for CellBender (default = 150)
-  #' @param use_gpu Use CUDA capable GPU (default = TRUE)
-  #' @param expected_cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
-  #' @param total_droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary_metrics (default: stored named vector)
+  #' @param use.gpu Use CUDA capable GPU (default = TRUE)
+  #' @param expected.cells If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
+  #' @param total.droplets If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
   #' @param args (optional) Additional parameters for CellBender
   #' @return bash script
   saveCellbenderScript = function(file = "cellbender_script.sh", 
                                   fpr = 0.01, 
                                   epochs = 150, 
-                                  use_gpu = TRUE, 
-                                  expected_cells = NULL, 
-                                  total_droplets = NULL, 
-                                  data_path = self$data_path, 
+                                  use.gpu = TRUE, 
+                                  expected.cells = NULL, 
+                                  total.droplets = NULL, 
+                                  data.path = self$data.path, 
                                   samples = self$metadata$sample, 
                                   args = NULL) {
     # Preparations
-    inputs <- getH5Paths(data_path, samples, "raw")
-    outputs <- sapply(samples, \(sample) paste0(data_path,sample,"/outs/cellbender.h5")) %>% 
+    inputs <- getH5Paths(data.path, samples, "raw")
+    outputs <- sapply(samples, \(sample) paste0(data.path,sample,"/outs/cellbender.h5")) %>% 
       setNames(samples)
     
-    if (is.null(expected_cells)) expected_cells <- self$getExpectedCells(samples)
-    if (is.null(total_droplets)) total_droplets <- self$getTotalDroplets(samples)
+    if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
+    if (is.null(total.droplets)) total.droplets <- self$getTotalDroplets(samples)
     
     # Create CellBender shell scripts
     script.list <- samples %>% 
       lapply(\(sample) {
-        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use_gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected_cells[sample]," --total-droplets-included ",total_droplets[sample]," --fpr ",fpr," --epochs ",epochs," ",if (!is.null(args)) paste(args, collapse = " "))
+        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use.gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected.cells[sample]," --total-droplets-included ",total.droplets[sample]," --fpr ",fpr," --epochs ",epochs," ",if (!is.null(args)) paste(args, collapse = " "))
       })
     
     out <- list("#! /bin/sh", script.list) %>% 
@@ -1111,19 +1156,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   getExpectedCells = function(samples = self$metadata$sample) {
-    expected_cells <- self$summary_metrics %>% 
+    expected.cells <- self$summary.metrics %>% 
       filter(metric == "Estimated Number of Cells") %$% 
       setNames(value, sample) %>%
       .[samples]
     
-    return(expected_cells)
+    return(expected.cells)
   },
   
   getTotalDroplets = function(samples = self$metadata$sample) {
-    expected_cells <- self$getExpectedCells(samples = samples)
-    total_droplets <- expected_cells * 3
+    expected.cells <- self$getExpectedCells(samples = samples)
+    total.droplets <- expected.cells * 3
     
-    return(total_droplets)
+    return(total.droplets)
   },
   
   addCms = function(cms, 
@@ -1144,15 +1189,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$metadata <- data.frame(sample = sample.names)
     }
     
-    if (!is.null(self$detailed_metrics)) warning("Consider updating detailed metrics by setting $detailed_metrics <- NULL and running $addDetailedMetrics()")
+    if (!is.null(self$detailed.metrics)) warning("Consider updating detailed metrics by setting $detailed.metrics <- NULL and running $addDetailedMetrics()")
     if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding()")
     if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets()")
   },
   
-  plotCbTraining = function(data_path = self$data_path, 
+  plotCbTraining = function(data.path = self$data.path, 
                             samples = self$metadata$sample) {
     requireNamespace("rhdf5")
-    paths <- getH5Paths(data_path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender")
     
     train.df <- samples %>% 
       lapply(\(id) {
@@ -1186,10 +1231,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  plotCbCellProbs = function(data_path = self$data_path, 
+  plotCbCellProbs = function(data.path = self$data.path, 
                              samples = self$metadata$sample) {
     requireNamespace("rhdf5")
-    paths <- getH5Paths(data_path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender")
     
     cell.prob <- samples %>%
       lapply(\(id) {
@@ -1210,10 +1255,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   plotCbAmbExp = function(cutoff = 0.005, 
-                          data_path = self$data_path, 
+                          data.path = self$data.path, 
                           samples = self$metadata$sample) {
     requireNamespace("rhdf5")
-    paths <- getH5Paths(data_path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender")
     
     amb <- samples %>% 
       lapply(\(id) {
@@ -1238,10 +1283,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   plotCbAmbGenes = function(cutoff = 0.005, 
-                            data_path = self$data_path, 
+                            data.path = self$data.path, 
                             samples = self$metadata$sample) {
     requireNamespace("rhdf5")
-    paths <- getH5Paths(data_path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender")
     
     amb <- samples %>% 
       lapply(\(id) {
@@ -1271,11 +1316,11 @@ ggplot(amb, aes(Var1, Freq, fill = Var1)) +
 addSummaryFromCms = function(cms = self$cms.filtered, 
                              n.cores = self$n.cores, 
                              verbose = self$verbose) {
-  if (!is.null(self$summary_metrics)) warning("Overvriting existing summary metrics")
+  if (!is.null(self$summary.metrics)) warning("Overvriting existing summary metrics")
   
   if (verbose) message(paste0(Sys.time()," Calculating 30 summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
   
-  self$summary_metrics <- cms %>% 
+  self$summary.metrics <- cms %>% 
     names() %>% 
     plapply(\(id) {
       cm <- cms[[id]]
@@ -1301,7 +1346,7 @@ addSummaryFromCms = function(cms = self$cms.filtered,
 },
 
 runSoupX = function(cms.raw = self$cms.raw, 
-                    data_path = self$data_path, 
+                    data.path = self$data.path, 
                     samples = self$metadata$sample, 
                     n.cores = self$n.cores, 
                     verbose = self$verbose) {
@@ -1312,7 +1357,7 @@ runSoupX = function(cms.raw = self$cms.raw,
   if (verbose) message(paste0(Sys.time()," Loading data"))
   soupx.list <- samples %>% 
     plapply(\(sample) {
-      paste(data_path,sample,"outs", sep = "/") %>% 
+      paste(data.path,sample,"outs", sep = "/") %>% 
         SoupX::load10X()
     }, n.cores = n.cores) %>% 
     setNames(samples)
@@ -1331,18 +1376,18 @@ runSoupX = function(cms.raw = self$cms.raw,
   self$soupx$plot.df <- samples %>%
     plapply(\(id) {
       dat <- tmp[[id]]
-      post_rho <- dat$fit$posterior
+      post.rho <- dat$fit$posterior
       priorRho <- dat$fit$priorRho
       priorRhoStdDev <- dat$fit$priorRhoStdDev
       
       v2 = (priorRhoStdDev/priorRho)**2
       k = 1+v2**-2/2*(1+sqrt(1+4*v2))
       theta = priorRho/(k-1)
-      prior_rho = dgamma(rhoProbes, k, scale=theta)
+      prior.rho = dgamma(rhoProbes, k, scale=theta)
       
       df <- data.frame(rhoProbes = rhoProbes, 
-                       post_rho = post_rho, 
-                       prior_rho = prior_rho) %>% 
+                       post.rho = post.rho, 
+                       prior.rho = prior.rho) %>% 
         tidyr::pivot_longer(cols = -c("rhoProbes"),
                      names_to = "variable",
                      values_to = "value") %>%
@@ -1378,9 +1423,9 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
   
   ggplot(plot.df, aes(rhoProbes, value, linetype = variable, col = variable)) + 
     geom_line(show.legend = FALSE) +
-    geom_vline(data = line.df, aes(xintercept = value, col = "rho_max", linetype = "rho_max")) +
-    scale_color_manual(name = "", values = c("post_rho" = "black", "rho_max" = "red", "prior_rho" = "black")) +
-    scale_linetype_manual(name = "", values = c("post_rho" = "solid", "rho_max" = "solid", "prior_rho" = "dashed")) +
+    geom_vline(data = line.df, aes(xintercept = value, col = "rho.max", linetype = "rho.max")) +
+    scale_color_manual(name = "", values = c("post.rho" = "black", "rho.max" = "red", "prior.rho" = "black")) +
+    scale_linetype_manual(name = "", values = c("post.rho" = "solid", "rho.max" = "solid", "prior.rho" = "dashed")) +
     self$theme +
     labs(x = "Contamination fraction", y = "Probability density") +
     facet_wrap(~sample, scales = "free_y") +
@@ -1388,10 +1433,10 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
     guides(linetype = guide_legend(byrow = TRUE), col = guide_legend(byrow = TRUE))
 },
 
-plotCbCells = function(data_path = self$data_path, 
+plotCbCells = function(data.path = self$data.path, 
                        samples = self$metadata$sample) {
   requireNamespace("rhdf5")
-  paths <- getH5Paths(data_path, samples, "cellbender_filtered")
+  paths <- getH5Paths(data.path, samples, "cellbender_filtered")
   
   df <- samples %>% 
     sapply(\(id) rhdf5::h5read(paths[id], "matrix/shape")[2]) %>% 
