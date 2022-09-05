@@ -2,12 +2,12 @@
 % Please edit documentation in R/inner_functions.R
 \name{checkCompMeta}
 \alias{checkCompMeta}
-\title{Check whether 'comp_group' is in metadata}
+\title{Check whether 'comp.group' is in metadata}
 \usage{
-checkCompMeta(comp_group, metadata)
+checkCompMeta(comp.group, metadata)
 }
 \arguments{
-\item{comp_group}{Comparison metric.}
+\item{comp.group}{Comparison metric.}
 
 \item{metadata}{Metadata for samples.}
 }
@@ -15,9 +15,9 @@ checkCompMeta(comp_group, metadata)
 nothing or stop
 }
 \description{
-Checks whether 'comp_group' is any of the column names in metadata.
+Checks whether 'comp.group' is any of the column names in metadata.
 }
 \examples{
-checkCompMeta(comp_group = "sex", metadata = crm$metadata)
+checkCompMeta(comp.group = "sex", metadata = crm$metadata)
 }
 \keyword{internal}

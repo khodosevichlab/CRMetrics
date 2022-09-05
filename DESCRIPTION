@@ -1,7 +1,7 @@
 Package: CRMetrics
 Title: Cell Ranger metrics visualisation
 Version: 0.1
-Authors@R: c(person("Rasmus", "Rydbirk", email = "rasmus.rydbirk@bric.ku.dk", role = c("aut", "cre")), person("Henrietta","", email="@bric.ku.dk", role="aut"), person("Fabienne", "Kick", email="fabienne.kick@bric.ku.dk", role="aut"), person("Xian", "Xin", email="xian.xin@bric.ku.dk", role="aut"))
+Authors@R: c(person("Rasmus", "Rydbirk", email = "rasmus.rydbirk@bric.ku.dk", role = c("aut", "cre")), person("Henrietta","Holze", email="@bric.ku.dk", role="aut"), person("Fabienne", "Kick", email="fabienne.kick@bric.ku.dk", role="aut"), person("Xian", "Xin", email="xian.xin@bric.ku.dk", role="aut"))
 Description: Sample filtering and visualisation of Cell Ranger output metrics.
 License: GPL-3
 Encoding: UTF-8
@@ -30,7 +30,11 @@ Suggests:
     conos,
     data.table,
     pagoda2,
-    Seurat
+    qs,
+    reticulate,
+    rhdf5,
+    Seurat,
+    SoupX
 Remotes: const-ae/sparseMatrixStats
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1

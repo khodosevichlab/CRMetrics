@@ -5,14 +5,14 @@
 \title{Read 10x HDF5 files}
 \usage{
 read10xH5(
-  data_path,
+  data.path,
   sample.names = NULL,
   type = c("raw", "filtered", "cellbender", "cellbender_filtered"),
   symbol = TRUE,
   sep = "!!",
   n.cores = 1,
   verbose = TRUE,
-  unique_names = FALSE
+  unique.names = FALSE
 )
 }
 \arguments{

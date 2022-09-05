@@ -6,17 +6,17 @@
 \usage{
 addPlotStatsSamples(
   p,
-  comp_group,
+  comp.group,
   metadata,
   h.adj = 0.05,
   exact = FALSE,
-  second_comp_group
+  second.comp.group
 )
 }
 \arguments{
 \item{p}{Plot to add statistics to.}
 
-\item{comp_group}{Comparison metric.}
+\item{comp.group}{Comparison metric.}
 
 \item{metadata}{Metadata for samples.}
 
@@ -24,7 +24,7 @@ addPlotStatsSamples(
 
 \item{exact}{Whether to calculate exact p values (default = FALSE).}
 
-\item{second_comp_group}{Second comparison metric.}
+\item{second.comp.group}{Second comparison metric.}
 }
 \value{
 ggplot2 object
@@ -33,6 +33,6 @@ ggplot2 object
 Use ggpubr to add statistics to samples ar plot
 }
 \examples{
-addPlotStats(p, comp_group = "sex", metadata = crm$metadata, second_comp_group = "condition")
+addPlotStats(p, comp.group = "sex", metadata = crm$metadata, second.comp.group = "condition")
 }
 \keyword{internal}

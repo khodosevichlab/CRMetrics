@@ -4,10 +4,10 @@
 \alias{plotGeom}
 \title{Plot the data as points, as bars as a histogram, or as a violin}
 \usage{
-plotGeom(plot_geom, col)
+plotGeom(plot.geom, col)
 }
 \arguments{
-\item{plot_geom}{The plot_geom to use, "point", "bar", "histogram", or "violin".}
+\item{plot.geom}{The plot.geom to use, "point", "bar", "histogram", or "violin".}
 }
 \value{
 geom
@@ -16,6 +16,6 @@ geom
 Plot the data as points, barplot, histogram or violin
 }
 \examples{
-plot.geom <- plotGeom(plot_geom = "point")
+plot.geom <- plotGeom(plot.geom = "point")
 }
 \keyword{internal}

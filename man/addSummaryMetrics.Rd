@@ -4,10 +4,10 @@
 \alias{addSummaryMetrics}
 \title{Add summary metrics}
 \usage{
-addSummaryMetrics(data_path, metadata, n.cores = 1, verbose = TRUE)
+addSummaryMetrics(data.path, metadata, n.cores = 1, verbose = TRUE)
 }
 \arguments{
-\item{data_path}{Path to cellranger count data.}
+\item{data.path}{Path to cellranger count data.}
 
 \item{metadata}{Metadata for samples.}
 
@@ -22,6 +22,6 @@ data frame
 Add summary metrics by reading Cell Ranger metrics summary files.
 }
 \examples{
-summary.metrics <- addSummaryMetrics(data_path = crm$data_path, metadata = crm$metadata, n.cores = crm$n.cores)
+summary.metrics <- addSummaryMetrics(data.path = crm$data.path, metadata = crm$metadata, n.cores = crm$n.cores)
 }
 \keyword{internal}

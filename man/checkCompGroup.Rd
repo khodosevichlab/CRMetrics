@@ -2,14 +2,14 @@
 % Please edit documentation in R/inner_functions.R
 \name{checkCompGroup}
 \alias{checkCompGroup}
-\title{Set correct 'comp_group' parameter}
+\title{Set correct 'comp.group' parameter}
 \usage{
-checkCompGroup(comp_group, category, verbose = TRUE)
+checkCompGroup(comp.group, category, verbose = TRUE)
 }
 \arguments{
-\item{comp_group}{Comparison metric.}
+\item{comp.group}{Comparison metric.}
 
-\item{category}{Comparison metric to use if comp_group is not provided.}
+\item{category}{Comparison metric to use if comp.group is not provided.}
 
 \item{verbose}{Print messages (default = TRUE).}
 }
@@ -17,9 +17,9 @@ checkCompGroup(comp_group, category, verbose = TRUE)
 vector
 }
 \description{
-Set comp_group to 'category' if null.
+Set comp.group to 'category' if null.
 }
 \examples{
-comp_group <- checkCompGroup(comp_group = "sex")
+comp.group <- checkCompGroup(comp.group = "sex")
 }
 \keyword{internal}

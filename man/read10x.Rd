@@ -5,17 +5,17 @@
 \title{Load 10x count matrices}
 \usage{
 read10x(
-  data_path,
+  data.path,
   sample.names = NULL,
   symbol = TRUE,
   sep = "!!",
-  unique_names = TRUE,
+  unique.names = TRUE,
   n.cores = 1,
   verbose = TRUE
 )
 }
 \arguments{
-\item{data_path}{Path to cellranger count data.}
+\item{data.path}{Path to cellranger count data.}
 
 \item{sample.names}{Vector of sample names (default = NULL)}
 
@@ -34,6 +34,6 @@ data frame
 Load gene expression count data
 }
 \examples{
-cms <- read10x(data_path = crm$data_path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
+cms <- read10x(data.path = crm$data.path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
 }
 \keyword{internal}

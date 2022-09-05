@@ -6,18 +6,18 @@
 \usage{
 addPlotStats(
   p,
-  comp_group,
+  comp.group,
   metadata,
   h.adj = 0.05,
-  primary_test,
-  secondary_test,
+  primary.test,
+  secondary.test,
   exact = FALSE
 )
 }
 \arguments{
 \item{p}{Plot to add statistics to.}
 
-\item{comp_group}{Comparison metric.}
+\item{comp.group}{Comparison metric.}
 
 \item{metadata}{Metadata for samples.}
 
@@ -25,7 +25,7 @@ addPlotStats(
 
 \item{exact}{Whether to calculate exact p values (default = FALSE).}
 
-\item{stat_test}{Statistical test to perform to compare means.}
+\item{stat.test}{Statistical test to perform to compare means.}
 }
 \value{
 ggplot2 object
@@ -34,6 +34,6 @@ ggplot2 object
 Use ggpubr to add statistics to plots.
 }
 \examples{
-addPlotStats(p, comp_group = "sex", metadata = crm$metadata, stat_test = "kurskal.test")
+addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kurskal.test")
 }
 \keyword{internal}
