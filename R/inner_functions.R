@@ -398,5 +398,35 @@ getH5Paths <- function(data_path, samples = NULL, type = NULL) {
     }) %>% 
     setNames(samples)
   
+  # Check that all files exist
+  if (paths %>% sapply(length) %>% {any(. == 0)}) {
+    miss.names <- paths %>% 
+      sapply(length) %>%
+      {paths[. == 0]} %>% 
+      names()
+    
+    miss <- miss.names %>% 
+      sapply(\(sample) {
+        if (type == "raw") {
+          paste0(data_path,sample,"/outs/raw_[feature/gene]_bc_matrix.h5")
+        } else if (type == "filtered") {
+          paste0(data_path,sample,"/outs/filtered_[feature/gene]_bc_matrix.h5")
+        } else {
+          paste0(data_path,sample,"/outs/",type,".h5")
+        }
+      }) %>% 
+      setNames(miss.names)
+  } else if (!(paths %>% sapply(file.exists) %>% all())) {
+    miss <- paths %>% 
+      sapply(file.exists) %>%
+      {paths[!.]}
+  } else {
+    miss <- NULL
+  }
+  
+  if (!is.null(miss)) {
+    stop(cat("Not all files exist. Missing the following: \n",paste(miss, sep = "\n"),"\n"))
+  }
+  
   return(paths)
 }
