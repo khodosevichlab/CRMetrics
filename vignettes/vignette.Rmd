@@ -55,8 +55,8 @@ Initialize a new object of class `CRMetrics` with the path to the Cell Ranger ou
 Metadata can be added in the initialization call from a comma-separated file. The metadata file contains a column `sample` with the samples and optionally more columns with factors. Only sample IDs in column `sample` will be included.
 
 ```{r}
-crm <- CRMetrics$new(data_path = "/data/ExtData/CRMetrics_testdata/", 
-                     metadata = "/data/ExtData/CRMetrics_testdata/metadata.csv", 
+crm <- CRMetrics$new(data.path = "/data/ExtData/CRMetrics_testdata2/", 
+                     metadata = "/data/ExtData/CRMetrics_testdata2/metadata.csv", 
                      n.cores = 50)
 ```
 
@@ -97,7 +97,11 @@ conda_install("cellbender",
 Then, clone the `CellBender` repository as instructed in the manual. Here, we clone to `/apps/` through `cd /apps/; git clone https://github.com/broadinstitute/CellBender.git` and then `CellBender` can be installed:
 
 ```{r, eval=FALSE}
-conda_install("cellbender", pip = TRUE, pip_options = "-e", packages = "/apps/CellBender/")
+conda_install("cellbender", 
+              conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
+              pip = TRUE, 
+              pip_options = "-e", 
+              packages = "/apps/CellBender/")
 ```
 
 ### Analysis
@@ -106,8 +110,8 @@ For `CellBender`, we need to specify expected number of cells and total droplets
 
 ```{r}
 crm$prepareCellbender(shrinkage = 100, # Subsamples every 100th datapoint for faster plotting
-                      show_expected_cells = TRUE, 
-                      show_total_droplets = TRUE)
+                      show.expected.cells = TRUE, 
+                      show.total.droplets = TRUE)
 ```
 
 We could change the total droplets included for sampleX. Let us first look at the vector.
@@ -127,15 +131,15 @@ We plot this change.
 
 ```{r}
 crm$prepareCellbender(shrinkage = 100, 
-                      show_expected_cells = TRUE, 
-                      show_total_droplets = TRUE, 
-                      total_droplets = droplets)
+                      show.expected.cells = TRUE, 
+                      show.total.droplets = TRUE, 
+                      total.droplets = droplets)
 ```
 
 We could also multiply expected cells by 4 for all samples and save this in our CRMetrics object.
 
 ```{r, eval=FALSE}
-crm$cellbender$total.droplets <- crm$cellbender$expected.cells * 4
+crm$cellbender$total.droplets <- crm$getTotalDroplets(multiplier = 4)
 ```
 
 Finally, we save a script for running `CellBender` on all our samples. Here, we use our modified total droplet vector.
@@ -144,14 +148,37 @@ Finally, we save a script for running `CellBender` on all our samples. Here, we 
 crm$saveCellbenderScript(file = "/apps/cellbender_script.sh", 
                          fpr = 0.01, 
                          epochs = 150, 
-                         use_gpu = TRUE)
+                         use.gpu = TRUE,
+                         total.droplets = droplets)
 ```
 
 We can run this script in the terminal. Here, we load our miniconda module: `module load miniconda\4.12.0`, we activate the environment: `conda activate cellbender` and we run the bash script: `sh /apps/cellbender_script.sh`
 
+### Plotting
+
+```{r}
+crmc$plotCbCells()
+```
+
+```{r, fig.width = 12, fig.height = 10}
+crmc$plotCbTraining()
+```
+
+```{r, fig.width = 12, fig.height = 10}
+crmc$plotCbCellProbs()
+```
+
+```{r, fig.width = 12, fig.height = 10}
+crmc$plotCbAmbExp()
+```
+
+```{r}
+crmc$plotCbAmbGenes()
+```
+
 ## SoupX
 
-Running SoupX uses the automated estimation of contamination and correction.
+The implementation of SoupX uses the automated estimation of contamination and correction.
 
 ```{r}
 crm$runSoupX()
@@ -177,13 +204,12 @@ We can investigate which metrics are available and choose the ones we would like
 crm$selectMetrics()
 ```
 
-
 ## Samples per condition
 
 First, we can plot the number of samples per condition. Here, we investigate how the distribution of the 10x Chromium chemistry differs between the throughput (resolution) of the 10x kits where LT is short for low throughput.
 
 ```{r warning=FALSE}
-crm$plotSummaryMetrics(comp_group = "chemistry", metrics = "samples per group", second_comp_group = "resolution")
+crm$plotSummaryMetrics(comp.group = "chemistry", metrics = "samples per group", second.comp.group = "resolution")
 ```
 
 ## Metrics per sample
@@ -193,7 +219,7 @@ In one plot, we can illustrate selected metric summary stats. If no comparison g
 ```{r fig.width=12, fig.height=12, warning=FALSE}
 metrics.to.plot <- crm$selectMetrics(ids = c(1:4,6,18,19))
 crm$plotSummaryMetrics(metrics = metrics.to.plot, 
-                       plot_geom = "point")
+                       plot.geom = "point")
 ```
 
 ## Metrics per condition
@@ -203,9 +229,9 @@ We can do the same, but set the comparison group to `chemistry`. This will add s
 ```{r fig.width=12, fig.height=10, warning=FALSE}
 crm$addComparison("chemistry")
 crm$plotSummaryMetrics(metrics = metrics.to.plot, 
-                       plot_geom = "point", 
-                       stat_test = "non_parametric",
-                       second_comp_group = "cellranger")
+                       plot.geom = "point", 
+                       stat.test = "non-parametric",
+                       second.comp.group = "cellranger")
 ```
 
 ## Metrics per condition with >2 levels
@@ -218,12 +244,12 @@ crm$metadata$cellranger %<>%
   {c(.[c(1,2)],rep("<3.0.0",2),.[c(5,6)])} %>% 
   factor()
 
-crm$plotSummaryMetrics(comp_group = "cellranger",
+crm$plotSummaryMetrics(comp.group = "cellranger",
                        metrics = metrics.to.plot, 
-                       plot_geom = "point", 
-                       stat_test = "non_parametric",
-                       second_comp_group = "chemistry", 
-                       secondary_testing = TRUE)
+                       plot.geom = "point", 
+                       stat.test = "non-parametric",
+                       second.comp.group = "chemistry", 
+                       secondary.testing = TRUE)
 ```
 
 
@@ -234,21 +260,21 @@ For the sake of the example, we add a numeric vector to our metadata. Then, we c
 ```{r fig.height=10, fig.width=12}
 crm$metadata$num.vec <- c(4,3,4,3,4,6) %>% as.numeric()
 
-crm$plotSummaryMetrics(comp_group = "num.vec",
+crm$plotSummaryMetrics(comp.group = "num.vec",
                        metrics = metrics.to.plot, 
-                       plot_geom = "point",
-                       second_comp_group = "chemistry",
+                       plot.geom = "point",
+                       second.comp.group = "chemistry",
                        se = FALSE)
 ```
 
 We see that there's a significant effect of the numeric vector on `Mean Reads per Cell`. Let us investigate `Mean Reads per Cell` closer by performing regression analyses for both conditions of `chemistry`.
 
 ```{r}
-crm$plotSummaryMetrics(comp_group = "num.vec",
+crm$plotSummaryMetrics(comp.group = "num.vec",
                        metrics = "Mean Reads per Cell", 
-                       plot_geom = "point",
-                       second_comp_group = "chemistry", 
-                       group_reg_lines = TRUE)
+                       plot.geom = "point",
+                       second.comp.group = "chemistry", 
+                       group.reg.lines = TRUE)
 ```
 
 We see that there is no significant effect of the numeric vector on neither of the chemistries although the R2 values are high.
@@ -264,10 +290,10 @@ crm$addDetailedMetrics()
 We plot the detailed metrics. The horizontal lines indicates the median values for all samples.
 
 ```{r}
-metrics.to.plot <- crm$detailed_metrics$metric %>%
+metrics.to.plot <- crm$detailed.metrics$metric %>%
   unique()
 crm$plotDetailedMetrics(metrics = metrics.to.plot, 
-                        plot_geom = "violin")
+                        plot.geom = "violin")
 ```
 
 # Embed cells using Conos and UMAP
@@ -308,7 +334,7 @@ We can see that the depth distribution varies between samples. We can create a c
 
 ```{r}
 depth_cutoff_vec <- c(1e3,1e3,1e3,1e3,3e3,3.5e3) %>% 
-  setNames(crm$detailed_metrics$sample %>% unique() %>% sort())
+  setNames(crm$detailed.metrics$sample %>% unique() %>% sort())
 
 depth_cutoff_vec
 ```
@@ -348,14 +374,74 @@ crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
 We can plot the estimated doublets in the UMAP embedding.
 
 ```{r}
-crm$plotUmap(doublet_method = "scrublet")
+crm$plotUmap(doublet.method = "scrublet")
 ```
 
 And we can plot the scores for the doublet estimations.
 
 ```{r}
-crm$plotUmap(doublet_method = "scrublet", 
-             doublet_scores = TRUE)
+crm$plotUmap(doublet.method = "scrublet", 
+             doublet.scores = TRUE)
+```
+
+## Differences between methods
+
+We can compare how much `scrublet` and `DoubletDetection` overlap in their doublets estimates.
+First, let us plot a bar plot of the number of doublets per sample.
+
+```{r}
+scrub.res <- crm$doublets$scrublet$result %>% 
+  select(labels, sample) %>% 
+  mutate(method = "scrublet")
+dd.res <- crm$doublets$doubletdetection$result %>% 
+  select(labels, sample) %>% 
+  mutate(labels = as.logical(labels), 
+         method = "DoubletDetection")
+
+dd.res[is.na(dd.res)] <- FALSE
+
+plot.df <- rbind(scrub.res,
+                 dd.res) %>% 
+  filter(labels) %>% 
+  group_by(sample, method) %>% 
+  summarise(count = n())
+
+ggplot(plot.df, aes(sample, count, fill = method)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  crm$theme +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+  labs(x = "", y = "No. doublets", fill = "Method", title = "Doublets per sample")
+```
+
+We can also show the total number of doublets detected per method.
+
+```{r}
+plot.df %>% 
+  group_by(method) %>% 
+  summarise(count = sum(count)) %>% 
+  ggplot(aes(method, count, fill = method)) + 
+  geom_bar(stat = "identity") +
+  crm$theme +
+  guides(fill = "none") +
+  labs(x = "", y = "No. doublets", title = "Total doublets per method")
+```
+
+### UMAP
+
+```{r}
+plot.vec <- data.frame(scrublet = scrub.res$labels %>% as.numeric(), 
+                       doubletdetection = dd.res$labels %>% as.numeric()) %>% 
+  apply(1, \(x) if (x[1] == 0 & x[2] == 0) "Kept" else if (x[1] == 1 & x[2] == 0) "scrublet" else if (x[1] == 0 & x[2] == 1) "DoubletDetection" else "Both") %>% 
+  setNames(rownames(scrub.res)) %>% 
+  factor(levels = c("Kept","scrublet","DoubletDetection","Both"))
+
+crm$con$plotGraph(groups = plot.vec, 
+                  mark.groups = FALSE, 
+                  show.legend = TRUE, 
+                  shuffle.colors = TRUE, 
+                  title = "Doublets", 
+                  size = 0.3) +
+  scale_color_manual(values = c("grey80","red","blue","black"))
 ```
 
 # Mitochondrial fraction
@@ -376,7 +462,7 @@ We can plot all the cells to be filtered in the UMAP embedding
 crm$plotFilteredCells(type = "umap", 
                       depth = TRUE, 
                       depth.cutoff = depth_cutoff_vec, 
-                      doublet_method = "scrublet", 
+                      doublet.method = "scrublet", 
                       mito.frac = TRUE, 
                       mito.cutoff = 0.05, 
                       species = "human")
@@ -386,7 +472,7 @@ And we can plot the cells to be filtered per sample where `combination` means a 
 
 ```{r}
 crm$plotFilteredCells(type = "bar", 
-                      doublet_method = "scrublet", 
+                      doublet.method = "scrublet", 
                       depth = TRUE, 
                       depth.cutoff = depth_cutoff_vec, 
                       mito.frac = TRUE, 
@@ -403,17 +489,18 @@ filter.data %>% head()
 
 # Save filtered CMs
 
-Finally, we can filter the count matrices and save them for downstream applications.
+Finally, we can filter the count matrices and save them for downstream applications. Here, we use the `qs` package for saving large files fast.
 
 ```{r eval = FALSE}
-crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered.rds", 
-              depth_cutoff = depth_cutoff_vec, 
-              mito_cutoff = 0.05, 
-              species = "human",
-              doublets = "scrublet")
+crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered",
+              method = "qs",
+              depth.cutoff = depth_cutoff_vec, 
+              mito.cutoff = 0.05, 
+              doublets = "doubletdetection",
+              samples.to.exclude = NULL,
+              species = "human")
 ```
 
 ```{r}
 sessionInfo()
 ```
-
