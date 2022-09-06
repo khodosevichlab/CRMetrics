@@ -4,7 +4,7 @@
 \alias{CRMetrics}
 \title{CRMetrics class object}
 \description{
-Functions to analyse cellranger count data.
+Functions to analyse Cell Ranger count data
 }
 \examples{
 
@@ -951,6 +951,8 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
   compress = FALSE,
   n.cores = self$n.cores,
   species = c("human", "mouse"),
+  samples.to.exclude = NULL,
+  verbose = self$verbose,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -975,6 +977,10 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \item{\code{n.cores}}{integer Only for \code{method = 'qs'}: Number of cores (default = stored vector)}
 
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
+
+\item{\code{samples.to.exclude}}{character Sample names to exclude (default = NULL)}
+
+\item{\code{verbose}}{logical Show progress (default = self$verbose)}
 
 \item{\code{...}}{Parameters for saving R object passed to \code{saveRDS} or \code{qsave} depending on \code{method}}
 }

@@ -13,36 +13,9 @@
 #' @importFrom scales comma
 NULL
 
-# R6 class
-
-# logic of the class:
-# initialize: load metadata file and summary statistics
-#   metadata file must at least have a column with sample names
-#   sample names in metadata must match with directory names from Cell Ranger output
-#   failed samples are excluded with a warning
-
-# metadata file could be optional
-# if no metadata, make all plots with the samples on x-axis
-# potentially little informative 
-# function to add metadata as a data frame. Could need a lot of validation
-
-# plotting functions create plots based on metadata and summary and detailed metrics
-#   all plotting functions should work even if no comparison is specified
-
-#   summary plots are based on summary metrics from cell ranger
-#   specify a column from the metadata as comparison group. This can also be the sample column. 
-#   this group will be plotted on the x-axis and statistical comparisons are made
-#   if no comparison is specified, samples are plotted on x-axis and no statistical comparison is made
-# 
-#   detailed plots are based on detailed metrics, extracted from count matrices
-#   throws error if detailed metrics are not loaded
-#   data used for this is per UMI and gene count per bar code 
-#   x-axis are samples and comparison group is used for colors (optional)
-#   legend for colors is only created if comparison group is not samples
-
 #' CRMetrics class object
 #' 
-#' @description Functions to analyse cellranger count data.
+#' @description Functions to analyse Cell Ranger count data
 #' @export
 CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE, 
  public = list(
@@ -637,7 +610,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (verbose) message("Loading prerequisites...")
     requireNamespace("reticulate")
-    reticulate::use_condaenv(condaenv = env, conda = conda.path, required = T)
+    reticulate::use_condaenv(condaenv = env, conda = conda.path, required = TRUE)
     if (!reticulate::py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
     reticulate::source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
     
@@ -788,6 +761,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param compress logical Only for `method = 'rds'`: Compress the file or not (default = FALSE).
   #' @param n.cores integer Only for `method = 'qs'`: Number of cores (default = stored vector)
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
+  #' @param samples.to.exclude character Sample names to exclude (default = NULL)
+  #' @param verbose logical Show progress (default = self$verbose)
   #' @param ... Parameters for saving R object passed to `saveRDS` or `qsave` depending on `method`
   #' @return file
   #' @examples 
@@ -804,8 +779,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        doublets = NULL, 
                        compress = FALSE, 
                        n.cores = self$n.cores,
-                       species = c("human","mouse"), 
+                       species = c("human","mouse"),
+                       samples.to.exclude = NULL,
+                       verbose = self$verbose,
                        ...) {
+    # Preparations
     species %<>%
       tolower() %>% 
       match.arg(c("human","mouse"))
@@ -816,58 +794,84 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (raw) cms <- self$cms.raw else cms <- self$cms.filtered
     
+    if (!is.null(samples.to.exclude)) {
+      if (!((samples.to.exclude %in% names(cms)) %>% all())) stop("Not all 'samples.to.exclude' found in names of ",if (raw) "self$cms.raw" else "self$cms.filtered. Please check and try again.")
+      if (verbose) message(paste0("Excluding sample(s) ",paste(samples.to.exclude, sep = "\t")))
+      cms %<>% .[setdiff(names(.), samples.to.exclude)]
+      samples <- cms %>% 
+        names()
+    }
+    
     if (method == "rds") {
       file = paste0(prefix,".rds")
     } else {
       requireNamespace("qs")
       file = paste0(prefix,".qs")
     }
-    # Create list of cutoff values and doublets method and create empty list for filtered cells
-    cutoff.list = list(depth=depth.cutoff, mito=mito.cutoff, doublets=doublets)
-    filters.list = list()
     
-    # Write logical data frame to list for each filter type
-    for (i in 1:3) {
-      if (!is.null(cutoff.list[[i]])) {
-        if (names(cutoff.list)[i] == "depth") {
-          if (!is.numeric(cutoff.list[[i]])) stop("'depth.cutoff' must be numeric.")
-          depth <- self$getConosDepth() %>% 
-            as.data.frame() %>% 
-            setNames("depth")
-          if (length(cutoff.list[[i]] > 1)) {
-            split.vec <- strsplit(rownames(depth), "!!") %>% 
-              sapply('[[', 1)
-            depth.list <- split(depth, split.vec)
-            test <- mapply(function(x, y) x >= y, x = depth.list, y = cutoff.list[[i]])
-            filters.list[[length(filters.list)+1]] <- data.frame(do.call(rbind, test))
-          } else {
-            filters.list[[length(filters.list)+1]] <- data.frame(depth >= cutoff.list[[i]])
-          }
-        } else if (names(cutoff.list)[i] == "mito") {
-          if (!is.numeric(cutoff.list[[i]])) stop("'mito.cutoff' must be numeric.")
-          mf <- self$getMitoFraction() %>% 
-            as.data.frame() %>% 
-            setNames("mf")
-          filters.list[[length(filters.list)+1]] <- data.frame(mf <= cutoff.list[[i]])
-        } else if (names(cutoff.list)[i] == "doublets"){
-          if (!cutoff.list[[i]] %in% names(self$doublets)) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
-          doub <- self$doublets[[cutoff.list[[i]]]]$result$labels %>% replace_na(0)
-          filters.list[[length(filters.list)+1]] <- data.frame(ifelse(doub, FALSE, TRUE))
-        }
-      }
+    # Depth
+    if (!is.null(depth.cutoff)) {
+      depth.filter <- self$getConosDepth() %>% 
+        filterVector("depth.cutoff", depth.cutoff, samples)
+    } else {
+      depth.filter <- NULL
     }
-    filters <- do.call(cbind, filters.list)
-    log <- apply(filters,1,all) #Logical of which cell to keep
-    log.list <- split(log, split.vec)
-    log.list <- log.list[order(match(names(log.list),self$metadata$sample))]
-    cms <- mapply(function(x,y) x[,y], x = cms, y = log.list) #Filter count matrices
+    
+    # Mitochondrial fraction
+    if (!is.null(mito.cutoff)) {
+      mito.filter <- self$getMitoFraction() %>% 
+        filterVector("mito.cutoff", mito.cutoff, samples) %>% 
+        !. # NB, has to be negative
+    } else {
+      mito.filter <- NULL
+    }
+    
+    # Doublets
+    if (!is.null(doublets)) {
+      if (is.null(self$doublets[[doublets]])) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
+      
+      doublets.filter <- self$doublets[[doublets]]$result %>% 
+        mutate(labels = replace_na(labels, FALSE)) %>% 
+        {setNames(!.$labels, rownames(.))}
+    } else {
+      doublets.filter <- NULL
+    }
+    
+    # Create split vector
+    split.vec <- strsplit(cell.idx, "!!") %>% 
+      sapply('[[', 1)
+    
+    # Get cell index
+    cell.idx <- self$con$getDatasetPerCell() %>% 
+      names()
+    
+    # Filter
+    filter.list <- list(depth = depth.filter,
+                        mito = mito.filter, 
+                        doublets = doublets.filter) %>% 
+      .[!sapply(., is.null)] %>% 
+      lapply(\(filter) filter[cell.idx]) %>% # Ensure same order of cells
+      bind_cols() %>% 
+      apply(1, all) %>% 
+      split(split.vec)
+      
+    if (verbose) message(paste0("Removing ",sum(!filter.list %>% unlist())," cells"))
+    
+    cms.out <- samples %>% 
+      lapply(\(sample) {
+        cms[[sample]][,filter.list[[sample]]]
+      }) %>% 
+      setNames(samples)
     
     # Save filtered CMs
+    if (verbose) message(paste0("Saving data to ",file))
     if (method == "rds") {
-      saveRDS(cms, file = file, compress = compress, ...)
+      saveRDS(cms.out, file = file, compress = compress, ...)
     } else {
-      qsave(cms, file = file, nthreads = n.cores, ...)
+      qsave(cms.out, file = file, nthreads = n.cores, ...)
     }
+    
+    if (verbose) message(paste0("Done!"))
   },
   
   #' Select summary metrics.
