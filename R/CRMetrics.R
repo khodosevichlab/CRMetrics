@@ -125,21 +125,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 sample.names = self$metadata$sample, 
                                 n.cores = self$n.cores, 
                                 verbose = self$verbose) {
-    if (is.null(self$cms.filtered)) {
+    if (is.null(self$cms)) {
       if (cellbender) {
-        cms.filtered <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       } else {
-        cms.filtered <- read10x(data.path = data.path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+        cms <- read10x(data.path = data.path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
     } else {
-      message("Filtered CMs already present. To overwrite, set $cms.filtered = NULL and rerun this function.")
+      message("Filtered CMs already present. To overwrite, set $cms = NULL and rerun this function.")
     }
     
-    self$cms.filtered <- cms.filtered %>% 
+    self$cms <- cms %>% 
       lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
     
     if (is.null(self$detailed.metrics)) {
-      self$detailed.metrics <- addDetailedMetricsInner(cms = self$cms.filtered, verbose = verbose, n.cores = n.cores)
+      self$detailed.metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
     } else {
       message("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
     }
@@ -592,7 +592,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Detect doublets
   #' @description Detect doublet cells.
   #' @param method character Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
-  #' @param cms list List containing the count matrices (default=self$cms.filtered).
+  #' @param cms list List containing the count matrices (default=self$cms).
   #' @param env character Environment to run python in (default="r-reticulate").
   #' @param conda.path character Path to conda environment (default=system("whereis conda")).
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
@@ -602,7 +602,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$addDetailedMetrics()
   #' crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
   detectDoublets = function(method = c("scrublet","doubletdetection"), 
-                            cms = self$cms.filtered, 
+                            cms = self$cms, 
                             env = "r-reticulate", 
                             conda.path = system("whereis conda"), 
                             n.cores = self$n.cores,
@@ -656,7 +656,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Conos preprocessing
   #' @description Perform conos preprocessing.
-  #' @param cms list List containing the count matrices (default = self$cms.filtered).
+  #' @param cms list List containing the count matrices (default = self$cms).
   #' @param preprocess character Method to use for preprocessing (default = c("pagoda2","seurat")).
   #' @param min.transcripts.per.cell numeric Minimal transcripts per cell (default = 100)
   #' @param verbose logical Print messages or not (default = self$verbose).
@@ -665,7 +665,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @examples 
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing(preprocess = "pagoda2")
-  doPreprocessing = function(cms = self$cms.filtered,
+  doPreprocessing = function(cms = self$cms,
                              preprocess = c("pagoda2","seurat"),
                              min.transcripts.per.cell = 100,
                              verbose = self$verbose,
@@ -792,10 +792,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tolower() %>% 
       match.arg(c("rds","qs"))
     
-    if (raw) cms <- self$cms.raw else cms <- self$cms.filtered
+    if (raw) cms <- self$cms.raw else cms <- self$cms
     
     if (!is.null(samples.to.exclude)) {
-      if (!((samples.to.exclude %in% names(cms)) %>% all())) stop("Not all 'samples.to.exclude' found in names of ",if (raw) "self$cms.raw" else "self$cms.filtered. Please check and try again.")
+      if (!((samples.to.exclude %in% names(cms)) %>% all())) stop("Not all 'samples.to.exclude' found in names of ",if (raw) "self$cms.raw" else "self$cms. Please check and try again.")
       if (verbose) message(paste0("Excluding sample(s) ",paste(samples.to.exclude, sep = "\t")))
       cms %<>% .[setdiff(names(.), samples.to.exclude)]
       samples <- cms %>% 
@@ -870,6 +870,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     } else {
       qsave(cms.out, file = file, nthreads = n.cores, ...)
     }
+    
+    self$cms.filtered <- cms.out
     
     if (verbose) message(paste0("Done!"))
   },
@@ -1251,7 +1253,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (unique.names) cms %<>% createUniqueCellNames(sample.names, sep)
     
-    self$cms.filtered <- cms
+    self$cms <- cms
     
     if (length(cms) != nrow(self$metadata)) {
       warning("Overwriting metadata")
@@ -1426,14 +1428,14 @@ ggplot(amb, aes(Var1, Freq, fill = Var1)) +
 
 #' Add summary metrics from count matrices
 #' @description Add summary metrics from a list of count matrices
-#' @param cms list A list of filtered count matrices (default = self$cms.filtered)
+#' @param cms list A list of filtered count matrices (default = self$cms)
 #' @param n.cores integer Number of cores to use (default = self$n.cores)
 #' @param verbose logical Show progress (default = self$verbose)
 #' @return data.frame
 #' @examples
 #' crm$addCms()
 #' crm$addSummaryFromCms()
-addSummaryFromCms = function(cms = self$cms.filtered, 
+addSummaryFromCms = function(cms = self$cms, 
                              n.cores = self$n.cores, 
                              verbose = self$verbose) {
   if (!is.null(self$summary.metrics)) warning("Overvriting existing summary metrics")
