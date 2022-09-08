@@ -285,7 +285,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           } else {
             g <- g + 
               ggpmisc::stat_poly_eq(aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"), col = !!sym(second.comp.group))) +
-              ggpmisc::stat_poly_line(aes(col = !!sym(second_comp.group)), se = se)
+              ggpmisc::stat_poly_line(aes(col = !!sym(second.comp.group)), se = se)
           }
         }
         
