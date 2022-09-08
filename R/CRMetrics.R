@@ -133,6 +133,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }
     } else {
       message("Filtered CMs already present. To overwrite, set $cms = NULL and rerun this function.")
+      cms <- self$cms
     }
     
     self$cms <- cms %>% 
@@ -1440,7 +1441,7 @@ addSummaryFromCms = function(cms = self$cms,
                              verbose = self$verbose) {
   if (!is.null(self$summary.metrics)) warning("Overvriting existing summary metrics")
   
-  if (verbose) message(paste0(Sys.time()," Calculating 30 summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
+  if (verbose) message(paste0(Sys.time()," Calculating ",length(cms)," summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
   
   self$summary.metrics <- cms %>% 
     names() %>% 
@@ -1457,7 +1458,7 @@ addSummaryFromCms = function(cms = self$cms,
     bind_rows() %>% 
     pivot_longer(cols = -c(sample),
                  names_to = "metric",
-                 values_to = "value")
+                 values_to = "value") %>% 
     mutate(metric = factor(metric, labels = c("Estimated Number of Cells",
                                               "Median Genes per Cell",
                                               "Median UMI Counts per Cell",
