@@ -843,13 +843,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       doublets.filter <- NULL
     }
     
-    # Create split vector
-    split.vec <- strsplit(cell.idx, "!!") %>% 
-      sapply('[[', 1)
-    
     # Get cell index
     cell.idx <- self$con$getDatasetPerCell() %>% 
       names()
+    
+    # Create split vector
+    split.vec <- strsplit(cell.idx, "!!") %>% 
+      sapply('[[', 1)
     
     # Filter
     filter.list <- list(depth = depth.filter,
