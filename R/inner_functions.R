@@ -446,6 +446,7 @@ filterVector <- function(num.vec, name, filter, samples) {
       sapply(\(sample) {
         num.list[[sample]] >= filter[sample]
       }) %>% 
+      unname() %>% 
       unlist()
     
   } else {
