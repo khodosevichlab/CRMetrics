@@ -793,16 +793,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tolower() %>% 
       match.arg(c("rds","qs"))
     
+    # Extract CMs
     if (raw) cms <- self$cms.raw else cms <- self$cms
     
+    # Exclude samples
     if (!is.null(samples.to.exclude)) {
       if (!((samples.to.exclude %in% names(cms)) %>% all())) stop("Not all 'samples.to.exclude' found in names of ",if (raw) "self$cms.raw" else "self$cms. Please check and try again.")
       if (verbose) message(paste0("Excluding sample(s) ",paste(samples.to.exclude, sep = "\t")))
       cms %<>% .[setdiff(names(.), samples.to.exclude)]
-      samples <- cms %>% 
-        names()
     }
     
+    # Extract sample names
+    samples <- cms %>% 
+      names()
+    
+    # Set file format
     if (method == "rds") {
       file = paste0(prefix,".rds")
     } else {
@@ -872,6 +877,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       qsave(cms.out, file = file, nthreads = n.cores, ...)
     }
     
+    # Transfer filtered CMs to object
     self$cms.filtered <- cms.out
     
     if (verbose) message(paste0("Done!"))
