@@ -7,8 +7,8 @@ output:
 
 # Preparations
 
-We have selected [publicly available datasets](https://www.10xgenomics.com/resources/datasets) from 10x which can be downloaded [here](http://kkh.bric.ku.dk/rasmus/crmetrics_testdata.tar.gz). You can download the zipped data using wget or curl, e.g. 
-`wget http://kkh.bric.ku.dk/rasmus/crmetrics_testdata.tar.gz`, and then unpack using 
+We have selected a [publicly available dataset](https://www.ncbi.nlm.nih.gov/geo/) from GEO with accession number GSE179590 which can be downloaded [here](http://kkh.bric.ku.dk/fabienne/crmetrics_testdata.tar.gz). You can download the zipped data using wget or curl, e.g. 
+`wget http://kkh.bric.ku.dk/fabienne/crmetrics_testdata.tar.gz`, and then unpack using 
 `tar -xvf crmetrics_testdata.tar.gz`
 
 # Using Python modules
@@ -25,7 +25,7 @@ library(reticulate)
 
 Then you are ready to create a conda environment. In this example, we're on a server and we load `miniconda` using modules. The `conda` parameter should point to wherever your conda binary is located (in terminal, try `whereis conda`)
 
-```{r}
+```{r, eval=FALSE}
 conda_create("r-reticulate", 
              conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
              python_version = 3.8)
@@ -55,8 +55,8 @@ Initialize a new object of class `CRMetrics` with the path to the Cell Ranger ou
 Metadata can be added in the initialization call from a comma-separated file. The metadata file contains a column `sample` with the samples and optionally more columns with factors. Only sample IDs in column `sample` will be included.
 
 ```{r}
-crm <- CRMetrics$new(data.path = "/data/ExtData/CRMetrics_testdata2/", 
-                     metadata = "/data/ExtData/CRMetrics_testdata2/metadata.csv", 
+crm <- CRMetrics$new(data.path = "/data/ExtData/CRMetrics_testdata/", 
+                     metadata = "/data/ExtData/CRMetrics_testdata/metadata.csv", 
                      n.cores = 50)
 ```
 
@@ -69,7 +69,7 @@ crm$metadata
 # Remove ambient RNA
 
 We have added functionality to remove ambient RNA from our samples. This approach should be used with caution since it induces changes to the UMI counts (NB: it does not overwrite the outputs from Cell Ranger).
-We have included preparative steps for [CellBender](https://github.com/broadinstitute/CellBender/) as well as incorporated [SoupX]() into CRMetrics. 
+We have included preparative steps for [CellBender](https://github.com/broadinstitute/CellBender/) as well as incorporated [SoupX](https://github.com/constantAmateur/SoupX) into CRMetrics. 
 
 ## CellBender
 
@@ -114,17 +114,17 @@ crm$prepareCellbender(shrinkage = 100, # Subsamples every 100th datapoint for fa
                       show.total.droplets = TRUE)
 ```
 
-We could change the total droplets included for sampleX. Let us first look at the vector.
+We could change the total droplets included for any sample. Let us first look at the vector.
 
 ```{r}
 droplets <- crm$getTotalDroplets()
 droplets
 ```
 
-Then we change the total droplets for sampleX.
+Then we change the total droplets for SRR15054424.
 
 ```{r}
-droplets["sampleX"] <- 1e4
+droplets["SRR15054424"] <- 2e4
 ```
 
 We plot this change.
@@ -157,23 +157,23 @@ We can run this script in the terminal. Here, we load our miniconda module: `mod
 ### Plotting
 
 ```{r}
-crmc$plotCbCells()
+crm$plotCbCells()
 ```
 
 ```{r, fig.width = 12, fig.height = 10}
-crmc$plotCbTraining()
+crm$plotCbTraining()
 ```
 
 ```{r, fig.width = 12, fig.height = 10}
-crmc$plotCbCellProbs()
+crm$plotCbCellProbs()
 ```
 
 ```{r, fig.width = 12, fig.height = 10}
-crmc$plotCbAmbExp()
+crm$plotCbAmbExp()
 ```
 
 ```{r}
-crmc$plotCbAmbGenes()
+crm$plotCbAmbGenes()
 ```
 
 ## SoupX
@@ -206,15 +206,15 @@ crm$selectMetrics()
 
 ## Samples per condition
 
-First, we can plot the number of samples per condition. Here, we investigate how the distribution of the 10x Chromium chemistry differs between the throughput (resolution) of the 10x kits where LT is short for low throughput.
+First, we can plot the number of samples per condition. Here, we investigate how the distribution of the sex differs between the type of MS of the samples where RRMS is short for relapsing remitting MS, and SPMS is short for secondary progressive MS.
 
 ```{r warning=FALSE}
-crm$plotSummaryMetrics(comp.group = "chemistry", metrics = "samples per group", second.comp.group = "resolution")
+crm$plotSummaryMetrics(comp.group = "sex", metrics = "samples per group", second.comp.group = "type")
 ```
 
 ## Metrics per sample
 
-In one plot, we can illustrate selected metric summary stats. If no comparison group is set, it defaults to `sample`. We note that `donorC_3k` was counted with an old version of Cell Ranger and therefore does not contain all metrics.
+In one plot, we can illustrate selected metric summary stats. If no comparison group is set, it defaults to `sample`. 
 
 ```{r fig.width=12, fig.height=12, warning=FALSE}
 metrics.to.plot <- crm$selectMetrics(ids = c(1:4,6,18,19))
@@ -224,60 +224,58 @@ crm$plotSummaryMetrics(metrics = metrics.to.plot,
 
 ## Metrics per condition
 
-We can do the same, but set the comparison group to `chemistry`. This will add statistics to the plots. Additionally, we can add a second comparison group for coloring.
+We can do the same, but set the comparison group to `type`. This will add statistics to the plots. Additionally, we can add a second comparison group for coloring.
 
 ```{r fig.width=12, fig.height=10, warning=FALSE}
-crm$addComparison("chemistry")
+crm$addComparison("type")
 crm$plotSummaryMetrics(metrics = metrics.to.plot, 
                        plot.geom = "point", 
                        stat.test = "non-parametric",
-                       second.comp.group = "cellranger")
+                       second.comp.group = "sex")
 ```
 
 ## Metrics per condition with >2 levels
 
-For the sake of the example, we change Cell Ranger versions for samples before v. 3 to "<3.0.0". This will provide us with three comparisons groups to exemplify how to use automated statistics for such situations.
+For the sake of the example, we change the `RIN` values to `low` (RIN<6), `medium` (6<RIN<7), and `high` (RIN>7). This will provide us with three comparisons groups to exemplify how to use automated statistics for such situations.
 
 ```{r, fig.width=12, fig.height=10}
-crm$metadata$cellranger %<>% 
+crm$metadata$RIN %<>% 
   as.character() %>% 
-  {c(.[c(1,2)],rep("<3.0.0",2),.[c(5,6)])} %>% 
-  factor()
+  {c("medium","high","high","medium","high","high","low","high")} %>% 
+  factor(., levels = c("low", "medium", "high"))
 
-crm$plotSummaryMetrics(comp.group = "cellranger",
+crm$plotSummaryMetrics(comp.group = "RIN",
                        metrics = metrics.to.plot, 
                        plot.geom = "point", 
                        stat.test = "non-parametric",
-                       second.comp.group = "chemistry", 
+                       second.comp.group = "type", 
                        secondary.testing = TRUE)
 ```
 
 
 ## Metrics per condition with numeric covariate
 
-For the sake of the example, we add a numeric vector to our metadata. Then, we can choose a numeric comparison group which will add regression lines to the plots.
+We can choose a numeric comparison group, in this case `age`, which will add regression lines to the plots.
 
 ```{r fig.height=10, fig.width=12}
-crm$metadata$num.vec <- c(4,3,4,3,4,6) %>% as.numeric()
-
-crm$plotSummaryMetrics(comp.group = "num.vec",
+crm$plotSummaryMetrics(comp.group = "age",
                        metrics = metrics.to.plot, 
                        plot.geom = "point",
-                       second.comp.group = "chemistry",
+                       second.comp.group = "type",
                        se = FALSE)
 ```
 
-We see that there's a significant effect of the numeric vector on `Mean Reads per Cell`. Let us investigate `Mean Reads per Cell` closer by performing regression analyses for both conditions of `chemistry`.
+If the numeric vector has a significant effect on one of the metrics we can investigate it closer by performing regression analyses for both conditions of `type`.
 
 ```{r}
-crm$plotSummaryMetrics(comp.group = "num.vec",
+crm$plotSummaryMetrics(comp.group = "age",
                        metrics = "Mean Reads per Cell", 
                        plot.geom = "point",
-                       second.comp.group = "chemistry", 
+                       second.comp.group = "type", 
                        group.reg.lines = TRUE)
 ```
 
-We see that there is no significant effect of the numeric vector on neither of the chemistries although the R2 values are high.
+We see that there is no significant effect of the numeric vector on neither of the MS types.
 
 # Add detailed metrics
 
@@ -333,7 +331,7 @@ crm$plotDepth()
 We can see that the depth distribution varies between samples. We can create a cutoff vector specifying the depth cutoff per sample. It should be a named vector containing sample names.
 
 ```{r}
-depth_cutoff_vec <- c(1e3,1e3,1e3,1e3,3e3,3.5e3) %>% 
+depth_cutoff_vec <- c(2.5e3, 2e3, 1e3, 1.5e3, 1.5e3, 2e3, 2.5e3, 2e3) %>% 
   setNames(crm$detailed.metrics$sample %>% unique() %>% sort())
 
 depth_cutoff_vec
@@ -356,7 +354,7 @@ crm$plotUmap(depth = TRUE,
 
 For doublet detection, we included the possibility to do so using the Python modules `scrublet` and `DoubletDetection`. First, we should install these packages:
 
-```{r eval = FALSE}
+```{r, eval = FALSE}
 library(reticulate)
 conda_install("r-reticulate", 
               conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
@@ -364,11 +362,13 @@ conda_install("r-reticulate",
               packages = c("scrublet","doubletdetection"))
 ```
 
-`scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we use `scrublet`.
+`scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we run `scrublet` and `DoubletDetection` to compare in the next section.
 
 ```{r}
 crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
                    method = "scrublet")
+crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
+                   method = "doubletdetection")
 ```
 
 We can plot the estimated doublets in the UMAP embedding.
