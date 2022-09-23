@@ -294,21 +294,28 @@ percFilter <- function(filter.data, filter = "mito") {
 #' @examples 
 #' filtered <- labelsFilter(filter.data)
 labelsFilter <- function(filter.data) {
-  mito <- percFilter(filter.data, "mito") %>% 
-    sapply(\(x) {if (x < 0.01) "Low" else if(x > 0.05) "High" else "Medium"}) %>% 
-    {data.frame(sample = names(.), value = .)}
+  var.names <- filter.data$variable %>% 
+    unique()
   
-  depth <- percFilter(filter.data, "depth") %>% 
-    sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>% 
-    {data.frame(sample = names(.), value = .)}
+  tmp <- list()
   
-  doublets <- percFilter(filter.data, "doublets") %>% 
-    sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>%
-    {data.frame(sample = names(.), value = .)}
+  if ("mito" %in% var.names) {
+    tmp$mito <- percFilter(filter.data, "mito") %>% 
+      sapply(\(x) {if (x < 0.01) "Low" else if(x > 0.05) "High" else "Medium"}) %>% 
+      {data.frame(sample = names(.), value = .)}
+  }
   
-  tmp <- list(mito = mito,
-              depth = depth,
-              doublets = doublets)
+  if ("depth" %in% var.names) {
+    tmp$depth <- percFilter(filter.data, "depth") %>% 
+      sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>% 
+      {data.frame(sample = names(.), value = .)}
+  }
+  
+  if ("doublets" %in% var.names) {
+    tmp$doublets <- percFilter(filter.data, "doublets") %>% 
+      sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>%
+      {data.frame(sample = names(.), value = .)}
+  }
   
   tmp %<>% 
     names() %>% 
