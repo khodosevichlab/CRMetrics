@@ -464,3 +464,7 @@ filterVector <- function(num.vec, name, filter, samples) {
   
   return(out)
 }
+
+checkDataPath <- function(data.path) {
+  if (is.null(data.path)) stop("'data.path' cannot be NULL.")
+}

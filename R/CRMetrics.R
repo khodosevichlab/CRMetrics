@@ -44,23 +44,33 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    n.cores = 1,
   
   #' Initialize a CRMetrics object
-  #' @description To initialize new object, 'data.path' is needed. 'metadata' is also recommended, but not required.
-  #' @param data.path character Path to cellranger count data (default = NULL).
+  #' @description To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
+  #' @param data.path character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).
   #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL).
+  #' @param cms list List with count matrices (default = NULL)
+  #' @param sample.names character Sample names. Only relevant is cms is provided (default = NULL)
+  #' @param unique.names logical Create unique cell names. Only relevant if cms is provided (default = TRUE)
+  #' @param sep.cells character Sample-cell separator. Unly relevant if cms is provided and `unique.names=TRUE` (default = "!!")
   #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
   #' @param verbose logical Print messages or not (default = TRUE).
   #' @param theme ggplot2 theme (default: theme_bw()).
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
+  #' @param sep.meta character Separator for metadata file (default = ",")
   #' @param raw.meta logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
   #' @return CRMetrics object
   #' @examples 
   #' crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
-  initialize = function(data.path, 
+  initialize = function(data.path = NULL, 
                         metadata = NULL, 
+                        cms = NULL,
+                        sample.names = NULL,
+                        unique.names = TRUE,
+                        sep.cells = "!!",
                         comp.group = NULL, 
                         verbose = TRUE, 
                         theme = theme_bw(), 
                         n.cores = 1, 
+                        sep.meta = ",",
                         raw.meta = FALSE) {
     
     if ('CRMetrics' %in% class(data.path)) { # copy constructor
@@ -71,35 +81,60 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       return(NULL)
     }
     
-    # Check that last character is slash
-    length.path <- nchar(data.path)
-    last.char <- data.path %>% 
-      substr(length.path, length.path)
+    # Check that either data.path or cms is provided
+    if (is.null(data.path) & is.null(cms)) stop("Either 'data.path' or 'cms' must be provided.")
     
-    if (last.char != "/") data.path <- paste0(data.path,"/") else data.path <- data.path
+    # Check that last character is slash
+    if (!is.null(data.path)) {
+      length.path <- nchar(data.path)
+      last.char <- data.path %>% 
+        substr(length.path, length.path)
+      
+      if (last.char != "/") data.path <- paste0(data.path,"/") else data.path <- data.path
+    }
     
     # Write stuff to object
     self$n.cores <- as.integer(n.cores)
     self$data.path <- data.path
     self$verbose <- verbose
     self$theme <- theme
+    
+    # Metadata
     if (is.null(metadata)) {
-      self$metadata <- data.frame(sample = list.dirs(data.path, recursive = FALSE, full.names = FALSE))
+      if (!is.null(data.path)) {
+        self$metadata <- data.frame(sample = list.dirs(data.path, 
+                                                       recursive = FALSE, 
+                                                       full.names = FALSE))
+      }
     } else {
       if (class(metadata) == "data.frame") {
         self$metadata <- metadata %>% 
           arrange(sample)
       } else {
         stopifnot(file.exists(metadata))
-        self$metadata <- read.csv(metadata, header = TRUE, colClasses = "character") %>% 
+        self$metadata <- read.table(metadata, 
+                                    header = TRUE, 
+                                    colClasses = "character", 
+                                    sep = sep.meta) %>% 
           arrange(sample)
       }
     }
     
     if (!raw.meta) self$metadata %<>% lapply(type.convert, as.is = FALSE) %>% bind_cols()
     
+    # Add CMs
+    if (!is.null(cms)) {
+      self$addCms(cms = cms, 
+                  sample.names = sample.names, 
+                  unique.names = unique.names, 
+                  sep = sep.cells, 
+                  n.cores = self$n.cores)
+    } 
+    
     checkCompMeta(comp.group, self$metadata)
-    self$summary.metrics <- addSummaryMetrics(data.path, self$metadata, verbose)
+    
+    # Add summary metrics
+    if (is.null(cms)) self$summary.metrics <- addSummaryMetrics(data.path, self$metadata, verbose)
   },
   
   #' Add detailed metrics
@@ -138,11 +173,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       cms <- self$cms
     }
     
-    self$cms <- cms %>% 
-      lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
-    
     if (is.null(self$detailed.metrics)) {
-      self$detailed.metrics <- addDetailedMetricsInner(cms = self$cms, verbose = verbose, n.cores = n.cores)
+      if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
+      self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
     } else {
       message("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
     }
@@ -363,7 +396,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                  plot.geom = "violin", 
                                  data.path = self$data.path, 
                                  hline = TRUE){
-    if (is.null(detailed.metrics)) detailed.metrics <- self$addDetailedMetrics(data.path = data.path, sample.names = metadata$sample, verbose = self$verbose)
+    # Checks
+    if (is.null(detailed.metrics)) stop("'detailed.metrics' not calculated. Please run 'addDetailedMetrics()'.")
     comp.group %<>% checkCompGroup("sample", self$verbose)
     
     if (is.null(metrics)) {
@@ -755,6 +789,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Filter count matrices
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
+  #' @param min.transcripts.per.cell numeric Minimal transcripts per cell (default = 100)
   #' @param depth.cutoff numeric Depth cutoff (default = NULL).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = NULL).
   #' @param doublets character Doublet detection method to use (default = NULL).
@@ -768,7 +803,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$createEmbedding()
   #' crm$detectDoublets() # Optional
   #' crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
-  filterCms = function(depth.cutoff = NULL, 
+  filterCms = function(min.transcripts.per.cell = 100,
+                       depth.cutoff = NULL, 
                        mito.cutoff = NULL, 
                        doublets = NULL, 
                        compress = FALSE, 
@@ -796,6 +832,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     samples <- cms %>% 
       names()
     
+    # Apply min.transcripts.per.cell
+    if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
     # Depth
     if (!is.null(depth.cutoff)) {
       depth.filter <- self$getConosDepth() %>% 
@@ -1091,6 +1129,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set $cms.raw <- NULL"))
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
+      checkDataPath(data.path)
       cms.raw <- read10xH5(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
       self$cms.raw <- cms.raw
     }
@@ -1167,6 +1206,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                   samples = self$metadata$sample, 
                                   args = NULL) {
     # Preparations
+    checkDataPath(data.path)
     inputs <- getH5Paths(data.path, samples, "raw")
     outputs <- sapply(samples, \(sample) paste0(data.path,sample,"/outs/cellbender.h5")) %>% 
       setNames(samples)
@@ -1232,16 +1272,38 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                     unique.names = TRUE, 
                     sep = "!!", 
                     n.cores = self$n.cores) {
-    if (!is.list(cms)) stop("cms must be a list of count matrices")
+    # Checks begin
+    if (!is.list(cms)) stop("'cms' must be a list of count matrices")
+    
+    sample.class <- sapply(cms, class) %>% 
+      unlist() %>% 
+      sapply(\(x) grepl("Matrix", x))
+    if (any(sample.class)) {
+      warning(paste0("Some samples are not a matrix (maybe they only contain 1 cell). Removing the following samples: ",paste(sample.class[!sample.class] %>% names(), collapse = " ")))
+      cms %<>% .[sample.class]
+    } 
+    
+    sample.cells <- sapply(cms, ncol) %>% unlist()
+    if (any(sample.cells == 0)) {
+      warning(paste0("Some samples does not contain cells. Removing the following samples: ",paste(sample.cells[sample.cells == 0] %>% names(), collapse=" ")))
+      cms %<>% .[sample.cells > 0]
+    }
+    
     if (is.null(sample.names)) sample.names <- names(cms)
     if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
+    if (length(sample.names) != length(cms)) stop("Length of 'sample.names' does not match length of 'cms'.")
+    # Checks end
     
     if (unique.names) cms %<>% createUniqueCellNames(sample.names, sep)
     
     self$cms <- cms
     
-    if (length(cms) != nrow(self$metadata)) {
-      warning("Overwriting metadata")
+    if (!is.null(self$metadata)) {
+      if (length(cms) != nrow(self$metadata)) {
+        warning("Overwriting metadata")
+        self$metadata <- data.frame(sample = sample.names)
+      }
+    } else {
       self$metadata <- data.frame(sample = sample.names)
     }
     
@@ -1262,6 +1324,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$plotCbTraining()
   plotCbTraining = function(data.path = self$data.path, 
                             samples = self$metadata$sample) {
+    checkDataPath(data.path)
     requireNamespace("rhdf5")
     paths <- getH5Paths(data.path, samples, "cellbender")
     
@@ -1309,6 +1372,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$plotCbCellProbs()
   plotCbCellProbs = function(data.path = self$data.path, 
                              samples = self$metadata$sample) {
+    checkDataPath(data.path)
     requireNamespace("rhdf5")
     paths <- getH5Paths(data.path, samples, "cellbender")
     
@@ -1344,6 +1408,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotCbAmbExp = function(cutoff = 0.005, 
                           data.path = self$data.path, 
                           samples = self$metadata$sample) {
+    checkDataPath(data.path)
     requireNamespace("rhdf5")
     paths <- getH5Paths(data.path, samples, "cellbender")
     
@@ -1383,6 +1448,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotCbAmbGenes = function(cutoff = 0.005, 
                             data.path = self$data.path, 
                             samples = self$metadata$sample) {
+    checkDataPath(data.path)
     requireNamespace("rhdf5")
     paths <- getH5Paths(data.path, samples, "cellbender")
     
@@ -1465,6 +1531,7 @@ runSoupX = function(data.path = self$data.path,
                     samples = self$metadata$sample, 
                     n.cores = self$n.cores, 
                     verbose = self$verbose) {
+  checkDataPath(data.path)
   requireNamespace("SoupX")
   if (verbose) message(paste0(Sys.time()," Running using ", if (n.cores <- length(samples)) n.cores else length(samples)," cores"))
   
@@ -1567,6 +1634,7 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
 #' crm$plotCbCells()
 plotCbCells = function(data.path = self$data.path, 
                        samples = self$metadata$sample) {
+  checkDataPath(data.path)
   requireNamespace("rhdf5")
   paths <- getH5Paths(data.path, samples, "cellbender_filtered")
   
