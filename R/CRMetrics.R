@@ -105,6 +105,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Add detailed metrics
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
   #' @param min.transcripts.per.cell numeric Minimal number of transcripts per cell (default = 100)
+  #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE` (default = FALSE)
   #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param sep character Separator for cell names (default = "!!").
   #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
@@ -117,6 +118,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @examples 
   #' crm$addDetailedMetrics()
   addDetailedMetrics = function(min.transcripts.per.cell = 100, 
+                                raw = FALSE,
                                 symbol = TRUE, 
                                 sep = "!!", 
                                 cellbender = FALSE, 
@@ -129,7 +131,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (cellbender) {
         cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       } else {
-        cms <- read10x(data.path = data.path, sample.names = sample.names, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+        cms <- read10x(data.path = data.path, sample.names = sample.names, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
     } else {
       message("Filtered CMs already present. To overwrite, set $cms = NULL and rerun this function.")
