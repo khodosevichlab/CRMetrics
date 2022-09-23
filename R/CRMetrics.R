@@ -120,7 +120,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }
     }
     
-    if (!raw.meta) self$metadata %<>% lapply(type.convert, as.is = FALSE) %>% bind_cols()
+    if (!is.null(metadata)) {
+      if (!raw.meta) self$metadata %<>% lapply(type.convert, as.is = FALSE) %>% bind_cols()
+    }
     
     # Add CMs
     if (!is.null(cms)) {
@@ -698,6 +700,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param min.transcripts.per.cell numeric Minimal transcripts per cell (default = 100)
   #' @param verbose logical Print messages or not (default = self$verbose).
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
+  #' @param get.largevis logical For Pagoda2, create largeVis embedding (default = FALSE)
+  #' @param tsne logical Create tSNE embedding (default = FALSE)
+  #' @param make.geneknn logical For Pagoda2, estimate gene kNN (default = FALSE)
+  #' @param cluster logical For Seurat, estimate clusters (default = FALSE)
+  #' @param ... Additional arguments for `Pagaoda2::basicP2Proc` or `conos:::basicSeuratProc`
   #' @return Conos object
   #' @examples 
   #' crm$addDetailedMetrics()
@@ -706,13 +713,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                              preprocess = c("pagoda2","seurat"),
                              min.transcripts.per.cell = 100,
                              verbose = self$verbose,
-                             n.cores = self$n.cores) {
+                             n.cores = self$n.cores,
+                             get.largevis = FALSE,
+                             tsne = FALSE,
+                             make.geneknn = FALSE,
+                             cluster = FALSE,
+                             ...) {
     preprocess %<>% 
       tolower() %>% 
       match.arg(c("pagoda2","seurat"))
     if (is.null(cms)) {
-      message("No count matrices found, running addDetailedMetrics.")
-      self$addDetailedMetrics()
+      stop("No count matrices found, please add them using addDetailedMetrics or addCms.")
     }
     
     if (preprocess == "pagoda2") {
@@ -725,8 +736,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         get.tsne = FALSE,
         make.geneknn = FALSE,
         min.transcripts.per.cell = min.transcripts.per.cell,
-        n.cores = n.cores
-      )
+        n.cores = n.cores,
+        ...)
     } else if (preprocess == "seurat") {
       if (verbose) message('Running preprocessing using Seurat...')
       requireNamespace("conos")
@@ -736,7 +747,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         do.par = (n.cores > 1),
         tsne = FALSE,
         cluster = FALSE,
-        verbose = FALSE)
+        verbose = FALSE,
+        ...)
     } 
     if (verbose) message('Preprocessing done!\n')
     
@@ -749,31 +761,36 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cms list List containing the preprocessed count matrices (default = self$cms.preprocessed).
   #' @param verbose logical Print messages or not (default = self$verbose).
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
+  #' @param arg.buildGraph list A list with additional arguments for the `buildGraph` function in Conos (default = list())
+  #' @param arg.findCommunities list A list with additional arguments for the `findCommunities` function in Conos (default = list(n.iterations = 1)) # Should be updated when Conos issue #123 is resolved
+  #' @param arg.embedGraph list A list with additional arguments for the `embedGraph` function in Conos (default = list(method = "UMAP))
   #' @return Conos object
   #' @examples 
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   createEmbedding = function(cms = self$cms.preprocessed,
-                              verbose = self$verbose, 
-                              n.cores = self$n.cores) {
+                             verbose = self$verbose, 
+                             n.cores = self$n.cores,
+                             arg.buildGraph = list(),
+                             arg.findCommunities = list(n.iterations = 1),
+                             arg.embedGraph = list(method = "UMAP")) {
     requireNamespace("conos")
     if (is.null(cms)) {
-      message("No preprocessed count matrices found, running doPreprocessing.")
-      self$doPreprocessing()
+      stop("No preprocessed count matrices found, please run doPreprocessing.")
     }
     
     if (verbose) message('Creating Conos object... ')
     con <- conos::Conos$new(cms, n.cores = n.cores)
     
     if (verbose) message('Building graph... ')
-    con$buildGraph()
+    do.call(con$buildGraph, arg.buildGraph)
     
     if (verbose) message('Finding communities... ')
-    con$findCommunities(n.iterations = 1)
+    do.call(con$findCommunities, arg.findCommunities)
     
     if (verbose) message('Creating UMAP embedding... ')
-    con$embedGraph(method = 'UMAP')
+    do.call(con$embedGraph, arg.embedGraph)
     
     self$con <- con
     if (!is.null(self$depth)) {
@@ -781,7 +798,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       invisible(self$getConosDepth())
     } 
     if (!is.null(self$mito.fraction)) {
-      warning("Overwriting previous mito.frac vector")
+      warning("Overwriting previous mito.fraction vector")
       invisible(self$getMitoFraction())
     } 
     invisible(con)
@@ -1278,7 +1295,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     sample.class <- sapply(cms, class) %>% 
       unlist() %>% 
       sapply(\(x) grepl("Matrix", x))
-    if (any(sample.class)) {
+    if (!any(sample.class)) {
       warning(paste0("Some samples are not a matrix (maybe they only contain 1 cell). Removing the following samples: ",paste(sample.class[!sample.class] %>% names(), collapse = " ")))
       cms %<>% .[sample.class]
     } 
@@ -1524,13 +1541,19 @@ addSummaryFromCms = function(cms = self$cms,
 #' @param samples character Sample names to include (default = self$metadata$sample)
 #' @param n.cores numeric Number of cores (default = self$n.cores)
 #' @param verbose logical Show progress (default = self$verbose)
+#' @param arg.load10X list A list with additional parameters for `SoupX::load10X` (default = list())
+#' @param arg.autoEstCont list A list with additional parameters for `SoupX::autoEstCont` (default = list())
+#' @param arg.adjustCounts list A list with additional paramters for `SoupX::adjustCounts` (default = list())
 #' @return List containing a list with corrected counts, and a data.frame containing plotting estimations
 #' @examples 
 #' crm$runSoupX()
 runSoupX = function(data.path = self$data.path, 
                     samples = self$metadata$sample, 
                     n.cores = self$n.cores, 
-                    verbose = self$verbose) {
+                    verbose = self$verbose,
+                    arg.load10X = list(),
+                    arg.autoEstCont = list(),
+                    arg.adjustCounts = list()) {
   checkDataPath(data.path)
   requireNamespace("SoupX")
   if (verbose) message(paste0(Sys.time()," Running using ", if (n.cores <- length(samples)) n.cores else length(samples)," cores"))
@@ -1539,8 +1562,10 @@ runSoupX = function(data.path = self$data.path,
   if (verbose) message(paste0(Sys.time()," Loading data"))
   soupx.list <- samples %>% 
     plapply(\(sample) {
-      paste(data.path,sample,"outs", sep = "/") %>% 
-        SoupX::load10X()
+      arg <- list(dataDir = paste(data.path,sample,"outs", sep = "/")) %>% 
+        append(arg.load10X)
+      out <- do.call(SoupX::load10X, arg)
+      return(out)
     }, n.cores = n.cores) %>% 
     setNames(samples)
   
@@ -1548,7 +1573,10 @@ runSoupX = function(data.path = self$data.path,
   if (verbose) message(paste0(Sys.time()," Estimating contamination"))
   tmp <- soupx.list %>% 
     plapply(\(soupx.obj) {
-      SoupX::autoEstCont(soupx.obj)
+      arg <- list(sc = soupx.obj) %>% 
+        append(arg.autoEstCont)
+      out <- do.call(SoupX::autoEstCont, arg)
+      return(out)
     }, n.cores = n.cores) %>% 
     setNames(samples)
   
@@ -1558,6 +1586,8 @@ runSoupX = function(data.path = self$data.path,
   self$soupx$plot.df <- samples %>%
     plapply(\(id) {
       dat <- tmp[[id]]
+      
+      ## The following is taken from the SoupX package
       post.rho <- dat$fit$posterior
       priorRho <- dat$fit$priorRho
       priorRhoStdDev <- dat$fit$priorRhoStdDev
@@ -1586,8 +1616,10 @@ runSoupX = function(data.path = self$data.path,
   if (verbose) message(paste0(Sys.time()," Adjusting counts"))
   self$soupx$cms.adj <- tmp %>% 
     plapply(\(sample) {
-      tmp.sx <- SoupX::adjustCounts(sample)
-      return(tmp.sx)
+      arg <- list(sc = sample) %>% 
+        append(arg.adjustCounts)
+      out <- do.call(SoupX::adjustCounts, arg)
+      return(out)
       }, n.cores = n.cores) %>% 
     setNames(samples)
   
