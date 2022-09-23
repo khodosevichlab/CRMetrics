@@ -480,6 +480,17 @@ crm$plotFilteredCells(type = "bar",
                       species = "human")
 ```
 
+Finally, we can create a tile plot with an overview of sample quality for the different filters. NB, this is experimental and has not been validated across datasets.
+
+```{r}
+crm$plotFilteredCells(type = "tile", 
+                      doublet.method = "doubletdetection",
+                      depth = TRUE, 
+                      depth.cutoff = depth_cutoff_vec,
+                      mito.frac = TRUE, 
+                      mito.cutoff = 0.05, 
+                      species = "human")
+```
 We can also extract the raw numbers for plotting in other ways than those included here
 
 ```{r}
@@ -487,19 +498,26 @@ filter.data <- crm$plotFilteredCells(type = "export")
 filter.data %>% head()
 ```
 
-# Save filtered CMs
+# Filter count matrices
 
-Finally, we can filter the count matrices and save them for downstream applications. Here, we use the `qs` package for saving large files fast.
+Finally, we can filter the count matrices to create a cleaned list to be used in downstream applications.
 
-```{r eval = FALSE}
-crm$filterCms(file = "/data/ExtData/CRMetrics_testdata/cms_filtered",
-              method = "qs",
-              depth.cutoff = depth_cutoff_vec, 
+```{r filter, eval = FALSE}
+crm$filterCms(depth.cutoff = depth_cutoff_vec, 
               mito.cutoff = 0.05, 
               doublets = "doubletdetection",
               samples.to.exclude = NULL,
               species = "human")
 ```
+
+The filtered list of count matrices is stored in $cms.filtered which can be saved on disk afterwards.
+
+```{r save, eval=FALSE}
+library(qs)
+qsave(crm$cms.filtered, "/data/ExtData/CRMetrics_testdata/cms_filtered.qs", 
+      nthreads = 50)
+```
+
 
 ```{r}
 sessionInfo()
