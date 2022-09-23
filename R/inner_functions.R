@@ -37,6 +37,7 @@ checkCompMeta <- function(comp.group, metadata) {
 #' @description Load gene expression count data
 #' @param data.path Path to cellranger count data.
 #' @param sample.names Vector of sample names (default = NULL)
+#' @param raw logical Add raw count matrices (default = FALSE)
 #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
 #' @param sep Separator for cell names (default = "!!").
 #' @param n.cores Number of cores for the calculations (default = 1).
@@ -44,15 +45,16 @@ checkCompMeta <- function(comp.group, metadata) {
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' cms <- read10x(data.path = crm$data.path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
+#' cms <- read10x(data.path = crm$data.path, samples = crm$metadata$samples, raw = FALSE, symbol = TRUE, n.cores = crm$n.cores)
 #' @export
-read10x <- function(data.path, sample.names = NULL, symbol = TRUE, sep = "!!", unique.names = TRUE, n.cores = 1, verbose = TRUE) {
+read10x <- function(data.path, sample.names = NULL, raw = FALSE, symbol = TRUE, sep = "!!", unique.names = TRUE, n.cores = 1, verbose = TRUE) {
   requireNamespace("data.table")
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
   full.path <- sample.names %>% 
     sapply(\(sample) {
-      dir(paste(data.path,sample,"outs", sep = "/"), pattern = glob2rx("filtered_*_bc_matri*"), full.names = TRUE) %>% 
+      if (raw) pat <- glob2rx("raw_*_bc_matri*") else pat <- glob2rx("filtered_*_bc_matri*")
+      dir(paste(data.path,sample,"outs", sep = "/"), pattern = pat, full.names = TRUE) %>% 
         .[!grepl(".h5", .)]
     })
   
