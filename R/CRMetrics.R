@@ -963,12 +963,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                      names_to = "variable",
                      values_to = "value")
     }
-    
+    # UMAP plot
     if (type == "umap"){
       g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
         scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     }
-    
+    # Bar plot
     if (type == "bar") {
       g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1), 
                           filter = ifelse(grepl("+", filter, fixed = TRUE), "combination", as.character(filter))) %>%
@@ -987,11 +987,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
         labs(x = "", y = "Percentage cells filtered")
     } else if (type == "tile") {
-      g <- labelsFilter(tmp) %>%
-        ggplot(aes(fraction, sample, fill = value)) +
-        geom_tile(aes(width = 0.7, height = 0.7), color = "black", size = 0.5) +
-        scale_fill_manual(values = c("green", "orange", "red")) +
-        self$theme
+      # Tile plot
+      tmp.plot <- labelsFilter(tmp)
+      
+      if ("mito" %in% tmp.plot$fraction) {
+        tmp.plot %<>% 
+          mutate(., fraction = gsub("mito", "mito.fraction", .$fraction))
+      }
+        g <- tmp.plot %>% 
+          ggplot(aes(fraction, sample, fill = value)) +
+          geom_tile(aes(width = 0.7, height = 0.7), color = "black", size = 0.5) +
+          scale_fill_manual(values = c("green", "orange", "red")) +
+          self$theme +
+          labs(x = "", y = "", fill = "")
     } else if (type == "export") {
       g <- tmp
     }
