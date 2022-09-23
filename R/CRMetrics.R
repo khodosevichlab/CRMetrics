@@ -755,29 +755,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Filter count matrices
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
-  #' @param prefix character Prefix for file name (default = "cms.filtered")
-  #' @param method character Method for saving, either `rds` or `qs` (default = `rds`)
-  #' @param raw logical Save raw count matrices (TRUE) or normalized count matrices (default = TRUE).
   #' @param depth.cutoff numeric Depth cutoff (default = NULL).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = NULL).
   #' @param doublets character Doublet detection method to use (default = NULL).
-  #' @param compress logical Only for `method = 'rds'`: Compress the file or not (default = FALSE).
-  #' @param n.cores integer Only for `method = 'qs'`: Number of cores (default = stored vector)
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
   #' @param samples.to.exclude character Sample names to exclude (default = NULL)
   #' @param verbose logical Show progress (default = self$verbose)
-  #' @param ... Parameters for saving R object passed to `saveRDS` or `qsave` depending on `method`
-  #' @return file
+  #' @return list of filtered count matrices
   #' @examples 
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$detectDoublets() # Optional
-  #' crm$filterCMS(file = "cms_filtered.rds", depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
-  filterCms = function(prefix = "cms_filtered", 
-                       method = c("rds","qs"),
-                       raw = FALSE, 
-                       depth.cutoff = NULL, 
+  #' crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+  filterCms = function(depth.cutoff = NULL, 
                        mito.cutoff = NULL, 
                        doublets = NULL, 
                        compress = FALSE, 
@@ -791,12 +782,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tolower() %>% 
       match.arg(c("human","mouse"))
     
-    method %<>%
-      tolower() %>% 
-      match.arg(c("rds","qs"))
-    
     # Extract CMs
-    if (raw) cms <- self$cms.raw else cms <- self$cms
+    cms <- self$cms
     
     # Exclude samples
     if (!is.null(samples.to.exclude)) {
@@ -808,14 +795,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Extract sample names
     samples <- cms %>% 
       names()
-    
-    # Set file format
-    if (method == "rds") {
-      file = paste0(prefix,".rds")
-    } else {
-      requireNamespace("qs")
-      file = paste0(prefix,".qs")
-    }
     
     # Depth
     if (!is.null(depth.cutoff)) {
@@ -865,22 +844,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       
     if (verbose) message(paste0("Removing ",sum(!filter.list %>% unlist())," cells"))
     
-    cms.out <- samples %>% 
+    self$cms.filtered <- samples %>% 
       lapply(\(sample) {
         cms[[sample]][,filter.list[[sample]]]
       }) %>% 
       setNames(samples)
-    
-    # Save filtered CMs
-    if (verbose) message(paste0("Saving data to ",file))
-    if (method == "rds") {
-      saveRDS(cms.out, file = file, compress = compress, ...)
-    } else {
-      qsave(cms.out, file = file, nthreads = n.cores, ...)
-    }
-    
-    # Transfer filtered CMs to object
-    self$cms.filtered <- cms.out
     
     if (verbose) message(paste0("Done!"))
   },
