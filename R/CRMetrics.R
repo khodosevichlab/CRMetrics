@@ -635,7 +635,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param env character Environment to run python in (default="r-reticulate").
   #' @param conda.path character Path to conda environment (default=system("whereis conda")).
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
-  #' @param verbose logical Print messages or not (defeults = self$verbose).
+  #' @param verbose logical Print messages or not (defeults = self$verbose)
+  #' @param args list A list with additional arguments for either `DoubletDetection` or `scrublet`. Please check the respective manuals.
   #' @return data.frame
   #' @examples 
   #' crm$addDetailedMetrics()
@@ -645,8 +646,65 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                             env = "r-reticulate", 
                             conda.path = system("whereis conda"), 
                             n.cores = self$n.cores,
-                            verbose = self$verbose) {
+                            verbose = self$verbose,
+                            args = list()) {
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
+    if (!is.list(args)) stop("'args' must be a list.")
+    
+    # Prepare arguments
+    if (method == "doubletdetection") {
+      args.std <- list(boost_rate = 0.25, 
+                       clustering_algorithm = "phenograph", 
+                       clustering_kwargs = NULL, 
+                       n_components = 30, 
+                       n_iters = 10, 
+                       n_jobs = n.cores, 
+                       n_top_var_genes = 10000, 
+                       normalizer = NULL, 
+                       pseudocount = 0.1, 
+                       random_state = 0, 
+                       replace = FALSE, 
+                       standard_scaling = FALSE, 
+                       p_thresh = 1e-7, 
+                       voter_tresh = 0.9)
+      ints <- c("n_components","n_iters","n_jobs","n_top_var_genes","random_state")
+    } else {
+      args.std <- list(total_counts = NULL,
+                       sim_doublet_ratio = 2.0,
+                       n_neighbors = NULL,
+                       expected_doublet_rate = 0.1,
+                       stdev_doublet_rate = 0.02,
+                       random_state = 0,
+                       synthetic_doublet_umi_subsampling = 1.0, 
+                       use_approx_neighbors = TRUE, 
+                       distance_metric = "euclidean", 
+                       get_doublet_neighbor_parents = FALSE, 
+                       min_counts = 3, 
+                       min_cells = 3, 
+                       min_gene_variability_pctl = 85, 
+                       log_transform = FALSE, 
+                       mean_center = TRUE, 
+                       normalize_variance = TRUE, 
+                       n_prin_comps = 30, 
+                       svd_solver = "arpack")
+      ints <- c("random_state","min_cells","n_prin_comps")
+    }
+    
+    # Update arguments based on input
+    if (length(args) > 0) {
+      diff <- setdiff(args %>% names(), args.std %>% names())
+      if (length(diff) > 0) stop(paste0("Argument(s) not recognized: ",paste(diff, collapse = " "),". Please update 'args' and try again."))
+      for (i in names(args)) {
+        args.std[[i]] <- args[[i]]
+      }
+    }
+    
+    # Ensure integers
+    for (i in ints) {
+      args.std[[i]] <- as.integer(args.std[[i]])
+    }
+    
+    # Prep environment
     if (verbose) message("Loading prerequisites...")
     requireNamespace("reticulate")
     reticulate::use_condaenv(condaenv = env, conda = conda.path, required = TRUE)
@@ -654,15 +712,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     reticulate::source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
     
     if (verbose) message("Identifying doublets using '",method,"'...")
+    
+    # Calculate
     tmp <- cms %>% 
       names() %>% 
       lapply(\(cm) {
         if (verbose) message(paste0("Running sample '",cm,"'..."))
+        args.out <- list(cm = Matrix::t(cms[[cm]])) %>% append(args.std)
+        
         if (method == "doubletdetection") {
-          tmp.out <- do.call("doubletdetection_py", list(Matrix::t(cms[[cm]]), as.integer(n.cores)))
+          tmp.out <- do.call("doubletdetection_py", args.out)
         } else {
-          tmp.out <- do.call("scrublet_py", list(Matrix::t(cms[[cm]])))
+          tmp.out <- do.call("scrublet_py", args.out)
         }
+        
         tmp.out %<>%
           setNames(c("labels","scores","output"))
       }) %>% 
