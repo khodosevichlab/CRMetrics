@@ -465,6 +465,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = 0.05).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
+  #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object
   #' @examples
@@ -485,6 +486,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                       mito.cutoff = 0.05, 
                       species = c("human","mouse"), 
                       size = 0.3,
+                      sep = "!!",
                       ...) {
     species %<>% 
       tolower() %>% 
@@ -499,9 +501,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (depth) {
       depths <- self$getConosDepth()
       if (length(depth.cutoff) > 1) {
-        depths.list <- strsplit(names(depths), "!!") %>% 
+        depths.list <- strsplit(names(depths), sep) %>% 
           sapply('[[',1) %>% 
-          {split(depths, .)}
+          split(depths, .)
         depths <- mapply(function(x,y) x >= y, x=depths.list, y=depth.cutoff) %>% unlist() %>% setNames(names(depths))
         g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = "Cells with low depth with sample-specific cutoff", size = size, ...)
       } else {
@@ -538,6 +540,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the sequencing depth in histogram.
   #' @param cutoff numeric The depth cutoff to color the UMAP (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
+  #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return ggplot2 object
   #' @examples 
   #' crm$addDetailedMetrics()
@@ -545,7 +548,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$createEmbedding()
   #' crm$plotDepth()
   plotDepth = function(cutoff = 1e3, 
-                       samples = self$metadata$sample){
+                       samples = self$metadata$sample,
+                       sep = "!!"){
     # Checks
     if (is.null(self$con)) {
       message("No Conos object found, running createEmbedding.")
@@ -559,7 +563,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Preparations
     tmp <- depths %>% 
       {data.frame(depth = unname(.), sample = names(.))} %>% 
-      mutate(sample = sample %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1)) %>%
+      mutate(sample = sample %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1)) %>%
       split(., .$sample) %>% 
       .[samples] %>% 
       lapply(\(z) with(density(z$depth, adjust = 1/10), data.frame(x,y))) %>% 
@@ -876,6 +880,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
   #' @param samples.to.exclude character Sample names to exclude (default = NULL)
   #' @param verbose logical Show progress (default = self$verbose)
+  #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return list of filtered count matrices
   #' @examples 
   #' crm$addDetailedMetrics()
@@ -892,6 +897,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        species = c("human","mouse"),
                        samples.to.exclude = NULL,
                        verbose = self$verbose,
+                       sep = "!!",
                        ...) {
     # Preparations
     species %<>%
@@ -947,7 +953,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       names()
     
     # Create split vector
-    split.vec <- strsplit(cell.idx, "!!") %>% 
+    split.vec <- strsplit(cell.idx, sep) %>% 
       sapply('[[', 1)
     
     # Filter
@@ -997,6 +1003,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = 0.05).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
+  #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object or data frame
   #' @examples 
@@ -1014,6 +1021,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                mito.cutoff = 0.05, 
                                species = c("human","mouse"),
                                size = 0.3,
+                               sep = "!!",
                                ...) {
     type %<>% 
       tolower() %>% 
@@ -1025,7 +1033,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Prepare data
     if (length(depth.cutoff) > 1){
       depth <- self$getConosDepth()
-      depth.list <- strsplit(names(depth), "!!") %>% 
+      depth.list <- strsplit(names(depth), sep) %>% 
         sapply('[[',1) %>% 
         {split(depth, .)}
       depth <- mapply(function(x,y) x >= y, x = depth.list, y = depth.cutoff) %>% unlist() %>% setNames(names(depth))
@@ -1075,7 +1083,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tmp %<>%
         apply(2, \(x) x != "") %>% 
         {data.frame(. * 1)} %>% 
-        mutate(., sample = rownames(.) %>% strsplit("!!", TRUE) %>% sapply(`[[`, 1),
+        mutate(., sample = rownames(.) %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1),
                cell = rownames(.)) %>%
         pivot_longer(cols = -c(sample,cell),
                      names_to = "variable",
@@ -1088,7 +1096,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     # Bar plot
     if (type == "bar") {
-      g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit("!!") %>% sapply('[[', 1), 
+      g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit(sep) %>% sapply('[[', 1), 
                           filter = ifelse(grepl("+", filter, fixed = TRUE), "combination", as.character(filter))) %>%
         group_by(sample,filter) %>% 
         dplyr::count() %>% 
