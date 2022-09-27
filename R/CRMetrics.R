@@ -488,27 +488,26 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                       size = 0.3,
                       sep = "!!",
                       ...) {
+    if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'umap').")
+    
     species %<>% 
       tolower() %>% 
       match.arg(c("human","mouse"))
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
-      if (self$verbose) message("No embedding found, running createEmbedding.")
-      self$createEmbedding()
+      if (self$verbose) stop("No embedding found, please run createEmbedding.")
     }
     
     # Depth
     if (depth) {
-      depths <- self$getConosDepth()
+      depths <- self$getConosDepth() %>% 
+        filterVector("depth.cutoff", depth.cutoff, self$con$samples %>% names(), sep)
       if (length(depth.cutoff) > 1) {
-        depths.list <- strsplit(names(depths), sep) %>% 
-          sapply('[[',1) %>% 
-          split(depths, .)
-        depths <- mapply(function(x,y) x >= y, x=depths.list, y=depth.cutoff) %>% unlist() %>% setNames(names(depths))
-        g <- self$con$plotGraph(colors = ifelse(!depths, 1, 0), title = "Cells with low depth with sample-specific cutoff", size = size, ...)
+        main <- "Cells with low depth with sample-specific cutoff"
       } else {
-        g <- self$con$plotGraph(colors = ifelse(depths < depth.cutoff, 1, 0) %>% setNames(names(depths)), title = paste0("Cells with low depth, < ",depth.cutoff), size = size, ...)
+        main <- paste0("Cells with low depth, < ",depth.cutoff)
       }
+        g <- self$con$plotGraph(colors = (!depths) * 1, title = main, size = size, ...)
     }
     
     # Doublets
@@ -528,8 +527,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Mitochondrial fraction
     if (mito.frac) {
-      mf <- self$getMitoFraction(species = species)
-      g <- self$con$plotGraph(colors = ifelse(mf > mito.cutoff, 1, 0) %>% setNames(names(mf)), title = paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%"), size = size, ...)
+      mf <- self$getMitoFraction(species = species) %>% 
+        filterVector("mito.cutoff", mito.cutoff, self$con$samples %>% names(), sep)
+      if (length(mito.cutoff) > 1) {
+        main <- "Cells with low mito. frac with sample-specific cutoff"
+      } else {
+        main <- paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%")
+      }
+        g <- self$con$plotGraph(colors = mf * 1, title = main, size = size, ...)
     }
     
     if (!exists("g")) g <- self$con$plotGraph(...)
@@ -923,7 +928,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Depth
     if (!is.null(depth.cutoff)) {
       depth.filter <- self$getConosDepth() %>% 
-        filterVector("depth.cutoff", depth.cutoff, samples)
+        !filterVector("depth.cutoff", depth.cutoff, samples, sep)
     } else {
       depth.filter <- NULL
     }
@@ -931,7 +936,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Mitochondrial fraction
     if (!is.null(mito.cutoff)) {
       mito.filter <- self$getMitoFraction() %>% 
-        filterVector("mito.cutoff", mito.cutoff, samples) %>% 
+        filterVector("mito.cutoff", mito.cutoff, samples, sep) %>% 
         !. # NB, has to be negative
     } else {
       mito.filter <- NULL
