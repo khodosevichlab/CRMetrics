@@ -925,6 +925,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Apply min.transcripts.per.cell
     if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
+    
     # Depth
     if (!is.null(depth.cutoff)) {
       depth.filter <- self$getConosDepth() %>% 
@@ -1002,10 +1003,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
   #' @param type character The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export")).
   #' @param depth logical Plot the depth or not (default = TRUE).
-  #' @param depth.cutoff numeric Depth cutoff (default = 1e3).
+  #' @param depth.cutoff numeric Depth cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 1e3).
   #' @param doublet.method character Method to detect doublets (default = NULL).
   #' @param mito.frac logical Plot the mitochondrial fraction or not (default = TRUE).
-  #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = 0.05).
+  #' @param mito.cutoff numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 0.05).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
   #' @param sep character Separator for creating unique cell names (default = "!!")
@@ -1031,22 +1032,24 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     type %<>% 
       tolower() %>% 
       match.arg(c("umap","bar","tile","export"))
-    species %<>%
-      tolower() %>% 
-      match.arg(c("human","mouse"))
+    
+    if (mito.frac) species %<>% tolower() %>% match.arg(c("human","mouse"))
     
     # Prepare data
-    if (length(depth.cutoff) > 1){
-      depth <- self$getConosDepth()
-      depth.list <- strsplit(names(depth), sep) %>% 
-        sapply('[[',1) %>% 
-        {split(depth, .)}
-      depth <- mapply(function(x,y) x >= y, x = depth.list, y = depth.cutoff) %>% unlist() %>% setNames(names(depth))
-      tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito", ""),
-                  ifelse(!depth, "depth", ""))
+    if (depth) {
+      depths <- self$getConosDepth() %>% 
+        filterVector("depth.cutoff", depth.cutoff, depth.cutoff %>% names(), sep) %>% 
+        {ifelse(!., "depth", "")}
     } else {
-      tmp <- list(ifelse(self$getMitoFraction(species = species) > mito.cutoff, "mito",""),
-                  ifelse(self$getConosDepth() < depth.cutoff, "depth",""))
+      depths <- NULL
+    }
+    
+    if (mito.frac) {
+      mf <- self$getMitoFraction(species = species) %>% 
+        filterVector("mito.cutoff", mito.cutoff, mito.cutoff %>% names(), sep) %>% 
+        {ifelse(., "mito", "")}
+    } else {
+      mf <- NULL
     }
     
     if (!is.null(doublet.method)) {
@@ -1054,24 +1057,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       doublets <- tmp.doublets$labels %>% 
         ifelse("doublet","") %>% 
         setNames(rownames(tmp.doublets))
-      
-      tmp$doublets <- doublets
-      tmp %<>%
-        setNames(c("mito","depth","doublets"))
     } else {
-      tmp %<>%
-        setNames(c("mito","depth"))
+      doublets <- NULL
     }
     
-    ## Match names
-    idx <- tmp$mito %>% 
+    # Get cell index
+    cell.idx <- self$con$getDatasetPerCell() %>% 
       names()
     
-    tmp %<>%
-      lapply(\(x) {
-        x[match(idx, names(x))]
-      }) %>% 
-      data.frame()
+    # Create data.frame
+    tmp <- list(depth = depths,
+                mito = mf, 
+                doublets = doublets) %>% 
+      .[!sapply(., is.null)] %>%
+      lapply(\(filter) filter[cell.idx]) %>% # Ensure same order of cells
+      bind_cols() %>% 
+      as.data.frame() %>% 
+      `rownames<-`(cell.idx)
     
     if (type == "umap" || type == "bar") {
       tmp %<>% 
