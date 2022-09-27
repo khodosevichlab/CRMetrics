@@ -1167,7 +1167,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
       tmp <- self$con$samples %>% 
         lapply(`[[`, "counts") %>% 
-        lapply(\(cm) (sparseMatrixStats::rowSums2(cm[,grep(symb, colnames(cm))]) / sparseMatrixStats::rowSums2(cm)) %>% setNames(cm %>% rownames())) %>% 
+        lapply(\(cm) {
+          tmp.mat <- cm[,grep(symb, colnames(cm))]
+          if (class(tmp.mat) == "numeric") {
+            nom <- tmp.mat
+          } else {
+            nom <- sparseMatrixStats::rowSums2(tmp.mat)
+          }
+          (nom / sparseMatrixStats::rowSums2(cm)) %>% 
+            setNames(cm %>% rownames())
+        }) %>% 
         Reduce(c, .)
       self$mito.frac <- tmp
     } else {
