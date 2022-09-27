@@ -440,14 +440,14 @@ getH5Paths <- function(data.path, samples = NULL, type = NULL) {
   return(paths)
 }
 
-filterVector <- function(num.vec, name, filter, samples) {
+filterVector <- function(num.vec, name, filter, samples, sep) {
   if (!is.numeric(filter)) stop(paste0("'",name,"' must be numeric."))
   
   if (length(filter) > 1) {
     if (is.null(names(filter))) stop(paste0("'",name,"' must have sample names as names."))
     filter %<>% .[samples]
     
-    num.list <- strsplit(names(num.vec), "!!") %>% 
+    num.list <- strsplit(names(num.vec), sep) %>% 
       sapply('[[', 1) %>%
       split(num.vec, .)
     
