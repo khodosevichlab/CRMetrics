@@ -1203,6 +1203,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Get Conos sequencing depth
   #' @description Extract sequencing depth from Conos object.
+  #' @param force logical Force update of stored vector (default = FALSE)
   #' @return data frame
   #' @examples 
   #' crm$addDetailedMetrics()
@@ -1224,6 +1225,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Get fraction of mitochondrial genes
   #' @description Calculate the fraction of mitochondrial genes.
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
+  #' @param force logical Force update of stored vector (default = FALSE)
   #' @return data frame
   #' @examples 
   #' crm$addDetailedMetrics()

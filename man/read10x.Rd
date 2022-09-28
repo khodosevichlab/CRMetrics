@@ -7,6 +7,7 @@
 read10x(
   data.path,
   sample.names = NULL,
+  raw = FALSE,
   symbol = TRUE,
   sep = "!!",
   unique.names = TRUE,
@@ -18,6 +19,8 @@ read10x(
 \item{data.path}{Path to cellranger count data.}
 
 \item{sample.names}{Vector of sample names (default = NULL)}
+
+\item{raw}{logical Add raw count matrices (default = FALSE)}
 
 \item{symbol}{The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).}
 
@@ -34,6 +37,10 @@ data frame
 Load gene expression count data
 }
 \examples{
-cms <- read10x(data.path = crm$data.path, samples = crm$metadata$samples, symbol = TRUE, n.cores = crm$n.cores)
+cms <- read10x(data.path = crm$data.path, 
+samples = crm$metadata$samples, 
+raw = FALSE, 
+symbol = TRUE, 
+n.cores = crm$n.cores)
 }
 \keyword{internal}

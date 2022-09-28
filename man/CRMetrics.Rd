@@ -51,21 +51,21 @@ Plot detailed metrics
 crm$addDetailedMetrics()
 metrics.to.plot <- crm$detailed.metrics$metric \%>\% unique()
 crm$plotDetailedMetrics()
-Plot UMAP
+Plot embedding
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotUmap`
+## Method `CRMetrics$plotEmbedding`
 ## ------------------------------------------------
 
 crm$doPreprocessing()
 crm$createEmbedding() 
-crm$plotUMAP()
+crm$plotEmbedding()
 # Color cells for low depth
-crm$plotUmap(depth = TRUE, depth.cutoff = 1e3)
+crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
 # Colors cells for mitochondrial fraction
-crm$plotUmap(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
+crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
 # Colors cells by doublet scores
-crm$plotUmap(doublet.method = "scrublet", doublet.scores = TRUE)
+crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
 Plot depth
 
 ## ------------------------------------------------
@@ -76,6 +76,16 @@ crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$plotDepth()
+Plot mitochondrial fraction
+
+## ------------------------------------------------
+## Method `CRMetrics$plotMitoFraction`
+## ------------------------------------------------
+
+crm$addDetailedMetrics()
+crm$doPreprocessing()
+crm$createEmbedding()
+crm$plotMitoFraction()
 Save summary metrics
 
 ## ------------------------------------------------
@@ -98,7 +108,8 @@ Detect doublets
 ## ------------------------------------------------
 
 crm$addDetailedMetrics()
-crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+crm$detectDoublets(method = "scrublet", 
+conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 Conos preprocessing
 
 ## ------------------------------------------------
@@ -126,7 +137,7 @@ crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
-crm$filterCMS(file = "cms_filtered.rds", depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
 Select summary metrics.
 
 ## ------------------------------------------------
@@ -145,7 +156,7 @@ crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
-crm$plotFilteredCells(type = "umap", doublet.method = "scrublet")
+crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
 filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
 Get Conos sequencing depth
 
@@ -308,8 +319,9 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
 \item \href{#method-CRMetrics-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
 \item \href{#method-CRMetrics-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
-\item \href{#method-CRMetrics-plotUmap}{\code{CRMetrics$plotUmap()}}
+\item \href{#method-CRMetrics-plotEmbedding}{\code{CRMetrics$plotEmbedding()}}
 \item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
+\item \href{#method-CRMetrics-plotMitoFraction}{\code{CRMetrics$plotMitoFraction()}}
 \item \href{#method-CRMetrics-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
 \item \href{#method-CRMetrics-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
 \item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
@@ -340,15 +352,20 @@ Initialize a CRMetrics object}
 \if{html}{\out{<a id="method-CRMetrics-new"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-new}{}}}
 \subsection{Method \code{new()}}{
-To initialize new object, 'data.path' is needed. 'metadata' is also recommended, but not required.
+To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$new(
-  data.path,
+  data.path = NULL,
   metadata = NULL,
+  cms = NULL,
+  sample.names = NULL,
+  unique.names = TRUE,
+  sep.cells = "!!",
   comp.group = NULL,
   verbose = TRUE,
   theme = theme_bw(),
   n.cores = 1,
+  sep.meta = ",",
   raw.meta = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -356,9 +373,17 @@ To initialize new object, 'data.path' is needed. 'metadata' is also recommended,
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{data.path}}{character Path to cellranger count data (default = NULL).}
+\item{\code{data.path}}{character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).}
 
 \item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL).}
+
+\item{\code{cms}}{list List with count matrices (default = NULL)}
+
+\item{\code{sample.names}}{character Sample names. Only relevant is cms is provided (default = NULL)}
+
+\item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
+
+\item{\code{sep.cells}}{character Sample-cell separator. Unly relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
 
 \item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).}
 
@@ -367,6 +392,8 @@ To initialize new object, 'data.path' is needed. 'metadata' is also recommended,
 \item{\code{theme}}{ggplot2 theme (default: theme_bw()).}
 
 \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+
+\item{\code{sep.meta}}{character Separator for metadata file (default = ",")}
 
 \item{\code{raw.meta}}{logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)}
 }
@@ -393,6 +420,7 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
   min.transcripts.per.cell = 100,
+  raw = FALSE,
   symbol = TRUE,
   sep = "!!",
   cellbender = FALSE,
@@ -408,6 +436,8 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{min.transcripts.per.cell}}{numeric Minimal number of transcripts per cell (default = 100)}
+
+\item{\code{raw}}{logical Add raw count matrices from Cell Ranger output. Cannot be combined with \code{cellbender=TRUE} (default = FALSE)}
 
 \item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
 
@@ -626,7 +656,7 @@ ggplot2 object
 \preformatted{crm$addDetailedMetrics()
 metrics.to.plot <- crm$detailed.metrics$metric \%>\% unique()
 crm$plotDetailedMetrics()
-Plot UMAP
+Plot embedding
 }
 \if{html}{\out{</div>}}
 
@@ -634,12 +664,12 @@ Plot UMAP
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-plotUmap"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-plotUmap}{}}}
-\subsection{Method \code{plotUmap()}}{
-Plot cells in a UMAP using Conos and color by depth and doublets.
+\if{html}{\out{<a id="method-CRMetrics-plotEmbedding"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotEmbedding}{}}}
+\subsection{Method \code{plotEmbedding()}}{
+Plot cells in embedding using Conos and color by depth and doublets.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotUmap(
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotEmbedding(
   depth = FALSE,
   doublet.method = NULL,
   doublet.scores = FALSE,
@@ -648,6 +678,7 @@ Plot cells in a UMAP using Conos and color by depth and doublets.
   mito.cutoff = 0.05,
   species = c("human", "mouse"),
   size = 0.3,
+  sep = "!!",
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -671,6 +702,8 @@ Plot cells in a UMAP using Conos and color by depth and doublets.
 
 \item{\code{size}}{numeric Dot size (default = 0.3)}
 
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
 \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
 }
 \if{html}{\out{</div>}}
@@ -682,13 +715,13 @@ ggplot2 object
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{crm$doPreprocessing()
 crm$createEmbedding() 
-crm$plotUMAP()
+crm$plotEmbedding()
 # Color cells for low depth
-crm$plotUmap(depth = TRUE, depth.cutoff = 1e3)
+crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
 # Colors cells for mitochondrial fraction
-crm$plotUmap(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
+crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
 # Colors cells by doublet scores
-crm$plotUmap(doublet.method = "scrublet", doublet.scores = TRUE)
+crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
 Plot depth
 }
 \if{html}{\out{</div>}}
@@ -702,15 +735,17 @@ Plot depth
 \subsection{Method \code{plotDepth()}}{
 Plot the sequencing depth in histogram.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(cutoff = 1000, samples = self$metadata$sample)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(cutoff = 1000, samples = self$metadata$sample, sep = "!!")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cutoff}}{numeric The depth cutoff to color the UMAP (default = 1e3).}
+\item{\code{cutoff}}{numeric The depth cutoff to color the cells in the embedding (default = 1e3).}
 
 \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
+
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 }
 \if{html}{\out{</div>}}
 }
@@ -723,6 +758,46 @@ ggplot2 object
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$plotDepth()
+Plot mitochondrial fraction
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CRMetrics-plotMitoFraction"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotMitoFraction}{}}}
+\subsection{Method \code{plotMitoFraction()}}{
+Plot the mitochondrial fraction in histogram.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMitoFraction(
+  cutoff = 0.05,
+  samples = self$metadata$sample,
+  sep = "!!"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{cutoff}}{numeric The mito. fraction cutoff to color the embedding (default = 0.05).}
+
+\item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
+
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+ggplot2 object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{crm$addDetailedMetrics()
+crm$doPreprocessing()
+crm$createEmbedding()
+crm$plotMitoFraction()
 Save summary metrics
 }
 \if{html}{\out{</div>}}
@@ -813,11 +888,12 @@ Detect doublet cells.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
   method = c("scrublet", "doubletdetection"),
-  cms = self$cms.filtered,
+  cms = self$cms,
   env = "r-reticulate",
   conda.path = system("whereis conda"),
   n.cores = self$n.cores,
-  verbose = self$verbose
+  verbose = self$verbose,
+  args = list()
 )}\if{html}{\out{</div>}}
 }
 
@@ -826,7 +902,7 @@ Detect doublet cells.
 \describe{
 \item{\code{method}}{character Which method to use, either \code{scrublet} or \code{doubletdetection} (default="scrublet").}
 
-\item{\code{cms}}{list List containing the count matrices (default=self$cms.filtered).}
+\item{\code{cms}}{list List containing the count matrices (default=self$cms).}
 
 \item{\code{env}}{character Environment to run python in (default="r-reticulate").}
 
@@ -834,7 +910,9 @@ Detect doublet cells.
 
 \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
 
-\item{\code{verbose}}{logical Print messages or not (defeults = self$verbose).}
+\item{\code{verbose}}{logical Print messages or not (defeults = self$verbose)}
+
+\item{\code{args}}{list A list with additional arguments for either \code{DoubletDetection} or \code{scrublet}. Please check the respective manuals.}
 }
 \if{html}{\out{</div>}}
 }
@@ -844,7 +922,8 @@ data.frame
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{crm$addDetailedMetrics()
-crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+crm$detectDoublets(method = "scrublet", 
+conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 Conos preprocessing
 }
 \if{html}{\out{</div>}}
@@ -859,18 +938,23 @@ Conos preprocessing
 Perform conos preprocessing.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$doPreprocessing(
-  cms = self$cms.filtered,
+  cms = self$cms,
   preprocess = c("pagoda2", "seurat"),
   min.transcripts.per.cell = 100,
   verbose = self$verbose,
-  n.cores = self$n.cores
+  n.cores = self$n.cores,
+  get.largevis = FALSE,
+  tsne = FALSE,
+  make.geneknn = FALSE,
+  cluster = FALSE,
+  ...
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{list List containing the count matrices (default = self$cms.filtered).}
+\item{\code{cms}}{list List containing the count matrices (default = self$cms).}
 
 \item{\code{preprocess}}{character Method to use for preprocessing (default = c("pagoda2","seurat")).}
 
@@ -879,6 +963,16 @@ Perform conos preprocessing.
 \item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
 
 \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+
+\item{\code{get.largevis}}{logical For Pagoda2, create largeVis embedding (default = FALSE)}
+
+\item{\code{tsne}}{logical Create tSNE embedding (default = FALSE)}
+
+\item{\code{make.geneknn}}{logical For Pagoda2, estimate gene kNN (default = FALSE)}
+
+\item{\code{cluster}}{logical For Seurat, estimate clusters (default = FALSE)}
+
+\item{\code{...}}{Additional arguments for \code{Pagaoda2::basicP2Proc} or \code{conos:::basicSeuratProc}}
 }
 \if{html}{\out{</div>}}
 }
@@ -900,12 +994,15 @@ Create Conos embedding
 \if{html}{\out{<a id="method-CRMetrics-createEmbedding"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-createEmbedding}{}}}
 \subsection{Method \code{createEmbedding()}}{
-Create conos UMAP embedding.
+Create Conos embedding.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$createEmbedding(
   cms = self$cms.preprocessed,
   verbose = self$verbose,
-  n.cores = self$n.cores
+  n.cores = self$n.cores,
+  arg.buildGraph = list(),
+  arg.findCommunities = list(n.iterations = 1),
+  arg.embedGraph = list(method = "UMAP")
 )}\if{html}{\out{</div>}}
 }
 
@@ -917,6 +1014,12 @@ Create conos UMAP embedding.
 \item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
 
 \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+
+\item{\code{arg.buildGraph}}{list A list with additional arguments for the \code{buildGraph} function in Conos (default = list())}
+
+\item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list(n.iterations = 1)) # Should be updated when Conos issue #123 is resolved}
+
+\item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP))}
 }
 \if{html}{\out{</div>}}
 }
@@ -942,29 +1045,21 @@ Filter count matrices
 Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
-  prefix = "cms_filtered",
-  method = c("rds", "qs"),
-  raw = FALSE,
+  min.transcripts.per.cell = 100,
   depth.cutoff = NULL,
   mito.cutoff = NULL,
   doublets = NULL,
-  compress = FALSE,
-  n.cores = self$n.cores,
   species = c("human", "mouse"),
   samples.to.exclude = NULL,
   verbose = self$verbose,
-  ...
+  sep = "!!"
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{prefix}}{character Prefix for file name (default = "cms.filtered")}
-
-\item{\code{method}}{character Method for saving, either \code{rds} or \code{qs} (default = \code{rds})}
-
-\item{\code{raw}}{logical Save raw count matrices (TRUE) or normalized count matrices (default = TRUE).}
+\item{\code{min.transcripts.per.cell}}{numeric Minimal transcripts per cell (default = 100)}
 
 \item{\code{depth.cutoff}}{numeric Depth cutoff (default = NULL).}
 
@@ -972,22 +1067,18 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 
 \item{\code{doublets}}{character Doublet detection method to use (default = NULL).}
 
-\item{\code{compress}}{logical Only for \code{method = 'rds'}: Compress the file or not (default = FALSE).}
-
-\item{\code{n.cores}}{integer Only for \code{method = 'qs'}: Number of cores (default = stored vector)}
-
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
 
 \item{\code{samples.to.exclude}}{character Sample names to exclude (default = NULL)}
 
 \item{\code{verbose}}{logical Show progress (default = self$verbose)}
 
-\item{\code{...}}{Parameters for saving R object passed to \code{saveRDS} or \code{qsave} depending on \code{method}}
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-file
+list of filtered count matrices
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -995,7 +1086,7 @@ file
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
-crm$filterCMS(file = "cms_filtered.rds", depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
 Select summary metrics.
 }
 \if{html}{\out{</div>}}
@@ -1037,10 +1128,10 @@ Plot filtered cells
 \if{html}{\out{<a id="method-CRMetrics-plotFilteredCells"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotFilteredCells}{}}}
 \subsection{Method \code{plotFilteredCells()}}{
-Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
+Plot filetered cells in an embedding, in a bar plot, on a tile or export the data frame
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotFilteredCells(
-  type = c("umap", "bar", "tile", "export"),
+  type = c("embedding", "bar", "tile", "export"),
   depth = TRUE,
   depth.cutoff = 1000,
   doublet.method = NULL,
@@ -1048,6 +1139,7 @@ Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data fram
   mito.cutoff = 0.05,
   species = c("human", "mouse"),
   size = 0.3,
+  sep = "!!",
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -1055,21 +1147,23 @@ Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data fram
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{type}}{character The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export")).}
+\item{\code{type}}{character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).}
 
 \item{\code{depth}}{logical Plot the depth or not (default = TRUE).}
 
-\item{\code{depth.cutoff}}{numeric Depth cutoff (default = 1e3).}
+\item{\code{depth.cutoff}}{numeric Depth cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 1e3).}
 
 \item{\code{doublet.method}}{character Method to detect doublets (default = NULL).}
 
 \item{\code{mito.frac}}{logical Plot the mitochondrial fraction or not (default = TRUE).}
 
-\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = 0.05).}
+\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 0.05).}
 
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
 
 \item{\code{size}}{numeric Dot size (default = 0.3)}
+
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 
 \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
 }
@@ -1084,7 +1178,7 @@ ggplot2 object or data frame
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
-crm$plotFilteredCells(type = "umap", doublet.method = "scrublet")
+crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
 filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
 Get Conos sequencing depth
 }
@@ -1099,9 +1193,16 @@ Get Conos sequencing depth
 \subsection{Method \code{getConosDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth(force = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{force}}{logical Force update of stored vector (default = FALSE)}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 data frame
 }
@@ -1124,13 +1225,15 @@ Get fraction of mitochondrial genes
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = "human")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = "human", force = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
+
+\item{\code{force}}{logical Force update of stored vector (default = FALSE)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1536,7 +1639,7 @@ Add summary metrics from count matrices
 Add summary metrics from a list of count matrices
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addSummaryFromCms(
-  cms = self$cms.filtered,
+  cms = self$cms,
   n.cores = self$n.cores,
   verbose = self$verbose
 )}\if{html}{\out{</div>}}
@@ -1545,7 +1648,7 @@ Add summary metrics from a list of count matrices
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{list A list of filtered count matrices (default = self$cms.filtered)}
+\item{\code{cms}}{list A list of filtered count matrices (default = self$cms)}
 
 \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
 
@@ -1577,7 +1680,10 @@ Run SoupX ambient RNA estimation and correction
   data.path = self$data.path,
   samples = self$metadata$sample,
   n.cores = self$n.cores,
-  verbose = self$verbose
+  verbose = self$verbose,
+  arg.load10X = list(),
+  arg.autoEstCont = list(),
+  arg.adjustCounts = list()
 )}\if{html}{\out{</div>}}
 }
 
@@ -1591,6 +1697,12 @@ Run SoupX ambient RNA estimation and correction
 \item{\code{n.cores}}{numeric Number of cores (default = self$n.cores)}
 
 \item{\code{verbose}}{logical Show progress (default = self$verbose)}
+
+\item{\code{arg.load10X}}{list A list with additional parameters for \code{SoupX::load10X} (default = list())}
+
+\item{\code{arg.autoEstCont}}{list A list with additional parameters for \code{SoupX::autoEstCont} (default = list())}
+
+\item{\code{arg.adjustCounts}}{list A list with additional paramters for \code{SoupX::adjustCounts} (default = list())}
 }
 \if{html}{\out{</div>}}
 }

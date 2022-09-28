@@ -22,6 +22,8 @@ data frame
 Add summary metrics by reading Cell Ranger metrics summary files.
 }
 \examples{
-summary.metrics <- addSummaryMetrics(data.path = crm$data.path, metadata = crm$metadata, n.cores = crm$n.cores)
+summary.metrics <- addSummaryMetrics(data.path = crm$data.path, 
+metadata = crm$metadata, 
+n.cores = crm$n.cores)
 }
 \keyword{internal}

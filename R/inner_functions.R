@@ -1,7 +1,9 @@
-#' @importFrom utils combn read.delim
+#' @importFrom stats chisq.test fisher.test
+#' @importFrom utils combn read.delim glob2rx
 #' @importFrom readr cols read_csv
 #' @importFrom Matrix sparseMatrix
 #' @importFrom sparseMatrixStats colSums2
+#' @importFrom methods as
 NULL
 
 #' Set correct 'comp.group' parameter
@@ -13,7 +15,9 @@ NULL
 #' @return vector
 #' @examples 
 #' comp.group <- checkCompGroup(comp.group = "sex")
-checkCompGroup <- function(comp.group, category, verbose = TRUE) {
+checkCompGroup <- function(comp.group, 
+                           category, 
+                           verbose = TRUE) {
   if (is.null(comp.group)) {
     if (verbose) message(paste0("Using '",category,"' for 'comp.group'"))
     comp.group <- category
@@ -29,7 +33,8 @@ checkCompGroup <- function(comp.group, category, verbose = TRUE) {
 #' @return nothing or stop
 #' @examples 
 #' checkCompMeta(comp.group = "sex", metadata = crm$metadata)
-checkCompMeta <- function(comp.group, metadata) {
+checkCompMeta <- function(comp.group, 
+                          metadata) {
   if (!is.null(comp.group) && (!comp.group %in% colnames(metadata))) stop("'comp.group' doesn't match any column name in metadata.")
 }
 
@@ -45,9 +50,20 @@ checkCompMeta <- function(comp.group, metadata) {
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' cms <- read10x(data.path = crm$data.path, samples = crm$metadata$samples, raw = FALSE, symbol = TRUE, n.cores = crm$n.cores)
+#' cms <- read10x(data.path = crm$data.path, 
+#' samples = crm$metadata$samples, 
+#' raw = FALSE, 
+#' symbol = TRUE, 
+#' n.cores = crm$n.cores)
 #' @export
-read10x <- function(data.path, sample.names = NULL, raw = FALSE, symbol = TRUE, sep = "!!", unique.names = TRUE, n.cores = 1, verbose = TRUE) {
+read10x <- function(data.path, 
+                    sample.names = NULL, 
+                    raw = FALSE, 
+                    symbol = TRUE, 
+                    sep = "!!", 
+                    unique.names = TRUE, 
+                    n.cores = 1, 
+                    verbose = TRUE) {
   requireNamespace("data.table")
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
@@ -103,7 +119,9 @@ read10x <- function(data.path, sample.names = NULL, raw = FALSE, symbol = TRUE, 
 #' @return data frame
 #' @examples 
 #' detailed.metrics <- addDetailedMetricsInner(cms = crm$cms, n.cores = crm$n.cores)
-addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
+addDetailedMetricsInner <- function(cms, 
+                                    verbose = TRUE, 
+                                    n.cores = 1) {
   if (verbose) message(Sys.time()," Counting using ", if (n.cores < length(cms)) n.cores else length(cms)," cores")
   samples <- cms %>% 
     names()
@@ -159,7 +177,13 @@ addDetailedMetricsInner <- function(cms, verbose = TRUE, n.cores = 1) {
 #' @return ggplot2 object
 #' @examples 
 #' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kurskal.test")
-addPlotStats <- function(p, comp.group, metadata, h.adj = 0.05, primary.test, secondary.test, exact = FALSE) {
+addPlotStats <- function(p, 
+                         comp.group, 
+                         metadata, 
+                         h.adj = 0.05, 
+                         primary.test, 
+                         secondary.test, 
+                         exact = FALSE) {
   checkCompMeta(comp.group, metadata)
   g <- p
   
@@ -192,7 +216,12 @@ addPlotStats <- function(p, comp.group, metadata, h.adj = 0.05, primary.test, se
 #' @return ggplot2 object
 #' @examples 
 #' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, second.comp.group = "condition")
-addPlotStatsSamples <- function(p, comp.group, metadata, h.adj = 0.05, exact = FALSE, second.comp.group) {
+addPlotStatsSamples <- function(p, 
+                                comp.group, 
+                                metadata, 
+                                h.adj = 0.05, 
+                                exact = FALSE, 
+                                second.comp.group) {
   checkCompMeta(comp.group, metadata)
   checkCompMeta(second.comp.group, metadata)
   if (comp.group == second.comp.group) { 
@@ -220,8 +249,13 @@ addPlotStatsSamples <- function(p, comp.group, metadata, h.adj = 0.05, exact = F
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' summary.metrics <- addSummaryMetrics(data.path = crm$data.path, metadata = crm$metadata, n.cores = crm$n.cores)
-addSummaryMetrics <- function(data.path, metadata, n.cores = 1, verbose = TRUE) {
+#' summary.metrics <- addSummaryMetrics(data.path = crm$data.path, 
+#' metadata = crm$metadata, 
+#' n.cores = crm$n.cores)
+addSummaryMetrics <- function(data.path, 
+                              metadata, 
+                              n.cores = 1, 
+                              verbose = TRUE) {
   samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample %>% unique())
   
@@ -251,7 +285,8 @@ addSummaryMetrics <- function(data.path, metadata, n.cores = 1, verbose = TRUE) 
 #' @return geom
 #' @examples 
 #' plot.geom <- plotGeom(plot.geom = "point")
-plotGeom = function(plot.geom, col){
+plotGeom = function(plot.geom, 
+                    col){
   if (plot.geom == "point"){
     geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
   } else if (plot.geom == "bar"){
@@ -272,7 +307,8 @@ plotGeom = function(plot.geom, col){
 #' @return vector
 #' @examples 
 #' perc <- percFilter(filter.data, filter = "depth")
-percFilter <- function(filter.data, filter = "mito") {
+percFilter <- function(filter.data, 
+                       filter = "mito") {
   cells.per.sample <- filter.data$sample %>% table() %>% c()
   variable.count <- filter.data %>% 
     filter(variable == filter) %$% 
@@ -332,7 +368,14 @@ labelsFilter <- function(filter.data) {
 #' @param sample.names character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
 #' @export
-read10xH5 <- function(data.path, sample.names = NULL, type = c("raw","filtered","cellbender","cellbender_filtered"), symbol = TRUE, sep = "!!", n.cores = 1, verbose = TRUE, unique.names = FALSE) {
+read10xH5 <- function(data.path, 
+                      sample.names = NULL, 
+                      type = c("raw","filtered","cellbender","cellbender_filtered"), 
+                      symbol = TRUE, 
+                      sep = "!!", 
+                      n.cores = 1, 
+                      verbose = TRUE, 
+                      unique.names = FALSE) {
   requireNamespace("rhdf5")
   
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
@@ -381,7 +424,10 @@ read10xH5 <- function(data.path, sample.names = NULL, type = c("raw","filtered",
   return(out)
 }
 
-createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
+#' @keywords internal
+createUniqueCellNames <- function(cms, 
+                                  sample.names, 
+                                  sep = "!!") {
   sample.names %>%
     lapply(\(sample) {
       cms[[sample]] %>% 
@@ -390,7 +436,10 @@ createUniqueCellNames <- function(cms, sample.names, sep = "!!") {
     setNames(sample.names)
 }
 
-getH5Paths <- function(data.path, samples = NULL, type = NULL) {
+#' @keywords internal
+getH5Paths <- function(data.path, 
+                       samples = NULL, 
+                       type = NULL) {
   # Check input
   type %<>%
     tolower() %>% 
@@ -440,7 +489,12 @@ getH5Paths <- function(data.path, samples = NULL, type = NULL) {
   return(paths)
 }
 
-filterVector <- function(num.vec, name, filter, samples, sep) {
+#' @keywords internal
+filterVector <- function(num.vec, 
+                         name, 
+                         filter, 
+                         samples, 
+                         sep) {
   if (!is.numeric(filter)) stop(paste0("'",name,"' must be numeric."))
   
   if (length(filter) > 1) {
@@ -465,6 +519,7 @@ filterVector <- function(num.vec, name, filter, samples, sep) {
   return(out)
 }
 
+#' @keywords internal
 checkDataPath <- function(data.path) {
   if (is.null(data.path)) stop("'data.path' cannot be NULL.")
 }
