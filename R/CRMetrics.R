@@ -557,8 +557,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        sep = "!!"){
     # Checks
     if (is.null(self$con)) {
-      message("No Conos object found, running createEmbedding.")
-      self$createEmbedding()
+      stop("No Conos object found, please run createEmbedding.")
     }
     
     if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
@@ -606,6 +605,70 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       plot_grid(plotlist = ., ncol = 3,label_size = 5)
     
     return(depth.plot)
+  },
+  
+  #' Plot mitochondrial fraction
+  #' @description Plot the mitochondrial fraction in histogram.
+  #' @param cutoff numeric The mito. fraction cutoff to color the embedding (default = 0.05).
+  #' @param samples character Sample names to include for plotting (default = $metadata$sample).
+  #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @return ggplot2 object
+  #' @examples 
+  #' crm$addDetailedMetrics()
+  #' crm$doPreprocessing()
+  #' crm$createEmbedding()
+  #' crm$plotMitoFraction()
+  plotMitoFraction = function(cutoff = 0.05, 
+                       samples = self$metadata$sample,
+                       sep = "!!"){
+    # Checks
+    if (is.null(self$con)) {
+      stop("No Conos object found, please run createEmbedding.")
+    }
+    
+    if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
+    
+    mf <- self$getMitoFraction()
+    
+    # Preparations
+    tmp <- mf %>% 
+      {data.frame(mito.frac = unname(.), sample = names(.))} %>% 
+      mutate(sample = sample %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1)) %>%
+      split(., .$sample) %>% 
+      .[samples] %>% 
+      lapply(\(z) with(density(z$mito.frac, adjust = 1/10), data.frame(x,y))) %>% 
+      {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
+      bind_rows()
+    
+    # Plot
+    mf.plot <- tmp %>% 
+      pull(sample) %>% 
+      unique() %>% 
+      lapply(\(id) {
+        if (length(cutoff) == 1) {
+          g <- tmp %>% filter(sample == id) %>%  
+            ggplot(aes(x,y)) +
+            self$theme +
+            geom_line() +
+            geom_area(fill = "#A65141") +
+            geom_area(mapping = aes(x = ifelse(x<cutoff , x, NA)), fill = "#E7CDC2") +
+            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
+            labs(title = id, y = "Density [AU]", x = "")
+        } else {
+          g <- tmp %>% filter(sample == id) %>%  
+            ggplot(aes(x,y)) +
+            self$theme +
+            geom_line() +
+            geom_area(fill = "#A65141") +
+            geom_area(mapping = aes(x = ifelse(x<cutoff[names(cutoff) == id] , x, NA)), fill = "#E7CDC2") +
+            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
+            labs(title = id, y = "Density [AU]", x = "")
+        }
+        return(g)
+      }) %>% 
+      plot_grid(plotlist = ., ncol = 3, label_size = 5)
+    
+    return(mf.plot)
   },
   
   #' Save summary metrics
