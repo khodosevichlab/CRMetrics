@@ -455,8 +455,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }
   },
   
-  #' Plot UMAP
-  #' @description Plot cells in a UMAP using Conos and color by depth and doublets.
+  #' Plot embedding
+  #' @description Plot cells in embedding using Conos and color by depth and doublets.
   #' @param depth logical Plot depth or not (default = FALSE).
   #' @param doublet.method character Doublet detection method (default = NULL).
   #' @param doublet.scores logical Plot doublet scores or not (default = FALSE).
@@ -471,24 +471,24 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @examples
   #' crm$doPreprocessing()
   #' crm$createEmbedding() 
-  #' crm$plotUMAP()
+  #' crm$plotEmbedding()
   #' # Color cells for low depth
-  #' crm$plotUmap(depth = TRUE, depth.cutoff = 1e3)
+  #' crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
   #' # Colors cells for mitochondrial fraction
-  #' crm$plotUmap(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
+  #' crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
   #' # Colors cells by doublet scores
-  #' crm$plotUmap(doublet.method = "scrublet", doublet.scores = TRUE)
-  plotUmap = function(depth = FALSE, 
-                      doublet.method = NULL, 
-                      doublet.scores = FALSE, 
-                      depth.cutoff = 1e3, 
-                      mito.frac = FALSE, 
-                      mito.cutoff = 0.05, 
-                      species = c("human","mouse"), 
-                      size = 0.3,
-                      sep = "!!",
-                      ...) {
-    if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'umap').")
+  #' crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
+  plotEmbedding = function(depth = FALSE, 
+                           doublet.method = NULL, 
+                           doublet.scores = FALSE, 
+                           depth.cutoff = 1e3, 
+                           mito.frac = FALSE, 
+                           mito.cutoff = 0.05, 
+                           species = c("human","mouse"), 
+                           size = 0.3,
+                           sep = "!!",
+                           ...) {
+    if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'embedding').")
     
     species %<>% 
       tolower() %>% 
@@ -543,7 +543,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' Plot depth
   #' @description Plot the sequencing depth in histogram.
-  #' @param cutoff numeric The depth cutoff to color the UMAP (default = 1e3).
+  #' @param cutoff numeric The depth cutoff to color the cells in the embedding (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return ggplot2 object
@@ -892,7 +892,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' Create Conos embedding
-  #' @description Create conos UMAP embedding.
+  #' @description Create Conos embedding.
   #' @param cms list List containing the preprocessed count matrices (default = self$cms.preprocessed).
   #' @param verbose logical Print messages or not (default = self$verbose).
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
@@ -924,7 +924,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (verbose) message('Finding communities... ')
     do.call(con$findCommunities, arg.findCommunities)
     
-    if (verbose) message('Creating UMAP embedding... ')
+    if (verbose) message('Creating embedding... ')
     do.call(con$embedGraph, arg.embedGraph)
     
     self$con <- con
@@ -1063,8 +1063,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' Plot filtered cells
-  #' @description Plot filetered cells on a UMAP, in a bar plot, on a tile or export the data frame
-  #' @param type character The type of plot to use: umap, bar, tile or export (default = c("umap","bar","tile","export")).
+  #' @description Plot filetered cells in an embedding, in a bar plot, on a tile or export the data frame
+  #' @param type character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).
   #' @param depth logical Plot the depth or not (default = TRUE).
   #' @param depth.cutoff numeric Depth cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 1e3).
   #' @param doublet.method character Method to detect doublets (default = NULL).
@@ -1080,9 +1080,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$detectDoublets() # Optional
-  #' crm$plotFilteredCells(type = "umap", doublet.method = "scrublet")
+  #' crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
   #' filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
-  plotFilteredCells = function(type = c("umap","bar","tile","export"), 
+  plotFilteredCells = function(type = c("embedding","bar","tile","export"), 
                                depth = TRUE, 
                                depth.cutoff = 1e3, 
                                doublet.method = NULL, 
@@ -1094,7 +1094,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                ...) {
     type %<>% 
       tolower() %>% 
-      match.arg(c("umap","bar","tile","export"))
+      match.arg(c("embedding","bar","tile","export"))
     
     if (mito.frac) species %<>% tolower() %>% match.arg(c("human","mouse"))
     
@@ -1138,7 +1138,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       as.data.frame() %>% 
       `rownames<-`(cell.idx)
     
-    if (type == "umap" || type == "bar") {
+    if (type == "embedding" || type == "bar") {
       tmp %<>% 
         mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
         mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
@@ -1159,8 +1159,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                      names_to = "variable",
                      values_to = "value")
     }
-    # UMAP plot
-    if (type == "umap"){
+    # Embedding plot
+    if (type == "embedding"){
       g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
         scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
     }
