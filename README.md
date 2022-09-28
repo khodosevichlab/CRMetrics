@@ -1,12 +1,48 @@
-# CRMetrics
-Summarization of Cell Ranger count metrics. 
+CRMetrics
+================
+9/28/2022
 
-As example data, you can use /data/PD-MSA_lentiform_nucleus/counts_premrna
+Cell Ranger output filtering and metrics visualisation
 
-The metrics are stored in <SAMPLE>/outs/metrics_summary.csv
+# Installation
 
-Notice one sample is marked "FAIL" and should not be included. Consider including an exclude parameter.
+To install the latest version, use
 
-As Laura mentioned, it would be nice to be able to show distribution plots of e.g. total UMIs per cell/sample. Therefore, consider including an option to load count matrices (slower) than to just load metrics summaries.
+``` r
+install.packages("devtools")
+devtools::install_github("khodosevichlab/CRMetrics")
+```
 
-Please check inspiration.Rmd.
+# Initialization
+
+A CRMetrics object can be initialized in different ways using
+`CRMetrics$new()`. The most important arguments are:
+
+-   `data.path`: A path to a directory containing sample-wise
+    directories with outputs from `cellranger count`. Can also be `NULL`
+-   `cms`: A list with count matrices. Must be named with sample IDs.
+    Can also be `NULL`
+-   `metadata`: Can either be 1) a `data.frame`, or 2) a path to a table
+    file (separator should be set with the `sep.meta` argument), or 3)
+    `NULL`. For 1) and 2) the object must contain named columns, and one
+    column has to be named `sample` containing sample IDs. Sample IDs
+    must match the directory names in `data.path` or names of `cms`
+    unless both these are `NULL`. In case of 3), a minimal metadata
+    object is created from names in `data.path` or names of `cms`.
+
+# Vignette
+
+For usage, please see the
+[vignette](https://github.com/khodosevichlab/CRMetrics/blob/main/vignettes/vignette.md)
+([code](https://github.com/khodosevichlab/CRMetrics/blob/main/vignettes/vignette.Rmd))
+
+# Python integrations
+
+CRMetrics makes use of several Python packages, most of them through the
+`reticulate` package in R. For these to work, we included an [example
+workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/vignettes/vignette.md#using-python-modules)
+in the vignette.
+
+# Cite
+
+To cite this work, please run `citation(CRMetrics)`.
