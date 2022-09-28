@@ -712,7 +712,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return data.frame
   #' @examples 
   #' crm$addDetailedMetrics()
-  #' crm$detectDoublets(method = "scrublet", conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+  #' crm$detectDoublets(method = "scrublet", 
+  #' conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
   detectDoublets = function(method = c("scrublet","doubletdetection"), 
                             cms = self$cms, 
                             env = "r-reticulate", 
@@ -930,11 +931,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$con <- con
     if (!is.null(self$depth)) {
       warning("Overwriting previous depth vector")
-      invisible(self$getConosDepth())
+      self$depth <- self$getConosDepth(force = TRUE)
     } 
     if (!is.null(self$mito.fraction)) {
       warning("Overwriting previous mito.fraction vector")
-      invisible(self$getMitoFraction())
+      self$mito.frac <- self$getMitoFraction(force = TRUE)
     } 
     invisible(con)
   },
@@ -959,14 +960,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   filterCms = function(min.transcripts.per.cell = 100,
                        depth.cutoff = NULL, 
                        mito.cutoff = NULL, 
-                       doublets = NULL, 
-                       compress = FALSE, 
-                       n.cores = self$n.cores,
+                       doublets = NULL,
                        species = c("human","mouse"),
                        samples.to.exclude = NULL,
                        verbose = self$verbose,
-                       sep = "!!",
-                       ...) {
+                       sep = "!!") {
     # Preparations
     species %<>%
       tolower() %>% 
@@ -992,7 +990,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Depth
     if (!is.null(depth.cutoff)) {
       depth.filter <- self$getConosDepth() %>% 
-        !filterVector("depth.cutoff", depth.cutoff, samples, sep)
+        filterVector("depth.cutoff", depth.cutoff, samples, sep)
     } else {
       depth.filter <- NULL
     }
@@ -1211,8 +1209,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$getConosDepth()
-  getConosDepth = function() {
-    if (is.null(self$depth)) {
+  getConosDepth = function(force = FALSE) {
+    if (is.null(self$depth) | force) {
       tmp <- self$con$samples %>% 
         lapply(`[[`, "depth") %>% 
         Reduce(c, .)
@@ -1232,8 +1230,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$getMitoFraction(species = c("human", "mouse"))
-  getMitoFraction = function(species="human") {
-    if (is.null(self$mito.frac)) {
+  getMitoFraction = function(species="human", force = FALSE) {
+    if (is.null(self$mito.frac) | force) {
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
       tmp <- self$con$samples %>% 
         lapply(`[[`, "counts") %>% 
