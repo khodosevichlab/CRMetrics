@@ -9,7 +9,6 @@
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
-#' @importFrom sparseMatrixStats rowSums2 colSums2
 #' @importFrom scales comma
 NULL
 
@@ -58,8 +57,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param sep.meta character Separator for metadata file (default = ",")
   #' @param raw.meta logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
   #' @return CRMetrics object
-  #' @examples 
+  #' @examples
+  #' \dontrun{
   #' crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
+  #' }
   initialize = function(data.path = NULL, 
                         metadata = NULL, 
                         cms = NULL,
@@ -139,7 +140,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (is.null(cms)) self$summary.metrics <- addSummaryMetrics(data.path, self$metadata, verbose)
   },
   
-  #' Add detailed metrics
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
   #' @param min.transcripts.per.cell numeric Minimal number of transcripts per cell (default = 100)
   #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE` (default = FALSE)
@@ -153,7 +153,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param verbose logical Print messages or not (default = self$verbose).
   #' @return Count matrices
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
+  #' }
   addDetailedMetrics = function(min.transcripts.per.cell = 100, 
                                 raw = FALSE,
                                 symbol = TRUE, 
@@ -183,20 +185,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
   },
   
-  #' Add comparison group
   #' @description Add comparison group for statistical testing.
   #' @param comp.group character Comparison metric (default = self$comp.group).
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @return Vector
   #' @examples 
+  #' \dontrun{
   #' crm$addComparison(comp.group = "sex")
+  #' }
   addComparison = function(comp.group, 
                            metadata = self$metadata) {
     checkCompMeta(comp.group, metadata)
     self$comp.group <- comp.group
   },
   
-  #' Plot samples
   #' @description Plot the number of samples.
   #' @param comp.group character Comparison metric, must match a column name of metadata (default = self$comp.group).
   #' @param h.adj numeric Position of statistics test p value as % of max(y) (default = 0.05).
@@ -205,7 +207,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param second.comp.group character Second comparison metric, must match a column name of metadata (default = NULL).
   #' @return ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
+  #' }
   plotSamples = function(comp.group = self$comp.group, 
                          h.adj = 0.05, 
                          exact = FALSE, 
@@ -236,7 +240,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' Plot summary metrics
   #' @description Plot all summary stats or a selected list.
   #' @param comp.group character Comparison metric (default = self$comp.group).
   #' @param second.comp.group character Second comparison metric, used for the metric "samples per group" or when "comp.group" is a numeric or an integer (default = NULL).
@@ -253,8 +256,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param secondary.testing logical Whether to show post hoc testing (default = TRUE)
   #' @return ggplot2 object
   #' @examples
+  #' \dontrun{
   #' metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
   #' crm$plotSummaryMetrics(metrics = metrics.to.plot, plot.geom = "point")
+  #' }
   plotSummaryMetrics = function(comp.group = self$comp.group, 
                                 second.comp.group = NULL, 
                                 metrics = NULL, 
@@ -377,7 +382,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
   },
   
-  #' Plot detailed metrics
   #' @description Plot detailed metrics from the detailed.metrics object
   #' @param comp.group character Comparison metric (default = self$comp.group).
   #' @param detailed.metrics data.frame Object containing the count matrices (default = self$detailed.metrics).
@@ -388,9 +392,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param hline logical Whether to show median as horizontal line (default = TRUE)
   #' @return ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' metrics.to.plot <- crm$detailed.metrics$metric %>% unique()
   #' crm$plotDetailedMetrics()
+  #' }
   plotDetailedMetrics = function(comp.group = self$comp.group, 
                                  detailed.metrics = self$detailed.metrics, 
                                  metadata = self$metadata, 
@@ -455,7 +461,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }
   },
   
-  #' Plot embedding
   #' @description Plot cells in embedding using Conos and color by depth and doublets.
   #' @param depth logical Plot depth or not (default = FALSE).
   #' @param doublet.method character Doublet detection method (default = NULL).
@@ -469,6 +474,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object
   #' @examples
+  #' \dontrun{
   #' crm$doPreprocessing()
   #' crm$createEmbedding() 
   #' crm$plotEmbedding()
@@ -478,6 +484,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
   #' # Colors cells by doublet scores
   #' crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
+  #' }
   plotEmbedding = function(depth = FALSE, 
                            doublet.method = NULL, 
                            doublet.scores = FALSE, 
@@ -541,17 +548,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' Plot depth
   #' @description Plot the sequencing depth in histogram.
   #' @param cutoff numeric The depth cutoff to color the cells in the embedding (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$plotDepth()
+  #' }
   plotDepth = function(cutoff = 1e3, 
                        samples = self$metadata$sample,
                        sep = "!!"){
@@ -607,17 +615,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(depth.plot)
   },
   
-  #' Plot mitochondrial fraction
   #' @description Plot the mitochondrial fraction in histogram.
   #' @param cutoff numeric The mito. fraction cutoff to color the embedding (default = 0.05).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$plotMitoFraction()
+  #' }
   plotMitoFraction = function(cutoff = 0.05, 
                        samples = self$metadata$sample,
                        sep = "!!"){
@@ -671,36 +680,37 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(mf.plot)
   },
   
-  #' Save summary metrics
   #' @description Save summary metrics to text file.
   #' @param file character Output file (default = "Summary_metrics.txt").
   #' @param dec character How the decimals are defined (default = ".").
   #' @param sep character What separator to use (default = `\t`).
   #' @return Tab-seprated table
   #' @examples 
+  #' \dontrun{
   #' crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
+  #' }
   saveSummaryMetrics = function(file = "Summary_metrics.tsv", 
                                 dec = ".", 
                                 sep = "\t") {
     write.table(self$summary.metrics, file, sep = sep, dec = dec)
   },
   
-  #' Save detailed metrics
   #' @description Save detailed metrics to text file.
   #' @param file character Output file (default = "Detailed_metrics.tsv").
   #' @param dec character How the decimals are defined (default = ".").
   #' @param sep character What separator to use (default = `\t`).
   #' @return Tab-separated table
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
+  #' }
   saveDetailedMetrics = function(file = "Detailed_metrics.tsv", 
                                  dec = ".", 
                                  sep = "\t") {
     write.table(self$detailed.metrics, file, sep = sep, dec = dec)
   },
   
-  #' Detect doublets
   #' @description Detect doublet cells.
   #' @param method character Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
   #' @param cms list List containing the count matrices (default=self$cms).
@@ -711,9 +721,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param args list A list with additional arguments for either `DoubletDetection` or `scrublet`. Please check the respective manuals.
   #' @return data.frame
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$detectDoublets(method = "scrublet", 
   #' conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
+  #' }
   detectDoublets = function(method = c("scrublet","doubletdetection"), 
                             cms = self$cms, 
                             env = "r-reticulate", 
@@ -829,7 +841,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$doublets[[method]] <- res
   },
   
-  #' Conos preprocessing
   #' @description Perform conos preprocessing.
   #' @param cms list List containing the count matrices (default = self$cms).
   #' @param preprocess character Method to use for preprocessing (default = c("pagoda2","seurat")).
@@ -843,8 +854,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param ... Additional arguments for `Pagaoda2::basicP2Proc` or `conos:::basicSeuratProc`
   #' @return Conos object
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing(preprocess = "pagoda2")
+  #' }
   doPreprocessing = function(cms = self$cms,
                              preprocess = c("pagoda2","seurat"),
                              min.transcripts.per.cell = 100,
@@ -892,7 +905,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     invisible(tmp)
   },
   
-  #' Create Conos embedding
   #' @description Create Conos embedding.
   #' @param cms list List containing the preprocessed count matrices (default = self$cms.preprocessed).
   #' @param verbose logical Print messages or not (default = self$verbose).
@@ -902,9 +914,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param arg.embedGraph list A list with additional arguments for the `embedGraph` function in Conos (default = list(method = "UMAP))
   #' @return Conos object
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
+  #' }
   createEmbedding = function(cms = self$cms.preprocessed,
                              verbose = self$verbose, 
                              n.cores = self$n.cores,
@@ -940,7 +954,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     invisible(con)
   },
   
-  #' Filter count matrices
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
   #' @param min.transcripts.per.cell numeric Minimal transcripts per cell (default = 100)
   #' @param depth.cutoff numeric Depth cutoff (default = NULL).
@@ -952,11 +965,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return list of filtered count matrices
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$detectDoublets() # Optional
   #' crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+  #' }
   filterCms = function(min.transcripts.per.cell = 100,
                        depth.cutoff = NULL, 
                        mito.cutoff = NULL, 
@@ -965,6 +980,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        samples.to.exclude = NULL,
                        verbose = self$verbose,
                        sep = "!!") {
+    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
     # Preparations
     species %<>%
       tolower() %>% 
@@ -1044,13 +1060,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (verbose) message(paste0("Done!"))
   },
   
-  #' Select summary metrics.
   #' @description Select metrics from summary.metrics
   #' @param ids character Metric id to select (default = NULL).
   #' @return vector
   #' @examples
+  #' \dontrun{
   #' crm$selectMetrics()
   #' selection.metrics <- crm$selectMetrics(c(1:4))
+  #' }
   selectMetrics = function(ids = NULL) {
     metrics <- self$summary.metrics$metric %>% 
       unique()
@@ -1060,7 +1077,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' Plot filtered cells
   #' @description Plot filetered cells in an embedding, in a bar plot, on a tile or export the data frame
   #' @param type character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).
   #' @param depth logical Plot the depth or not (default = TRUE).
@@ -1074,12 +1090,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object or data frame
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$detectDoublets() # Optional
   #' crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
   #' filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
+  #' }
   plotFilteredCells = function(type = c("embedding","bar","tile","export"), 
                                depth = TRUE, 
                                depth.cutoff = 1e3, 
@@ -1200,16 +1218,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  
-  #' Get Conos sequencing depth
   #' @description Extract sequencing depth from Conos object.
   #' @param force logical Force update of stored vector (default = FALSE)
   #' @return data frame
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$getConosDepth()
+  #' }
   getConosDepth = function(force = FALSE) {
     if (is.null(self$depth) | force) {
       tmp <- self$con$samples %>% 
@@ -1222,16 +1240,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' Get fraction of mitochondrial genes
   #' @description Calculate the fraction of mitochondrial genes.
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
   #' @param force logical Force update of stored vector (default = FALSE)
   #' @return data frame
   #' @examples 
+  #' \dontrun{
   #' crm$addDetailedMetrics()
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' crm$getMitoFraction(species = c("human", "mouse"))
+  #' }
   getMitoFraction = function(species="human", force = FALSE) {
     if (is.null(self$mito.frac) | force) {
       if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
@@ -1255,7 +1274,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' Prepare CellBender correction
   #' @description Create plots and script call for CellBender
   #' @param shrinkage integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
   #' @param show.expected.cells logical Plot line depicting expected number of cells (default = TRUE)
@@ -1272,7 +1290,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return ggplot2 object and bash script
   #' @examples 
+  #' \dontrun{
   #' crm$prepareCellbender()
+  #' }
   prepareCellbender = function(shrinkage = 100, 
                                show.expected.cells = TRUE, 
                                show.total.droplets = TRUE, 
@@ -1286,6 +1306,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                n.cores = self$n.cores, 
                                unique.names = FALSE,
                                sep = "!!") {
+    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
     # Preparations
     if (verbose) message(paste0(Sys.time()," Started run using ", if(n.cores < length(samples)) n.cores else length(samples)," cores"))
     if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
@@ -1349,7 +1370,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' Save CellBender script
   #' @param file character File name for CellBender script (default: cellbender_script.sh)
   #' @param fpr numeric False positive rate for CellBender (default = 0.01)
   #' @param epochs integer Number of epochs for CellBender (default = 150)
@@ -1361,8 +1381,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param args character (optional) Additional parameters for CellBender
   #' @return bash script
   #' @examples 
+  #' \dontrun{
   #' crm$prepareCellbender()
   #' crm$saveCellbenderScript()
+  #' }
   saveCellbenderScript = function(file = "cellbender_script.sh", 
                                   fpr = 0.01, 
                                   epochs = 150, 
@@ -1393,12 +1415,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     cat(out, file = file, sep = "\n")
   },
   
-  #' Get expected number of cells from Cell Ranger
   #' @description Extract the expected number of cells per sample based on the Cell Ranger summary metrics
   #' @param samples character Sample names to include (default = self$metadata$sample) 
   #' @return A numeric vector
   #' @examples 
+  #' \dontrun{
   #' crm$getExpectedCells()
+  #' }
   getExpectedCells = function(samples = self$metadata$sample) {
     expected.cells <- self$summary.metrics %>% 
       filter(metric == "Estimated Number of Cells") %$% 
@@ -1408,13 +1431,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(expected.cells)
   },
   
-  #' Get total droplets to include for CellBender estimations
   #' @description Get the total number of droplets included in the CellBender estimations. Based on the Cell Ranger summary metrics and multiplied by a preset multiplier.
   #' @param samples character Samples names to include (default = self$metadata$sample)
   #' @param multiplier numeric Number to multiply expected number of cells with (default = 3)
   #' @return A numeric vector
   #' @examples 
+  #' \dontrun{
   #' crm$getTotalDroplets()
+  #' }
   getTotalDroplets = function(samples = self$metadata$sample, 
                               multiplier = 3) {
     if(!is.numeric(multiplier)) stop("'multiplier' must be numeric.")
@@ -1424,7 +1448,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(total.droplets)
   },
   
-  #' Add count matrices to CRMetrics object
   #' @description Add a list of count matrices to the CRMetrics object.
   #' @param cms list List of count matrices
   #' @param sample.names character Vector of sample names. If NULL, sample.names are extracted from cms (default = NULL)
@@ -1433,7 +1456,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
   #' @return A ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$addCms(cms = cms.list)
+  #' }
   addCms = function(cms, 
                     sample.names = NULL, 
                     unique.names = TRUE, 
@@ -1479,20 +1504,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets()")
   },
   
-  #' Plot results from CellBender training
   #' @description Plot the results from the CellBender estimations
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @return A ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$prepareCellbender()
   #' crm$saveCellbenderScript()
   #' ## Run CellBender script
   #' crm$plotCbTraining()
+  #' }
   plotCbTraining = function(data.path = self$data.path, 
                             samples = self$metadata$sample) {
     checkDataPath(data.path)
-    requireNamespace("rhdf5")
+    checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
     
     train.df <- samples %>% 
@@ -1527,20 +1553,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' Plot CellBender cell probabilities
   #' @description Plot the CellBender assigned cell probabilities
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @return A ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$prepareCellbender()
   #' crm$saveCellbenderScript()
   #' ## Run the CellBender script
   #' crm$plotCbCellProbs()
+  #' }
   plotCbCellProbs = function(data.path = self$data.path, 
                              samples = self$metadata$sample) {
     checkDataPath(data.path)
-    requireNamespace("rhdf5")
+    checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
     
     cell.prob <- samples %>%
@@ -1561,22 +1588,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       facet_wrap(~sample, scales = "free_x")
   },
   
-  #' Plot CellBender estimated ambient gene expression
   #' @description Plot the estimated ambient gene expression per sample from CellBender calculations
   #' @param cutoff numeric Horizontal line included in the plot to indicate highly expressed ambient genes (default = 0.005)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @return A ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$prepareCellbender()
   #' crm$saveCellbenderScript()
   #' ## Run CellBender script
   #' crm$plotCbAmbExp()
+  #' }
   plotCbAmbExp = function(cutoff = 0.005, 
                           data.path = self$data.path, 
                           samples = self$metadata$sample) {
     checkDataPath(data.path)
-    requireNamespace("rhdf5")
+    checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
     
     amb <- samples %>% 
@@ -1601,22 +1629,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' Plot CellBender Ambient Genes
   #' @description Plot the most abundant estimated ambient genes from the CellBender calculations
   #' @param cutoff numeric Cutoff of ambient gene expression to use to extract ambient genes per sample
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @return A ggplot2 object
   #' @examples 
+  #' \dontrun{
   #' crm$prepareCellbender()
   #' crm$saveCellbenderScript()
   #' ## Run CellBender script
   #' crm$plotCbAmbGenes()
+  #' }
   plotCbAmbGenes = function(cutoff = 0.005, 
                             data.path = self$data.path, 
                             samples = self$metadata$sample) {
     checkDataPath(data.path)
-    requireNamespace("rhdf5")
+    checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
     
     amb <- samples %>% 
@@ -1644,18 +1673,20 @@ ggplot(amb, aes(Var1, Freq, fill = Var1)) +
   guides(fill = "none")
   },
 
-#' Add summary metrics from count matrices
 #' @description Add summary metrics from a list of count matrices
 #' @param cms list A list of filtered count matrices (default = self$cms)
 #' @param n.cores integer Number of cores to use (default = self$n.cores)
 #' @param verbose logical Show progress (default = self$verbose)
 #' @return data.frame
 #' @examples
+#' \dontrun{
 #' crm$addCms()
 #' crm$addSummaryFromCms()
+#' }
 addSummaryFromCms = function(cms = self$cms, 
                              n.cores = self$n.cores, 
                              verbose = self$verbose) {
+  checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
   if (!is.null(self$summary.metrics)) warning("Overvriting existing summary metrics")
   
   if (verbose) message(paste0(Sys.time()," Calculating ",length(cms)," summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
@@ -1685,7 +1716,6 @@ addSummaryFromCms = function(cms = self$cms,
   if (verbose) message(paste0(Sys.time()," Done!"))
 },
 
-#' Run SoupX
 #' @description Run SoupX ambient RNA estimation and correction
 #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
 #' @param samples character Sample names to include (default = self$metadata$sample)
@@ -1696,7 +1726,9 @@ addSummaryFromCms = function(cms = self$cms,
 #' @param arg.adjustCounts list A list with additional paramters for `SoupX::adjustCounts` (default = list())
 #' @return List containing a list with corrected counts, and a data.frame containing plotting estimations
 #' @examples 
+#' \dontrun{
 #' crm$runSoupX()
+#' }
 runSoupX = function(data.path = self$data.path, 
                     samples = self$metadata$sample, 
                     n.cores = self$n.cores, 
@@ -1776,13 +1808,14 @@ runSoupX = function(data.path = self$data.path,
   if (verbose) message(paste0(Sys.time()," Done!"))
 },
 
-#' Plot results from SoupX
 #' @description Plot the results from the SoupX estimations
 #' @param plot.df data.frame SoupX estimations (default = self$soupx$plot.df)
 #' @return A ggplot2 object
 #' @examples 
+#' \dontrun{
 #' crm$runSoupX()
 #' crm$plotSoupX()
+#' }
 plotSoupX = function(plot.df = self$soupx$plot.df) {
   if(is.null(plot.df)) stop("No plot data found. Please run $runSoupX first.")
   
@@ -1804,20 +1837,21 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
     guides(linetype = guide_legend(byrow = TRUE), col = guide_legend(byrow = TRUE))
 },
 
-#' Plot CellBender cell estimations
 #' @description Plot CellBender cell estimations against the estimated cell numbers from Cell Ranger
 #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
 #' @param samples character Sample names to include (default = self$metadata$sample)
 #' @return A ggplot2 object
 #' @examples 
+#' \dontrun{
 #' crm$prepareCellbender()
 #' crm$saveCellbenderScript()
 #' ## Run CellBender script
 #' crm$plotCbCells()
+#' }
 plotCbCells = function(data.path = self$data.path, 
                        samples = self$metadata$sample) {
   checkDataPath(data.path)
-  requireNamespace("rhdf5")
+  checkPackageInstalled("rhdf5", bioc = TRUE)
   paths <- getH5Paths(data.path, samples, "cellbender_filtered")
   
   df <- samples %>% 

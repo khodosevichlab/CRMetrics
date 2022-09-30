@@ -20,6 +20,8 @@ vector
 Set comp.group to 'category' if null.
 }
 \examples{
+\dontrun{
 comp.group <- checkCompGroup(comp.group = "sex")
+}
 }
 \keyword{internal}

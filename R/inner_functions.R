@@ -2,11 +2,10 @@
 #' @importFrom utils combn read.delim glob2rx
 #' @importFrom readr cols read_csv
 #' @importFrom Matrix sparseMatrix
-#' @importFrom sparseMatrixStats colSums2
 #' @importFrom methods as
 NULL
 
-#' Set correct 'comp.group' parameter
+#' @title Set correct 'comp.group' parameter
 #' @description Set comp.group to 'category' if null.
 #' @param comp.group Comparison metric.
 #' @param category Comparison metric to use if comp.group is not provided.
@@ -14,7 +13,9 @@ NULL
 #' @keywords internal
 #' @return vector
 #' @examples 
+#' \dontrun{
 #' comp.group <- checkCompGroup(comp.group = "sex")
+#' }
 checkCompGroup <- function(comp.group, 
                            category, 
                            verbose = TRUE) {
@@ -25,20 +26,22 @@ checkCompGroup <- function(comp.group,
   return(comp.group)
 }
 
-#' Check whether 'comp.group' is in metadata
+#' @title Check whether 'comp.group' is in metadata
 #' @description Checks whether 'comp.group' is any of the column names in metadata.
 #' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
 #' @keywords internal
 #' @return nothing or stop
 #' @examples 
+#' \dontrun{
 #' checkCompMeta(comp.group = "sex", metadata = crm$metadata)
+#' }
 checkCompMeta <- function(comp.group, 
                           metadata) {
   if (!is.null(comp.group) && (!comp.group %in% colnames(metadata))) stop("'comp.group' doesn't match any column name in metadata.")
 }
 
-#' Load 10x count matrices
+#' @title Load 10x count matrices
 #' @description Load gene expression count data
 #' @param data.path Path to cellranger count data.
 #' @param sample.names Vector of sample names (default = NULL)
@@ -50,11 +53,13 @@ checkCompMeta <- function(comp.group,
 #' @keywords internal
 #' @return data frame
 #' @examples 
+#' \dontrun{
 #' cms <- read10x(data.path = crm$data.path, 
 #' samples = crm$metadata$samples, 
 #' raw = FALSE, 
 #' symbol = TRUE, 
 #' n.cores = crm$n.cores)
+#' }
 #' @export
 read10x <- function(data.path, 
                     sample.names = NULL, 
@@ -110,7 +115,7 @@ read10x <- function(data.path,
   return(tmp)
 }
 
-#' Add detailed metrics
+#' @title Add detailed metrics
 #' @description Add detailed metrics, requires to load raw count matrices using pagoda2.
 #' @param cms List containing the count matrices. 
 #' @param verbose Print messages (default = TRUE).
@@ -118,10 +123,13 @@ read10x <- function(data.path,
 #' @keywords internal
 #' @return data frame
 #' @examples 
-#' detailed.metrics <- addDetailedMetricsInner(cms = crm$cms, n.cores = crm$n.cores)
+#' \dontrun{
+#' detailed.metrics <- addDetailedMetricsInner(cms = cms, n.cores = n.cores)
+#' }
 addDetailedMetricsInner <- function(cms, 
                                     verbose = TRUE, 
                                     n.cores = 1) {
+  checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
   if (verbose) message(Sys.time()," Counting using ", if (n.cores < length(cms)) n.cores else length(cms)," cores")
   samples <- cms %>% 
     names()
@@ -152,7 +160,7 @@ addDetailedMetricsInner <- function(cms,
   if (verbose) message(paste0(Sys.time()," Creating table"))
   
   tmp <- samples %>% 
-    plapply(\(sample.name) {
+    lapply(\(sample.name) {
       metricsDetailed[[sample.name]] %>% 
         mutate(sample = sample.name)
     }) %>% 
@@ -165,7 +173,7 @@ addDetailedMetricsInner <- function(cms,
   return(tmp)
 }
 
-#' Add statistics to plot
+#' @title Add statistics to plot
 #' @description Use ggpubr to add statistics to plots.
 #' @param p Plot to add statistics to. 
 #' @param comp.group Comparison metric.
@@ -176,7 +184,9 @@ addDetailedMetricsInner <- function(cms,
 #' @keywords internal
 #' @return ggplot2 object
 #' @examples 
-#' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kurskal.test")
+#' \dontrun{
+#' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kruskal.test")
+#' }
 addPlotStats <- function(p, 
                          comp.group, 
                          metadata, 
@@ -204,7 +214,7 @@ addPlotStats <- function(p,
   return(g)
 }
 
-#' Add statistics to plot
+#' @title Add statistics to plot
 #' @description Use ggpubr to add statistics to samples ar plot
 #' @param p Plot to add statistics to. 
 #' @param comp.group Comparison metric.
@@ -215,7 +225,9 @@ addPlotStats <- function(p,
 #' @keywords internal
 #' @return ggplot2 object
 #' @examples 
+#' \dontrun{
 #' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, second.comp.group = "condition")
+#' }
 addPlotStatsSamples <- function(p, 
                                 comp.group, 
                                 metadata, 
@@ -240,7 +252,7 @@ addPlotStatsSamples <- function(p,
   return(g)
 }
 
-#' Add summary metrics
+#' @title Add summary metrics
 #' @description Add summary metrics by reading Cell Ranger metrics summary files.
 #' @param data.path Path to cellranger count data.
 #' @param metadata Metadata for samples.
@@ -249,9 +261,11 @@ addPlotStatsSamples <- function(p,
 #' @keywords internal
 #' @return data frame
 #' @examples 
+#' \dontrun{
 #' summary.metrics <- addSummaryMetrics(data.path = crm$data.path, 
 #' metadata = crm$metadata, 
 #' n.cores = crm$n.cores)
+#' }
 addSummaryMetrics <- function(data.path, 
                               metadata, 
                               n.cores = 1, 
@@ -278,13 +292,15 @@ addSummaryMetrics <- function(data.path,
   return(metrics)
 }
 
-#' Plot the data as points, as bars as a histogram, or as a violin
+#' @title Plot the data as points, as bars as a histogram, or as a violin
 #' @description Plot the data as points, barplot, histogram or violin
 #' @param plot.geom The plot.geom to use, "point", "bar", "histogram", or "violin".
 #' @keywords internal
 #' @return geom
 #' @examples 
+#' \dontrun{
 #' plot.geom <- plotGeom(plot.geom = "point")
+#' }
 plotGeom = function(plot.geom, 
                     col){
   if (plot.geom == "point"){
@@ -299,14 +315,16 @@ plotGeom = function(plot.geom,
   return(geom)
 }
 
-#' Calculate percentage of filtered cells
+#' @title Calculate percentage of filtered cells
 #' @description Calculate percentage of filtered cells based on the filter
 #' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample.
 #' @param filter The variable to filter (default = "mito").
 #' @keywords internal
 #' @return vector
 #' @examples 
+#' \dontrun{
 #' perc <- percFilter(filter.data, filter = "depth")
+#' }
 percFilter <- function(filter.data, 
                        filter = "mito") {
   cells.per.sample <- filter.data$sample %>% table() %>% c()
@@ -324,13 +342,15 @@ percFilter <- function(filter.data,
   return(perc)
 }
 
-#' Get labels for percentage of filtered cells
+#' @title Get labels for percentage of filtered cells
 #' @description Labels the percentage of filtered cells based on mitochondrial fraction, sequencing depth and doublets as low, medium or high
 #' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample.
 #' @keywords internal
 #' @return data frame
 #' @examples 
+#' \dontrun{
 #' filtered <- labelsFilter(filter.data)
+#' }
 labelsFilter <- function(filter.data) {
   var.names <- filter.data$variable %>% 
     unique()
@@ -364,10 +384,21 @@ labelsFilter <- function(filter.data) {
   return(tmp)
 }
 
-#' Read 10x HDF5 files
+#' @title Read 10x HDF5 files
+#' @param data.path character
 #' @param sample.names character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
+#' @param symbol logical Use gene SYMBOLs (TRUE) or ENSEMBL IDs (FALSE) (default = TRUE)
+#' @param sep character Separator for creating unique cell names from sample IDs and cell IDs (default = "!!")
+#' @param n.cores integer Number of cores (default = 1)
+#' @param verbose logical Print progress (default = TRUE)
+#' @param unique.names logical Create unique cell IDs (default = FALSE)
+#' @return list with sparse count matrices
 #' @export
+#' @examples 
+#' \dontrun{
+#' cms.h5 <- read10xH5(data.path = ".")
+#' }
 read10xH5 <- function(data.path, 
                       sample.names = NULL, 
                       type = c("raw","filtered","cellbender","cellbender_filtered"), 
@@ -376,7 +407,7 @@ read10xH5 <- function(data.path,
                       n.cores = 1, 
                       verbose = TRUE, 
                       unique.names = FALSE) {
-  requireNamespace("rhdf5")
+  checkPackageInstalled("rhdf5", bioc = TRUE)
   
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
@@ -424,7 +455,16 @@ read10xH5 <- function(data.path,
   return(out)
 }
 
+#' @title Create unique cell names
+#' @description Create unique cell names from sample IDs and cell IDs
+#' @param cms list List of count matrices, should be named (optional)
+#' @param sample.names character Optional, list of sample names
+#' @param sep character Separator between sample IDs and cell IDs (default = "!!")
 #' @keywords internal
+#' @examples 
+#' \dontrun{
+#' cms <- creatUniqueCellNames(cms = cms)
+#' }
 createUniqueCellNames <- function(cms, 
                                   sample.names, 
                                   sep = "!!") {
@@ -436,7 +476,16 @@ createUniqueCellNames <- function(cms,
     setNames(sample.names)
 }
 
+#' @title Get H5 file paths
+#' @description Get file paths for H5 files
+#' @param data.path character Path for directory containing sample-wise directories with Cell Ranger count outputs
+#' @param samples character Sample names to include (default = NULL)
+#' @param type character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")
 #' @keywords internal
+#' @examples
+#' \dontrun{
+#' paths <- getH5Paths(data.path = ".")
+#' }
 getH5Paths <- function(data.path, 
                        samples = NULL, 
                        type = NULL) {
@@ -489,12 +538,26 @@ getH5Paths <- function(data.path,
   return(paths)
 }
 
+#' @title Create filtering vector
+#' @description Create logical filtering vector based on a numeric vector and a (sample-wise) cutoff
+#' @param num.vec numeric Numeric vector to create filter on
+#' @param name character Name of filter
+#' @param filter numeric Either a single numeric value or a numeric value with length of samples
+#' @param samples character Sample IDs
+#' @param sep character Separator to split cells by into sample-wise lists (default = "!!")
 #' @keywords internal
+#' @examples 
+#' \dontrun{
+#' filter <- filterVector(num.vec = 1:10 %>% setNames(c(rep("sample1!!cell",5),rep("sample2!!cell",5))), 
+#' name = "test", 
+#' filter = c(3,7) %>% setNames(c("sample1","sample2")), 
+#' samples = c("sample1","sample2"))
+#' }
 filterVector <- function(num.vec, 
                          name, 
                          filter, 
                          samples, 
-                         sep) {
+                         sep = "!!") {
   if (!is.numeric(filter)) stop(paste0("'",name,"' must be numeric."))
   
   if (length(filter) > 1) {
@@ -557,3 +620,4 @@ checkPackageInstalled <- function(pkgs, details='to run this function', install.
   }
   
   stop(error.text)
+}

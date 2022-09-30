@@ -20,6 +20,8 @@ data frame
 Add detailed metrics, requires to load raw count matrices using pagoda2.
 }
 \examples{
-detailed.metrics <- addDetailedMetricsInner(cms = crm$cms, n.cores = crm$n.cores)
+\dontrun{
+detailed.metrics <- addDetailedMetricsInner(cms = cms, n.cores = n.cores)
+}
 }
 \keyword{internal}

@@ -16,10 +16,30 @@ read10xH5(
 )
 }
 \arguments{
+\item{data.path}{character}
+
 \item{sample.names}{character vector, select specific samples for processing (default = NULL)}
 
 \item{type}{name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript}
+
+\item{symbol}{logical Use gene SYMBOLs (TRUE) or ENSEMBL IDs (FALSE) (default = TRUE)}
+
+\item{sep}{character Separator for creating unique cell names from sample IDs and cell IDs (default = "!!")}
+
+\item{n.cores}{integer Number of cores (default = 1)}
+
+\item{verbose}{logical Print progress (default = TRUE)}
+
+\item{unique.names}{logical Create unique cell IDs (default = FALSE)}
+}
+\value{
+list with sparse count matrices
 }
 \description{
 Read 10x HDF5 files
+}
+\examples{
+\dontrun{
+cms.h5 <- read10xH5(data.path = ".")
+}
 }

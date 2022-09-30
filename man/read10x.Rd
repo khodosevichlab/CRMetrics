@@ -37,10 +37,12 @@ data frame
 Load gene expression count data
 }
 \examples{
+\dontrun{
 cms <- read10x(data.path = crm$data.path, 
 samples = crm$metadata$samples, 
 raw = FALSE, 
 symbol = TRUE, 
 n.cores = crm$n.cores)
+}
 }
 \keyword{internal}

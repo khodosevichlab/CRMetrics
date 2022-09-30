@@ -12,51 +12,58 @@ Functions to analyse Cell Ranger count data
 ## Method `CRMetrics$new`
 ## ------------------------------------------------
 
+\dontrun{
 crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
-Add detailed metrics
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addDetailedMetrics`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
-Add comparison group
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addComparison`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addComparison(comp.group = "sex")
-Plot samples
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
+\dontrun{
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
-Plot summary metrics
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSummaryMetrics`
 ## ------------------------------------------------
 
+\dontrun{
 metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
 crm$plotSummaryMetrics(metrics = metrics.to.plot, plot.geom = "point")
-Plot detailed metrics
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotDetailedMetrics`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 metrics.to.plot <- crm$detailed.metrics$metric \%>\% unique()
 crm$plotDetailedMetrics()
-Plot embedding
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotEmbedding`
 ## ------------------------------------------------
 
+\dontrun{
 crm$doPreprocessing()
 crm$createEmbedding() 
 crm$plotEmbedding()
@@ -66,227 +73,253 @@ crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
 crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
 # Colors cells by doublet scores
 crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
-Plot depth
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotDepth`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$plotDepth()
-Plot mitochondrial fraction
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotMitoFraction`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$plotMitoFraction()
-Save summary metrics
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$saveSummaryMetrics`
 ## ------------------------------------------------
 
+\dontrun{
 crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
-Save detailed metrics
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$saveDetailedMetrics`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
-Detect doublets
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$detectDoublets`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$detectDoublets(method = "scrublet", 
 conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
-Conos preprocessing
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$doPreprocessing`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing(preprocess = "pagoda2")
-Create Conos embedding
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$createEmbedding`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
-Filter count matrices
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$filterCms`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
 crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
-Select summary metrics.
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$selectMetrics`
 ## ------------------------------------------------
 
+\dontrun{
 crm$selectMetrics()
 selection.metrics <- crm$selectMetrics(c(1:4))
-Plot filtered cells
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotFilteredCells`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
 crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
 filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
-Get Conos sequencing depth
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$getConosDepth`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$getConosDepth()
-Get fraction of mitochondrial genes
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$getMitoFraction`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$getMitoFraction(species = c("human", "mouse"))
-Prepare CellBender correction
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$prepareCellbender`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
-Save CellBender script
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$saveCellbenderScript`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
 crm$saveCellbenderScript()
-Get expected number of cells from Cell Ranger
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$getExpectedCells`
 ## ------------------------------------------------
 
+\dontrun{
 crm$getExpectedCells()
-Get total droplets to include for CellBender estimations
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$getTotalDroplets`
 ## ------------------------------------------------
 
+\dontrun{
 crm$getTotalDroplets()
-Add count matrices to CRMetrics object
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addCms`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addCms(cms = cms.list)
-Plot results from CellBender training
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotCbTraining`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbTraining()
-Plot CellBender cell probabilities
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotCbCellProbs`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run the CellBender script
 crm$plotCbCellProbs()
-Plot CellBender estimated ambient gene expression
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotCbAmbExp`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbAmbExp()
-Plot CellBender Ambient Genes
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotCbAmbGenes`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbAmbGenes()
-Add summary metrics from count matrices
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addSummaryFromCms`
 ## ------------------------------------------------
 
+\dontrun{
 crm$addCms()
 crm$addSummaryFromCms()
-Run SoupX
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$runSoupX`
 ## ------------------------------------------------
 
+\dontrun{
 crm$runSoupX()
-Plot results from SoupX
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSoupX`
 ## ------------------------------------------------
 
+\dontrun{
 crm$runSoupX()
 crm$plotSoupX()
-Plot CellBender cell estimations
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotCbCells`
 ## ------------------------------------------------
 
+\dontrun{
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
+}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -404,8 +437,9 @@ CRMetrics object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
-Add detailed metrics
+\preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
+}
 }
 \if{html}{\out{</div>}}
 
@@ -462,8 +496,9 @@ Count matrices
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
-Add comparison group
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
+}
 }
 \if{html}{\out{</div>}}
 
@@ -493,8 +528,9 @@ Vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addComparison(comp.group = "sex")
-Plot samples
+\preformatted{\dontrun{
+crm$addComparison(comp.group = "sex")
+}
 }
 \if{html}{\out{</div>}}
 
@@ -536,8 +572,9 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
-Plot summary metrics
+\preformatted{\dontrun{
+crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
+}
 }
 \if{html}{\out{</div>}}
 
@@ -603,9 +640,10 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
+\preformatted{\dontrun{
+metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
 crm$plotSummaryMetrics(metrics = metrics.to.plot, plot.geom = "point")
-Plot detailed metrics
+}
 }
 \if{html}{\out{</div>}}
 
@@ -653,10 +691,11 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 metrics.to.plot <- crm$detailed.metrics$metric \%>\% unique()
 crm$plotDetailedMetrics()
-Plot embedding
+}
 }
 \if{html}{\out{</div>}}
 
@@ -713,7 +752,8 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$doPreprocessing()
+\preformatted{\dontrun{
+crm$doPreprocessing()
 crm$createEmbedding() 
 crm$plotEmbedding()
 # Color cells for low depth
@@ -722,7 +762,7 @@ crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
 crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
 # Colors cells by doublet scores
 crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
-Plot depth
+}
 }
 \if{html}{\out{</div>}}
 
@@ -754,11 +794,12 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$plotDepth()
-Plot mitochondrial fraction
+}
 }
 \if{html}{\out{</div>}}
 
@@ -794,11 +835,12 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$plotMitoFraction()
-Save summary metrics
+}
 }
 \if{html}{\out{</div>}}
 
@@ -834,8 +876,9 @@ Tab-seprated table
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
-Save detailed metrics
+\preformatted{\dontrun{
+crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
+}
 }
 \if{html}{\out{</div>}}
 
@@ -871,9 +914,10 @@ Tab-separated table
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
-Detect doublets
+}
 }
 \if{html}{\out{</div>}}
 
@@ -921,10 +965,11 @@ data.frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$detectDoublets(method = "scrublet", 
 conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
-Conos preprocessing
+}
 }
 \if{html}{\out{</div>}}
 
@@ -981,9 +1026,10 @@ Conos object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing(preprocess = "pagoda2")
-Create Conos embedding
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1028,10 +1074,11 @@ Conos object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
-Filter count matrices
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1082,12 +1129,13 @@ list of filtered count matrices
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
 crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
-Select summary metrics.
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1115,9 +1163,10 @@ vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$selectMetrics()
+\preformatted{\dontrun{
+crm$selectMetrics()
 selection.metrics <- crm$selectMetrics(c(1:4))
-Plot filtered cells
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1174,13 +1223,14 @@ ggplot2 object or data frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$detectDoublets() # Optional
 crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
 filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
-Get Conos sequencing depth
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1208,11 +1258,12 @@ data frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$getConosDepth()
-Get fraction of mitochondrial genes
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1242,11 +1293,12 @@ data frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addDetailedMetrics()
+\preformatted{\dontrun{
+crm$addDetailedMetrics()
 crm$doPreprocessing()
 crm$createEmbedding()
 crm$getMitoFraction(species = c("human", "mouse"))
-Prepare CellBender correction
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1312,8 +1364,9 @@ ggplot2 object and bash script
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
-Save CellBender script
+\preformatted{\dontrun{
+crm$prepareCellbender()
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1366,9 +1419,10 @@ bash script
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
+\preformatted{\dontrun{
+crm$prepareCellbender()
 crm$saveCellbenderScript()
-Get expected number of cells from Cell Ranger
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1396,8 +1450,9 @@ A numeric vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$getExpectedCells()
-Get total droplets to include for CellBender estimations
+\preformatted{\dontrun{
+crm$getExpectedCells()
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1427,8 +1482,9 @@ A numeric vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$getTotalDroplets()
-Add count matrices to CRMetrics object
+\preformatted{\dontrun{
+crm$getTotalDroplets()
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1470,8 +1526,9 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addCms(cms = cms.list)
-Plot results from CellBender training
+\preformatted{\dontrun{
+crm$addCms(cms = cms.list)
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1504,11 +1561,12 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
+\preformatted{\dontrun{
+crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbTraining()
-Plot CellBender cell probabilities
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1541,11 +1599,12 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
+\preformatted{\dontrun{
+crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run the CellBender script
 crm$plotCbCellProbs()
-Plot CellBender estimated ambient gene expression
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1581,11 +1640,12 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
+\preformatted{\dontrun{
+crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbAmbExp()
-Plot CellBender Ambient Genes
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1621,11 +1681,12 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
+\preformatted{\dontrun{
+crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbAmbGenes()
-Add summary metrics from count matrices
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1661,9 +1722,10 @@ data.frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$addCms()
+\preformatted{\dontrun{
+crm$addCms()
 crm$addSummaryFromCms()
-Run SoupX
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1711,8 +1773,9 @@ List containing a list with corrected counts, and a data.frame containing plotti
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$runSoupX()
-Plot results from SoupX
+\preformatted{\dontrun{
+crm$runSoupX()
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1740,9 +1803,10 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$runSoupX()
+\preformatted{\dontrun{
+crm$runSoupX()
 crm$plotSoupX()
-Plot CellBender cell estimations
+}
 }
 \if{html}{\out{</div>}}
 
@@ -1775,10 +1839,12 @@ A ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{crm$prepareCellbender()
+\preformatted{\dontrun{
+crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
+}
 }
 \if{html}{\out{</div>}}
 

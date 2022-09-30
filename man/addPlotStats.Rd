@@ -34,6 +34,8 @@ ggplot2 object
 Use ggpubr to add statistics to plots.
 }
 \examples{
-addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kurskal.test")
+\dontrun{
+addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kruskal.test")
+}
 }
 \keyword{internal}

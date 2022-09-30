@@ -33,6 +33,8 @@ ggplot2 object
 Use ggpubr to add statistics to samples ar plot
 }
 \examples{
+\dontrun{
 addPlotStats(p, comp.group = "sex", metadata = crm$metadata, second.comp.group = "condition")
+}
 }
 \keyword{internal}
