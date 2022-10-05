@@ -750,7 +750,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        replace = FALSE, 
                        standard_scaling = FALSE, 
                        p_thresh = 1e-7, 
-                       voter_tresh = 0.9)
+                       voter_thresh = 0.9)
       ints <- c("n_components","n_iters","n_jobs","n_top_var_genes","random_state")
     } else {
       args.std <- list(total_counts = NULL,
