@@ -176,6 +176,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       message("CMs already present. To overwrite, set $cms = NULL and rerun this function.")
     }
     
+    # Check for unrealistic large samples
+    size.check <- self$cms %>% sapply(dim) %>% apply(2, prod) %>% {. > 2^31-1}
+    if (any(size.check)) warning(message(paste0("Unrealistic large samples detected that are larger than what can be handled in R. Consider removing ",paste(size.check[size.check] %>% names(), collapse = " "),". If kept, you may experience errors.")))
+    
     if (is.null(self$detailed.metrics)) {
       if (min.transcripts.per.cell > 0) cms <- self$cms %>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
       self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
