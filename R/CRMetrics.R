@@ -168,17 +168,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 verbose = self$verbose) {
     if (is.null(self$cms)) {
       if (cellbender) {
-        cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        self$cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       } else {
-        cms <- read10x(data.path = data.path, sample.names = sample.names, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
+        self$cms <- read10x(data.path = data.path, sample.names = sample.names, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
       }
     } else {
-      message("Filtered CMs already present. To overwrite, set $cms = NULL and rerun this function.")
-      cms <- self$cms
+      message("CMs already present. To overwrite, set $cms = NULL and rerun this function.")
     }
     
     if (is.null(self$detailed.metrics)) {
-      if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
+      if (min.transcripts.per.cell > 0) cms <- self$cms %>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
       self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
     } else {
       message("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
