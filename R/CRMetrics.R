@@ -992,6 +992,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Extract CMs
     cms <- self$cms
     
+    if (is.null(cms)) stop("$cms is NULL. filterCms depends on this object. Aborting")
+    
     # Exclude samples
     if (!is.null(samples.to.exclude)) {
       if (!((samples.to.exclude %in% names(cms)) %>% all())) stop("Not all 'samples.to.exclude' found in names of ",if (raw) "self$cms.raw" else "self$cms. Please check and try again.")
@@ -999,12 +1001,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       cms %<>% .[setdiff(names(.), samples.to.exclude)]
     }
     
+    if (verbose) message(paste0(Sys.time()," Preparing filter"))
     # Extract sample names
     samples <- cms %>% 
       names()
     
     # Apply min.transcripts.per.cell
-    if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
+    if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) >= min.transcripts.per.cell])
     
     # Depth
     if (!is.null(depth.cutoff)) {
@@ -1035,8 +1038,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Get cell index
-    cell.idx <- self$con$getDatasetPerCell() %>% 
-      names()
+    cell.idx <- cms %>% 
+      sapply(colnames) %>% 
+      unlist() %>% 
+      unname()
     
     # Create split vector
     split.vec <- strsplit(cell.idx, sep) %>% 
@@ -1052,7 +1057,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       apply(1, all) %>% 
       split(split.vec)
       
-    if (verbose) message(paste0("Removing ",sum(!filter.list %>% unlist())," cells"))
+    if (verbose) {
+      cells.remove <- sum(!filter.list %>% unlist())
+      cells.total <- length(cell.idx)
+      cells.percent <- cells.remove / cells.total * 100
+      message(paste0(Sys.time()," Removing ",cells.remove," cells of ", cells.total," (",formatC(cells.percent, digits = 3),"%)"))
+    }
     
     self$cms.filtered <- samples %>% 
       lapply(\(sample) {
