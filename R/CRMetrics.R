@@ -10,7 +10,10 @@
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom scales comma
+#' @importFrom utils globalVariables
 NULL
+
+utils::globalVariables(c("Valid Barcodes","Fraction Reads in Cells"))
 
 #' CRMetrics class object
 #' 
@@ -108,7 +111,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                                        full.names = FALSE))
       }
     } else {
-      if (class(metadata) == "data.frame") {
+      if (is(metadata, "data.frame")) {
         self$metadata <- metadata %>% 
           arrange(sample)
       } else {
@@ -1271,7 +1274,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         lapply(`[[`, "counts") %>% 
         lapply(\(cm) {
           tmp.mat <- cm[,grep(symb, colnames(cm))]
-          if (class(tmp.mat) == "numeric") {
+          if (is(tmp.mat, "numeric")) {
             nom <- tmp.mat
           } else {
             nom <- sparseMatrixStats::rowSums2(tmp.mat)

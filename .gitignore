@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # Project files
 .Rproj
+
+# README notebook
+README.Rmd

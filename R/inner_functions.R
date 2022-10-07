@@ -3,7 +3,10 @@
 #' @importFrom readr cols read_csv
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
+#' @importFrom utils globalVariables
 NULL
+
+utils::globalVariables(c(".","value","variable","V1","V2"))
 
 #' @title Set correct 'comp.group' parameter
 #' @description Set comp.group to 'category' if null.
@@ -548,7 +551,8 @@ getH5Paths <- function(data.path,
 #' @keywords internal
 #' @examples 
 #' \dontrun{
-#' filter <- filterVector(num.vec = 1:10 %>% setNames(c(rep("sample1!!cell",5),rep("sample2!!cell",5))), 
+#' filter <- filterVector(num.vec = 1:10 %>% 
+#' setNames(c(rep("sample1!!cell",5),rep("sample2!!cell",5))), 
 #' name = "test", 
 #' filter = c(3,7) %>% setNames(c("sample1","sample2")), 
 #' samples = c("sample1","sample2"))

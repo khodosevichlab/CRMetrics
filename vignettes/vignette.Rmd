@@ -1,8 +1,12 @@
 ---
-title: "Analysis of 10x test data"
+title: "CRMetrics - Cell Ranger Filtering and Metrics Visualization"
 output: 
-  github_document:
+  github_vignette:
     toc: true
+    vignette: >
+  %\VignetteEngine{knitr::knitr}
+  %\VignetteIndexEntry{"CRMetrics - Cell Ranger Filtering and Metrics Visualization"}
+  %\usepackage[UTF-8]{inputenc}
 ---
 
 # Preparations
@@ -51,18 +55,40 @@ library(magrittr)
 library(dplyr)
 ```
 
-Initialize a new object of class `CRMetrics` with the path to the Cell Ranger output and a metadata file. Here, the folder with our test data is stored in `/data/ExtData/`.
-Metadata can be added in the initialization call from a comma-separated file. The metadata file contains a column `sample` with the samples and optionally more columns with factors. Only sample IDs in column `sample` will be included.
+There are two ways to initialize a new object of class `CRMetrics`, either by providing `data.path` or `cms`. 
+`data.path` is the path to a directory containing sample-wise directories with the Cell Ranger count outputs. 
+`cms` is a (named, optional) list of (sparse, optional) count matrices. 
 
-```{r}
+Please note, if `data.path` is not provided, some functionality is lost, e.g. ambient RNA removal. 
+
+Optionally, metadata can be provided, either as a file or as a data.frame. For a file, the separator can be set with the parameter `sep.meta` (most often, either `,` (comma) or `\t` (tab) is used). In either format, the columns must be named and one column must be named `sample` and contain sample names. In combination with `data.path`, the sample names must match the sample directory names. Unmatched directory names are dropped.
+
+If `cms` is provided, it is recommended to add summary metrices afterwards:
+
+```{r cms, eval=FALSE}
+crm <- CRMetrics$new(cms = cms, n.cores = 1)
+crm$addSummaryFromCms()
+```
+
+Please note, some functionality depends on aggregation of sample and cell IDs using the `sep.cell` parameter. The default is `!!` which creates cell names in the format of `<sampleID>!!<cellID>`. If another separator is used, this needs to be provided in relevant function calls.
+
+Here, the folder with our test data is stored in `/data/ExtData/CRMetrics_testdata/` and we provide metadata in a comma-separated file.
+
+```{r init, eval=FALSE}
 crm <- CRMetrics$new(data.path = "/data/ExtData/CRMetrics_testdata/", 
                      metadata = "/data/ExtData/CRMetrics_testdata/metadata.csv", 
-                     n.cores = 50)
+                     sep.meta = ",",
+                     n.cores = 1,
+                     verbose = FALSE)
+```
+
+```{r load-obj, include=FALSE}
+crm <- qs::qread("/data/ExtData/CRMetrics_testdata/crm.qs", nthreads = 2)
 ```
 
 We can review our metadata
 
-```{r}
+```{r meta}
 crm$metadata
 ```
 
@@ -78,7 +104,7 @@ We have included preparative steps for [CellBender](https://github.com/broadinst
 To install, follow [these instructions](https://cellbender.readthedocs.io/en/latest/installation/index.html#manual-installation). It is highly recommended to run `CellBender` using GPU acceleration.
 If you are more comfortable installing through `reticulate` in R, these lines should be run:
 
-```{r, eval=FALSE}
+```{r cellbender-install, eval=FALSE}
 library(reticulate)
 conda_create("cellbender", 
              conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
@@ -96,7 +122,7 @@ conda_install("cellbender",
 
 Then, clone the `CellBender` repository as instructed in the manual. Here, we clone to `/apps/` through `cd /apps/; git clone https://github.com/broadinstitute/CellBender.git` and then `CellBender` can be installed:
 
-```{r, eval=FALSE}
+```{r cellbender-install-2, eval=FALSE}
 conda_install("cellbender", 
               conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
               pip = TRUE, 
@@ -108,7 +134,7 @@ conda_install("cellbender",
 
 For `CellBender`, we need to specify expected number of cells and total droplets included (please see the [manual](https://cellbender.readthedocs.io/en/latest/usage/index.html) for additional information). As hinted in the manual, the number of total droplets included could be expected number of cells multiplied by 3 (which we set as default). First, we plot these measures:
 
-```{r}
+```{r cbprep, cache=TRUE}
 crm$prepareCellbender(shrinkage = 100, # Subsamples every 100th datapoint for faster plotting
                       show.expected.cells = TRUE, 
                       show.total.droplets = TRUE)
@@ -116,35 +142,35 @@ crm$prepareCellbender(shrinkage = 100, # Subsamples every 100th datapoint for fa
 
 We could change the total droplets included for any sample. Let us first look at the vector.
 
-```{r}
+```{r totdrops}
 droplets <- crm$getTotalDroplets()
 droplets
 ```
 
 Then we change the total droplets for SRR15054424.
 
-```{r}
+```{r change-topdrops}
 droplets["SRR15054424"] <- 2e4
 ```
 
 We plot this change.
 
-```{r}
+```{r cbprep-totdrops, cache=TRUE}
 crm$prepareCellbender(shrinkage = 100, 
                       show.expected.cells = TRUE, 
                       show.total.droplets = TRUE, 
                       total.droplets = droplets)
 ```
 
-We could also multiply expected cells by 4 for all samples and save this in our CRMetrics object.
+We could also multiply expected cells by 2.5 for all samples and save this in our CRMetrics object.
 
-```{r, eval=FALSE}
-crm$cellbender$total.droplets <- crm$getTotalDroplets(multiplier = 4)
+```{r cb-totdrops-multiply, eval=FALSE}
+crm$cellbender$total.droplets <- crm$getTotalDroplets(multiplier = 2.5)
 ```
 
-Finally, we save a script for running `CellBender` on all our samples. Here, we use our modified total droplet vector.
+Finally, we save a script for running `CellBender` on all our samples. Here, we use our modified total droplet vector. If `total.droplets` is not specified, it will use the stored vector at `crm$cellbender$total.droplets`.
 
-```{r}
+```{r cb-save, eval=FALSE}
 crm$saveCellbenderScript(file = "/apps/cellbender_script.sh", 
                          fpr = 0.01, 
                          epochs = 150, 
@@ -156,51 +182,64 @@ We can run this script in the terminal. Here, we load our miniconda module: `mod
 
 ### Plotting
 
-```{r}
+We can plot the changes in cell numbers following CellBender estimations.
+
+```{r cb-plotcells, cache=TRUE}
 crm$plotCbCells()
 ```
 
-```{r, fig.width = 12, fig.height = 10}
+We can plot the CellBender training results.
+
+```{r cb-plottraining, fig.width = 12, fig.height = 10, cache=TRUE}
 crm$plotCbTraining()
 ```
 
-```{r, fig.width = 12, fig.height = 10}
+We can plot the cell probabilities.
+
+```{r cb-plotcellprobs, fig.width = 12, fig.height = 10, cache=TRUE}
 crm$plotCbCellProbs()
 ```
 
-```{r, fig.width = 12, fig.height = 10}
-crm$plotCbAmbExp()
+We can plot the identified ambient genes per sample.
+
+```{r cb-plotambexp, fig.width = 12, fig.height = 10, cache=TRUE}
+crm$plotCbAmbExp(cutoff = 0.005)
 ```
 
-```{r}
-crm$plotCbAmbGenes()
+Lastly, we can plot the proportion of samples expressing ambient genes. We see that *MALAT1* is identified as an ambient gene in all samples [which is expected](https://kb.10xgenomics.com/hc/en-us/articles/360004729092-Why-do-I-see-high-levels-of-Malat1-in-my-gene-expression-data-).
+
+```{r cb-plotambgenes, cache=TRUE}
+crm$plotCbAmbGenes(cutoff = 0.005)
 ```
 
 ## SoupX
 
-The implementation of SoupX uses the automated estimation of contamination and correction.
+The implementation of SoupX uses the automated estimation of contamination and correction. Please note, SoupX depends on Seurat for import of data.
+Since this calculation takes several minutes, it is not run in this vignette.
 
-```{r}
+```{r runsoupx, eval=FALSE}
 crm$runSoupX()
 ```
 
 Then, we can plot the corrections.
 
-```{r}
+```{r plotsoupx, cache=TRUE}
 crm$plotSoupX()
 ```
 
 In the end, we add the SoupX adjusted CMs to our object.
 
-```{r}
-crm$addCms(crm$soupx$cms.adj)
+```{r add-adj-cms}
+crm$addCms(cms = crm$soupx$cms.adj, 
+           unique.names = TRUE, 
+           sep = "!!")
 ```
 
 # Plot summary statistics
 
 We can investigate which metrics are available and choose the ones we would like to plot
 
-```{r}
+```{r select-metrics}
 crm$selectMetrics()
 ```
 
@@ -208,7 +247,7 @@ crm$selectMetrics()
 
 First, we can plot the number of samples per condition. Here, we investigate how the distribution of the sex differs between the type of MS of the samples where RRMS is short for relapsing remitting MS, and SPMS is short for secondary progressive MS.
 
-```{r warning=FALSE}
+```{r plot-summary-metrics, warning=FALSE, cache=TRUE}
 crm$plotSummaryMetrics(comp.group = "sex", metrics = "samples per group", second.comp.group = "type")
 ```
 
@@ -216,17 +255,17 @@ crm$plotSummaryMetrics(comp.group = "sex", metrics = "samples per group", second
 
 In one plot, we can illustrate selected metric summary stats. If no comparison group is set, it defaults to `sample`. 
 
-```{r fig.width=12, fig.height=12, warning=FALSE}
+```{r plot-sum-metrics-selected, fig.width=12, fig.height=12, warning=FALSE, cache=TRUE}
 metrics.to.plot <- crm$selectMetrics(ids = c(1:4,6,18,19))
 crm$plotSummaryMetrics(metrics = metrics.to.plot, 
-                       plot.geom = "point")
+                       plot.geom = "bar")
 ```
 
 ## Metrics per condition
 
 We can do the same, but set the comparison group to `type`. This will add statistics to the plots. Additionally, we can add a second comparison group for coloring.
 
-```{r fig.width=12, fig.height=10, warning=FALSE}
+```{r plot-sum-metrics-comp, fig.width=12, fig.height=10, warning=FALSE, cache=TRUE}
 crm$addComparison("type")
 crm$plotSummaryMetrics(metrics = metrics.to.plot, 
                        plot.geom = "point", 
@@ -238,7 +277,7 @@ crm$plotSummaryMetrics(metrics = metrics.to.plot,
 
 For the sake of the example, we change the `RIN` values to `low` (RIN<6), `medium` (6<RIN<7), and `high` (RIN>7). This will provide us with three comparisons groups to exemplify how to use automated statistics for such situations.
 
-```{r, fig.width=12, fig.height=10}
+```{r plot-sum-metrics-multilevel, fig.width=12, fig.height=10, cache=TRUE}
 crm$metadata$RIN %<>% 
   as.character() %>% 
   {c("medium","high","high","medium","high","high","low","high")} %>% 
@@ -252,12 +291,11 @@ crm$plotSummaryMetrics(comp.group = "RIN",
                        secondary.testing = TRUE)
 ```
 
-
 ## Metrics per condition with numeric covariate
 
 We can choose a numeric comparison group, in this case `age`, which will add regression lines to the plots.
 
-```{r fig.height=10, fig.width=12}
+```{r plot-sum-metrics-num-cov, fig.height=10, fig.width=12, cache=TRUE}
 crm$plotSummaryMetrics(comp.group = "age",
                        metrics = metrics.to.plot, 
                        plot.geom = "point",
@@ -267,7 +305,7 @@ crm$plotSummaryMetrics(comp.group = "age",
 
 If the numeric vector has a significant effect on one of the metrics we can investigate it closer by performing regression analyses for both conditions of `type`.
 
-```{r}
+```{r plot-sum-metrics-sec-comp, cache=TRUE}
 crm$plotSummaryMetrics(comp.group = "age",
                        metrics = "Mean Reads per Cell", 
                        plot.geom = "point",
@@ -281,72 +319,74 @@ We see that there is no significant effect of the numeric vector on neither of t
 
 We can read in count matrices to assess detailed metrics. Otherwise, if count matrices have already been added earlier, this step prepares data for plotting UMI and gene counts.
 
-```{r}
+```{r add-detailed-metrics}
 crm$addDetailedMetrics()
 ```
 
 We plot the detailed metrics. The horizontal lines indicates the median values for all samples.
 
-```{r}
+```{r plot-detailed-metrics, cache=TRUE}
 metrics.to.plot <- crm$detailed.metrics$metric %>%
   unique()
 crm$plotDetailedMetrics(metrics = metrics.to.plot, 
                         plot.geom = "violin")
 ```
 
-# Embed cells using Conos and UMAP
+# Embed cells using Conos
 
-In order to plot our cells in a UMAP embedding, we need to perform preprocessing of the raw count matrices. To do this, either `pagoda2` (default) or `Seurat` can be used. 
+In order to plot our cells in our embedding, we need to perform preprocessing of the raw count matrices. To do this, either `pagoda2` (default) or `Seurat` can be used.
 
-```{r}
+```{r preprocessing, eval=FALSE}
 crm$doPreprocessing()
 ```
 
-Then, we create the UMAP embedding using `conos`.
+Then, we create the embedding using `conos`.
 
-```{r}
+```{r create-embedding, eval=FALSE}
 crm$createEmbedding()
 ```
 
 We can now plot our cells.
 
-```{r}
-crm$plotUmap()
+```{r plot-embedding, cache=TRUE}
+crm$plotEmbedding()
 ```
 
 
 # Cell depth
 
-We can plot cell depth, both in the UMAP embedding or as histograms per sample.
+We can plot cell depth, both in the embedding or as histograms per sample.
 
-```{r}
-crm$plotUmap(depth = TRUE, 
-             depth.cutoff = 1.5e3)
+```{r plot-embedding-depth, cache=TRUE}
+crm$plotEmbedding(depth = TRUE, 
+             depth.cutoff = 1e3)
 ```
 
-```{r, warning=FALSE}
+```{r plot-depth, cache=TRUE, warning=FALSE}
 crm$plotDepth()
 ```
 
 We can see that the depth distribution varies between samples. We can create a cutoff vector specifying the depth cutoff per sample. It should be a named vector containing sample names.
 
-```{r}
+```{r plot-sw-depth, cache=TRUE}
 depth_cutoff_vec <- c(2.5e3, 2e3, 1e3, 1.5e3, 1.5e3, 2e3, 2.5e3, 2e3) %>% 
-  setNames(crm$detailed.metrics$sample %>% unique() %>% sort())
+  setNames(crm$detailed.metrics$sample %>% 
+             unique() %>% 
+             sort())
 
 depth_cutoff_vec
 ```
 
 Let's plot the updated cutoffs:
 
-```{r, warning=FALSE}
+```{r plot-upd-depth, warning=FALSE, cache=TRUE}
 crm$plotDepth(cutoff = depth_cutoff_vec)
 ```
 
-Also, we can do this in the UMAP embedding:
+Also, we can do this in the embedding:
 
-```{r}
-crm$plotUmap(depth = TRUE, 
+```{r plot-embedding-depth-upd, cache=TRUE}
+crm$plotEmbedding(depth = TRUE, 
              depth.cutoff = depth_cutoff_vec)
 ```
 
@@ -354,34 +394,39 @@ crm$plotUmap(depth = TRUE,
 
 For doublet detection, we included the possibility to do so using the Python modules `scrublet` and `DoubletDetection`. First, we should install these packages:
 
-```{r, eval = FALSE}
+```{r install-dd-software, eval=FALSE}
 library(reticulate)
-conda_install("r-reticulate", 
+conda_install(envname = "r-reticulate", 
               conda = "/opt/software/miniconda/4.12.0/condabin/conda", 
               pip = TRUE, 
               packages = c("scrublet","doubletdetection"))
 ```
 
-`scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we run `scrublet` and `DoubletDetection` to compare in the next section.
+`scrublet` is the default method, which is fast. `DoubletDetection` is significantly slower, but performs better according to [this](https://www.sciencedirect.com/science/article/pii/S2405471220304592) review. Here, we show how to run `scrublet` and `DoubletDetection` to compare in the next section. Since this takes some time, the results have been precalculated and are not run in this vignette.
 
-```{r}
-crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
+```{r run-dd, eval=FALSE}
+crm$detectDoublets(env = "r-reticulate",
+                   conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
                    method = "scrublet")
-crm$detectDoublets(conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
+crm$detectDoublets(env = "r-reticulate",
+                   conda.path = "/opt/software/miniconda/4.12.0/condabin/conda",
                    method = "doubletdetection")
 ```
 
-We can plot the estimated doublets in the UMAP embedding.
+We can plot the estimated doublets in the embedding.
 
-```{r}
-crm$plotUmap(doublet.method = "scrublet")
+```{r plot-scrublet-embedding, cache=TRUE}
+crm$plotEmbedding(doublet.method = "scrublet")
+crm$plotEmbedding(doublet.method = "doubletdetection")
 ```
 
 And we can plot the scores for the doublet estimations.
 
-```{r}
-crm$plotUmap(doublet.method = "scrublet", 
-             doublet.scores = TRUE)
+```{r plot-scrublet-scores, cache=TRUE}
+crm$plotEmbedding(doublet.method = "scrublet", 
+                  doublet.scores = TRUE)
+crm$plotEmbedding(doublet.method = "doubletdetection", 
+                  doublet.scores = TRUE)
 ```
 
 ## Differences between methods
@@ -389,10 +434,11 @@ crm$plotUmap(doublet.method = "scrublet",
 We can compare how much `scrublet` and `DoubletDetection` overlap in their doublets estimates.
 First, let us plot a bar plot of the number of doublets per sample.
 
-```{r}
+```{r compare-dd-res, cache=TRUE}
 scrub.res <- crm$doublets$scrublet$result %>% 
   select(labels, sample) %>% 
   mutate(method = "scrublet")
+
 dd.res <- crm$doublets$doubletdetection$result %>% 
   select(labels, sample) %>% 
   mutate(labels = as.logical(labels), 
@@ -415,7 +461,7 @@ ggplot(plot.df, aes(sample, count, fill = method)) +
 
 We can also show the total number of doublets detected per method.
 
-```{r}
+```{r plot-dd-per-method, cache=TRUE}
 plot.df %>% 
   group_by(method) %>% 
   summarise(count = sum(count)) %>% 
@@ -426,12 +472,12 @@ plot.df %>%
   labs(x = "", y = "No. doublets", title = "Total doublets per method")
 ```
 
-### UMAP
+Finally, let's plot an embedding showing the method-wise estimations as well as overlaps.
 
-```{r}
+```{r plot-dd-emb-per-method, cache=TRUE}
 plot.vec <- data.frame(scrublet = scrub.res$labels %>% as.numeric(), 
                        doubletdetection = dd.res$labels %>% as.numeric()) %>% 
-  apply(1, \(x) if (x[1] == 0 & x[2] == 0) "Kept" else if (x[1] == 1 & x[2] == 0) "scrublet" else if (x[1] == 0 & x[2] == 1) "DoubletDetection" else "Both") %>% 
+  apply(1, \(x) if (x[1] == 0 & x[2] == 0) "Kept" else if (x[1] > x[2]) "scrublet" else if (x[1] < x[2]) "DoubletDetection" else "Both") %>% 
   setNames(rownames(scrub.res)) %>% 
   factor(levels = c("Kept","scrublet","DoubletDetection","Both"))
 
@@ -448,18 +494,24 @@ crm$con$plotGraph(groups = plot.vec,
 
 We can also investigate the mitochondrial fraction in our cells
 
-```{r}
-crm$plotUmap(mito.frac = TRUE, 
+```{r plot-emb-mf, cache=TRUE}
+crm$plotEmbedding(mito.frac = TRUE, 
              mito.cutoff = 0.05, 
              species = "human")
 ```
 
+Similar as for depth, we can plot the distribution of the mitochondrial fraction per sample and include sample-wise cutoffs (not shown here).
+
+```{r plot-mf, cache=TRUE}
+crm$plotMitoFraction(cutoff = 0.05)
+```
+
 # Plot filtered cells
 
-We can plot all the cells to be filtered in the UMAP embedding
+We can plot all the cells to be filtered in our embedding
 
-```{r}
-crm$plotFilteredCells(type = "umap", 
+```{r plot-filtered-cells-emb, cache=TRUE}
+crm$plotFilteredCells(type = "embedding", 
                       depth = TRUE, 
                       depth.cutoff = depth_cutoff_vec, 
                       doublet.method = "scrublet", 
@@ -470,7 +522,7 @@ crm$plotFilteredCells(type = "umap",
 
 And we can plot the cells to be filtered per sample where `combination` means a cell that has at least two filter labels, e.g. `mito` and `depth`.
 
-```{r}
+```{r plot-filtered-cells-bar, cache=TRUE}
 crm$plotFilteredCells(type = "bar", 
                       doublet.method = "scrublet", 
                       depth = TRUE, 
@@ -482,7 +534,7 @@ crm$plotFilteredCells(type = "bar",
 
 Finally, we can create a tile plot with an overview of sample quality for the different filters. NB, this is experimental and has not been validated across datasets.
 
-```{r}
+```{r plot-filtered-cells-tile, cache=TRUE}
 crm$plotFilteredCells(type = "tile", 
                       doublet.method = "doubletdetection",
                       depth = TRUE, 
@@ -491,9 +543,10 @@ crm$plotFilteredCells(type = "tile",
                       mito.cutoff = 0.05, 
                       species = "human")
 ```
+
 We can also extract the raw numbers for plotting in other ways than those included here
 
-```{r}
+```{r export-filtered-cells}
 filter.data <- crm$plotFilteredCells(type = "export")
 filter.data %>% head()
 ```
@@ -515,10 +568,9 @@ The filtered list of count matrices is stored in $cms.filtered which can be save
 ```{r save, eval=FALSE}
 library(qs)
 qsave(crm$cms.filtered, "/data/ExtData/CRMetrics_testdata/cms_filtered.qs", 
-      nthreads = 50)
+      nthreads = 10)
 ```
 
-
-```{r}
+```{r session-info}
 sessionInfo()
 ```
