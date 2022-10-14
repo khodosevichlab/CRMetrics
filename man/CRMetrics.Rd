@@ -597,7 +597,7 @@ Plot all summary stats or a selected list.
   exact = FALSE,
   metadata = self$metadata,
   summary.metrics = self$summary.metrics,
-  plot.geom = "point",
+  plot.geom = "bar",
   se = FALSE,
   group.reg.lines = FALSE,
   secondary.testing = TRUE
@@ -1243,7 +1243,7 @@ filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrub
 \subsection{Method \code{getConosDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth(force = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth()}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1276,7 +1276,7 @@ crm$getConosDepth()
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = "human", force = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = "human")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

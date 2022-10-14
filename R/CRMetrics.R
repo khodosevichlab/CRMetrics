@@ -275,7 +275,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 exact = FALSE, 
                                 metadata = self$metadata, 
                                 summary.metrics = self$summary.metrics, 
-                                plot.geom = "point", 
+                                plot.geom = "bar", 
                                 se = FALSE, 
                                 group.reg.lines = FALSE, 
                                 secondary.testing = TRUE) {
@@ -1064,7 +1064,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       cells.remove <- sum(!filter.list %>% unlist())
       cells.total <- length(cell.idx)
       cells.percent <- cells.remove / cells.total * 100
-      message(paste0(Sys.time()," Removing ",cells.remove," cells of ", cells.total," (",formatC(cells.percent, digits = 3),"%)"))
+      message(paste0(Sys.time()," Removing ",cells.remove," of ", cells.total," cells (",formatC(cells.percent, digits = 3),"%)"))
     }
     
     self$cms.filtered <- samples %>% 
@@ -1072,8 +1072,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         cms[[sample]][,filter.list[[sample]]]
       }) %>% 
       setNames(samples)
-    
-    if (verbose) message(paste0("Done!"))
   },
   
   #' @description Select metrics from summary.metrics
@@ -1244,17 +1242,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$createEmbedding()
   #' crm$getConosDepth()
   #' }
-  getConosDepth = function(force = FALSE) {
-    if (is.null(self$depth) | force) {
-      tmp <- self$con$samples %>% 
-        lapply(`[[`, "depth") %>% 
-        Reduce(c, .)
-      self$depth <- tmp
-    } else {
-      tmp <- self$depth
-    }
+  getConosDepth = function() {
+    tmp <- self$con$samples %>% 
+      lapply(`[[`, "depth") %>% 
+      Reduce(c, .)
+    
     return(tmp)
   },
+  
+  # getUmiDepth = function() {
+  #   checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
+  #   tmp <- self$cms %>% 
+  #     lapply(\(cm) setNames(cm %>% sparseMatrixStats::colSums2(), cm %>% colnames())) %>% 
+  #     Reduce(c, .)
+  # },
   
   #' @description Calculate the fraction of mitochondrial genes.
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
@@ -1267,26 +1268,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$createEmbedding()
   #' crm$getMitoFraction(species = c("human", "mouse"))
   #' }
-  getMitoFraction = function(species="human", force = FALSE) {
-    if (is.null(self$mito.frac) | force) {
-      if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
-      tmp <- self$con$samples %>% 
-        lapply(`[[`, "counts") %>% 
-        lapply(\(cm) {
-          tmp.mat <- cm[,grep(symb, colnames(cm))]
-          if (is(tmp.mat, "numeric")) {
-            nom <- tmp.mat
-          } else {
-            nom <- sparseMatrixStats::rowSums2(tmp.mat)
-          }
-          (nom / sparseMatrixStats::rowSums2(cm)) %>% 
-            setNames(cm %>% rownames())
-        }) %>% 
-        Reduce(c, .)
-      self$mito.frac <- tmp
-    } else {
-      tmp <- self$mito.frac
-    }
+  getMitoFraction = function(species="human") {
+    if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
+    tmp <- self$con$samples %>% 
+      lapply(`[[`, "counts") %>% 
+      lapply(\(cm) {
+        tmp.mat <- cm[,grep(symb, colnames(cm))]
+        if (is(tmp.mat, "numeric")) {
+          nom <- tmp.mat
+        } else {
+          nom <- sparseMatrixStats::rowSums2(tmp.mat)
+        }
+        (nom / sparseMatrixStats::rowSums2(cm)) %>% 
+          setNames(cm %>% rownames())
+      }) %>% 
+      Reduce(c, .)
+    
     return(tmp)
   },
   
