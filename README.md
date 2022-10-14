@@ -2,11 +2,14 @@
   [![R-CMD-check](https://github.com/khodosevichlab/CRMetrics/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/khodosevichlab/CRMetrics/actions/workflows/R-CMD-check.yaml)
   [![CRAN version](https://www.r-pkg.org/badges/version/CRMetrics)](https://cran.r-project.org/package=CRMetrics)
   [![CRAN downloads](http://cranlogs.r-pkg.org/badges/grand-total/CRMetrics)](https://cran.r-project.org/package=CRMetrics)
+  [![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](https://cran.r-project.org/web/licenses/GPL-3)
   <!-- badges: end -->
+
+<img src="https://github.com/khodosevichlab/CRMetrics/blob/doc/CRMetrics_logo.png" align="right" height="140">
 
 CRMetrics
 ================
-9/28/2022
+14/10/2022
 
 Cell Ranger output filtering and metrics visualisation
 
@@ -39,14 +42,14 @@ A CRMetrics object can be initialized in different ways using
 # Vignette
 
 For usage, please see the
-[vignette](https://github.com/khodosevichlab/CRMetrics/blob/main/vignettes/vignette.md)
-([code](https://github.com/khodosevichlab/CRMetrics/blob/main/vignettes/vignette.Rmd))
+[vignette](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.md)
+([code](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.Rmd), [html](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.html))
 
 # Python integrations
 
 CRMetrics makes use of several Python packages, most of them through the
 `reticulate` package in R. For these to work, we included an [example
-workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/vignettes/vignette.md#using-python-modules)
+workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.md#using-python-modules)
 in the vignette.
 
 # Cite
