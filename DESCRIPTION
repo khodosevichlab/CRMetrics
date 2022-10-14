@@ -1,6 +1,6 @@
 Package: CRMetrics
 Title: Cell Ranger Output Filtering and Metrics Visualisation
-Version: 0.1
+Version: 0.2
 Authors@R: c(person("Rasmus", "Rydbirk", email = "rasmus.rydbirk@bric.ku.dk", role = c("aut", "cre")), person("Fabienne", "Kick", email="fabienne.kick@bric.ku.dk", role="aut"), person("Henrietta","Holze", email="@bric.ku.dk", role="aut"), person("Xian", "Xin", email="xian.xin@bric.ku.dk", role="ctb"))
 Description: Sample and cell filtering and visualisation of Cell Ranger output metrics.
 License: GPL-3
