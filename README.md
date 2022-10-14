@@ -5,7 +5,7 @@
   [![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](https://cran.r-project.org/web/licenses/GPL-3)
   <!-- badges: end -->
 
-<img src="https://github.com/khodosevichlab/CRMetrics/blob/doc/CRMetrics_logo.png" align="right" height="140">
+<img src="https://github.com/khodosevichlab/CRMetrics/blob/main/doc/CRmetrics_logo.png" align="right" height="140">
 
 CRMetrics
 ================
