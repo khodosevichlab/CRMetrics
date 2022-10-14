@@ -1,3 +1,9 @@
+  <!-- badges: start -->
+  [![R-CMD-check](https://github.com/khodosevichlab/CRMetrics/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/khodosevichlab/CRMetrics/actions/workflows/R-CMD-check.yaml)
+  [![CRAN version](https://www.r-pkg.org/badges/version/CRMetrics)](https://cran.r-project.org/package=CRMetrics)
+  [![CRAN downloads](http://cranlogs.r-pkg.org/badges/grand-total/CRMetrics)](https://cran.r-project.org/package=CRMetrics)
+  <!-- badges: end -->
+
 CRMetrics
 ================
 9/28/2022
