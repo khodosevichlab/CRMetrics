@@ -423,7 +423,7 @@ read10xH5 <- function(data.path,
   
   full.path <- getH5Paths(data.path, sample.names, type)
   
-  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores <- length(full.path)) n.cores else length(full.path)," cores"))
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores < length(full.path)) n.cores else length(full.path)," cores"))
   out <- full.path %>%
     plapply(\(path) {
       h5 <- rhdf5::h5read(path, "matrix")
