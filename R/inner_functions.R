@@ -2,10 +2,10 @@
 #' @importFrom utils combn read.delim glob2rx
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
-#' @importFrom utils globalVariables
+#' @importFrom utils globalVariables read.table
 NULL
 
-utils::globalVariables(c(".","value","variable","V1","V2"))
+utils::globalVariables(c(".","value","variable","V1","V2","metric"))
 
 #' @title Set correct 'comp.group' parameter
 #' @description Set comp.group to 'category' if null.
