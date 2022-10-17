@@ -295,7 +295,7 @@ addSummaryMetrics <- function(data.path,
         pivot_longer(cols = -c(sample),
                      names_to = "metric",
                      values_to = "value") %>% 
-        mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE))
+        mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
     }, n.cores = n.cores) %>% 
     bind_rows()
   if (verbose) message(paste0(Sys.time()," Done!"))

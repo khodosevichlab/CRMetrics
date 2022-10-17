@@ -1437,7 +1437,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   getExpectedCells = function(samples = self$metadata$sample) {
     expected.cells <- self$summary.metrics %>% 
-      filter(metric == "Estimated Number of Cells") %$% 
+      filter(metric == "estimated number of cells") %$% 
       setNames(value, sample) %>%
       .[samples]
     
@@ -1720,10 +1720,10 @@ addSummaryFromCms = function(cms = self$cms,
     pivot_longer(cols = -c(sample),
                  names_to = "metric",
                  values_to = "value") %>% 
-    mutate(metric = factor(metric, labels = c("Estimated Number of Cells",
-                                              "Median Genes per Cell",
-                                              "Median UMI Counts per Cell",
-                                              "Total Genes Detected"))) %>% 
+    mutate(metric = factor(metric, labels = c("estimated number of cells",
+                                              "median genes per cell",
+                                              "median umi counts per cell",
+                                              "total genes detected"))) %>% 
     arrange(sample)
     
   if (verbose) message(paste0(Sys.time()," Done!"))
