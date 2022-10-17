@@ -52,7 +52,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cms list List with count matrices (default = NULL)
   #' @param sample.names character Sample names. Only relevant is cms is provided (default = NULL)
   #' @param unique.names logical Create unique cell names. Only relevant if cms is provided (default = TRUE)
-  #' @param sep.cells character Sample-cell separator. Unly relevant if cms is provided and `unique.names=TRUE` (default = "!!")
+  #' @param sep.cells character Sample-cell separator. Only relevant if cms is provided and `unique.names=TRUE` (default = "!!")
   #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
   #' @param verbose logical Print messages or not (default = TRUE).
   #' @param theme ggplot2 theme (default: theme_bw()).
@@ -294,7 +294,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       # check if selected metrics are available
       difs <- setdiff(metrics, self$summary.metrics$metric %>% unique())
       if ("samples per group" %in% difs) difs <- difs[difs != "samples per group"]
-      if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
+      if (length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
     # if samples per group is one of the metrics to plot use the plotSamples function to plot
@@ -420,7 +420,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # check if selected metrics are available
     difs <- setdiff(metrics, self$detailed.metrics$metric %>% unique())
-    if(length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
+    if (length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     
     # if no plot type is defined, return a list of options
     if (is.null(plot.geom)) {
@@ -529,10 +529,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (is.null(dres)) stop("No results found for doublet.method '",doublet.method,"'. Please run doubletDetection(method = '",doublet.method,"'.")
       if (doublet.scores) {
         doublets <- dres$scores
-        label = "scores"
+        label <- "scores"
       } else {
         doublets <- dres$labels * 1
-        label = "labels"
+        label <- "labels"
       } 
       doublets %<>% setNames(rownames(dres))
       g <- self$con$plotGraph(colors = doublets, title = paste(doublet.method,label, collapse = " "), size = size, ...)
@@ -690,7 +690,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param file character Output file (default = "Summary_metrics.txt").
   #' @param dec character How the decimals are defined (default = ".").
   #' @param sep character What separator to use (default = `\t`).
-  #' @return Tab-seprated table
+  #' @return Tab-separated table
   #' @examples 
   #' \dontrun{
   #' crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
@@ -723,7 +723,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param env character Environment to run python in (default="r-reticulate").
   #' @param conda.path character Path to conda environment (default=system("whereis conda")).
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
-  #' @param verbose logical Print messages or not (defeults = self$verbose)
+  #' @param verbose logical Print messages or not (default = self$verbose)
   #' @param args list A list with additional arguments for either `DoubletDetection` or `scrublet`. Please check the respective manuals.
   #' @return data.frame
   #' @examples 
@@ -843,7 +843,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     res <- list(result = df,
                 output = output)
-    if (verbose) message("Detected ",sum(df$labels, na.rm = T)," possible doublets out of ",nrow(df)," cells.")
+    if (verbose) message("Detected ",sum(df$labels, na.rm = TRUE)," possible doublets out of ",nrow(df)," cells.")
     self$doublets[[method]] <- res
   },
   
@@ -1086,12 +1086,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     metrics <- self$summary.metrics$metric %>% 
       unique()
     
-    if(is.null(ids)) tmp <- data.frame(no = 1:length(metrics),metrics = metrics) else tmp <- metrics[ids]
+    if (is.null(ids)) tmp <- data.frame(no = seq_len(length(metrics)), metrics = metrics) else tmp <- metrics[ids]
     
     return(tmp)
   },
   
-  #' @description Plot filetered cells in an embedding, in a bar plot, on a tile or export the data frame
+  #' @description Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
   #' @param type character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).
   #' @param depth logical Plot the depth or not (default = TRUE).
   #' @param depth.cutoff numeric Depth cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 1e3).
@@ -1172,7 +1172,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tmp %<>% 
         mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
         mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
-                 gsub("  ", " ", ., fixed = T) %>% 
+                 gsub("  ", " ", ., fixed = TRUE) %>% 
                  gsub(" ", "+", .))
       
       tmp$filter[tmp$filter == ""] <- "kept"
@@ -1321,7 +1321,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                sep = "!!") {
     checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
     # Preparations
-    if (verbose) message(paste0(Sys.time()," Started run using ", if(n.cores < length(samples)) n.cores else length(samples)," cores"))
+    if (verbose) message(paste0(Sys.time()," Started run using ", if (n.cores < length(samples)) n.cores else length(samples)," cores"))
     if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
     if (is.null(total.droplets)) total.droplets <- self$getTotalDroplets(samples)
     
@@ -1346,7 +1346,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
             sort(decreasing = TRUE) %>% 
             {data.frame(y = .)} %>% 
             filter(y > 0) %>% 
-            mutate(., x = 1:nrow(.))
+            mutate(., x = seq_len(nrow(.)))
         }, n.cores = n.cores) %>% 
         setNames(samples)
       self$cellbender$umi.counts <- umi.counts
@@ -1388,7 +1388,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param epochs integer Number of epochs for CellBender (default = 150)
   #' @param use.gpu logical Use CUDA capable GPU (default = TRUE)
   #' @param expected.cells named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
-  #' @param total.droplets namd numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
+  #' @param total.droplets named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @param args character (optional) Additional parameters for CellBender
@@ -1454,7 +1454,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   getTotalDroplets = function(samples = self$metadata$sample, 
                               multiplier = 3) {
-    if(!is.numeric(multiplier)) stop("'multiplier' must be numeric.")
+    if (!is.numeric(multiplier)) stop("'multiplier' must be numeric.")
     expected.cells <- self$getExpectedCells(samples = samples)
     total.droplets <- expected.cells * multiplier
     
@@ -1538,7 +1538,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       lapply(\(id) {
         rhdf5::h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
           {data.frame(ELBO = ., 
-                      Epoch = 1:length(.), 
+                      Epoch = seq_len(length(.)), 
                       sample = id)}
       }) %>% 
       setNames(samples) %>% 
@@ -1587,7 +1587,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       lapply(\(id) {
         rhdf5::h5read(paths[id], "matrix/latent_cell_probability") %>%
           {data.frame(prob = ., 
-                      cell = 1:length(.), 
+                      cell = seq_len(length(.)), 
                       sample = id)}
       }) %>% 
       setNames(samples) %>% 
@@ -1624,7 +1624,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       lapply(\(id) {
         rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
           {data.frame(exp = ., 
-                      cell = 1:length(.), 
+                      cell = seq_len(length(.)), 
                       gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
                       sample = id)}
       }) %>% 
@@ -1665,7 +1665,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       lapply(\(id) {
         rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
           {data.frame(exp = ., 
-                      cell = 1:length(.), 
+                      cell = seq_len(length(.)), 
                       gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
                       sample = id)} %>% 
           filter(exp >= cutoff)
@@ -1736,7 +1736,7 @@ addSummaryFromCms = function(cms = self$cms,
 #' @param verbose logical Show progress (default = self$verbose)
 #' @param arg.load10X list A list with additional parameters for `SoupX::load10X` (default = list())
 #' @param arg.autoEstCont list A list with additional parameters for `SoupX::autoEstCont` (default = list())
-#' @param arg.adjustCounts list A list with additional paramters for `SoupX::adjustCounts` (default = list())
+#' @param arg.adjustCounts list A list with additional parameters for `SoupX::adjustCounts` (default = list())
 #' @return List containing a list with corrected counts, and a data.frame containing plotting estimations
 #' @examples 
 #' \dontrun{
@@ -1777,7 +1777,7 @@ runSoupX = function(data.path = self$data.path,
   
   # Save plot data
   if (verbose) message(paste0(Sys.time()," Preparing plot data"))
-  rhoProbes=seq(0,1,.001)
+  rhoProbes <- seq(0,1,.001)
   self$soupx$plot.df <- samples %>%
     plapply(\(id) {
       dat <- tmp[[id]]
@@ -1787,10 +1787,10 @@ runSoupX = function(data.path = self$data.path,
       priorRho <- dat$fit$priorRho
       priorRhoStdDev <- dat$fit$priorRhoStdDev
       
-      v2 = (priorRhoStdDev/priorRho)**2
-      k = 1+v2**-2/2*(1+sqrt(1+4*v2))
-      theta = priorRho/(k-1)
-      prior.rho = dgamma(rhoProbes, k, scale=theta)
+      v2 <- (priorRhoStdDev/priorRho)**2
+      k <- 1+v2**-2/2*(1+sqrt(1+4*v2))
+      theta <- priorRho/(k-1)
+      prior.rho <- dgamma(rhoProbes, k, scale=theta)
       
       df <- data.frame(rhoProbes = rhoProbes, 
                        post.rho = post.rho, 
@@ -1830,7 +1830,7 @@ runSoupX = function(data.path = self$data.path,
 #' crm$plotSoupX()
 #' }
 plotSoupX = function(plot.df = self$soupx$plot.df) {
-  if(is.null(plot.df)) stop("No plot data found. Please run $runSoupX first.")
+  if (is.null(plot.df)) stop("No plot data found. Please run $runSoupX first.")
   
   line.df <- plot.df %>% 
     split(., .$sample) %>% 

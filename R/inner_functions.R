@@ -146,7 +146,7 @@ addDetailedMetricsInner <- function(cms,
         mutate(., metric = "UMI_count", barcode = rownames(.))
       
       cm.bin <- cm
-      cm.bin[cm.bin > 0] = 1
+      cm.bin[cm.bin > 0] <- 1
       
       totalGenes <- cm.bin %>% 
         sparseMatrixStats::colSums2() %>% 
@@ -309,7 +309,7 @@ addSummaryMetrics <- function(data.path,
 #' \dontrun{
 #' plot.geom <- plotGeom(plot.geom = "point")
 #' }
-plotGeom = function(plot.geom, 
+plotGeom <- function(plot.geom, 
                     col){
   if (plot.geom == "point"){
     geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
@@ -341,7 +341,7 @@ percFilter <- function(filter.data,
     split(value, sample) %>% 
     lapply(sum)
   
-  perc <- 1:length(cells.per.sample) %>% 
+  perc <- seq_len(length(cells.per.sample)) %>% 
     sapply(\(x) {
       variable.count[[x]] / cells.per.sample[x]
     }) %>% 
@@ -367,19 +367,19 @@ labelsFilter <- function(filter.data) {
   
   if ("mito" %in% var.names) {
     tmp$mito <- percFilter(filter.data, "mito") %>% 
-      sapply(\(x) {if (x < 0.01) "Low" else if(x > 0.05) "High" else "Medium"}) %>% 
+      sapply(\(x) {if (x < 0.01) "Low" else if (x > 0.05) "High" else "Medium"}) %>% 
       {data.frame(sample = names(.), value = .)}
   }
   
   if ("depth" %in% var.names) {
     tmp$depth <- percFilter(filter.data, "depth") %>% 
-      sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>% 
+      sapply(\(x) {if (x < 0.05) "Low" else if (x > 0.1) "High" else "Medium"}) %>% 
       {data.frame(sample = names(.), value = .)}
   }
   
   if ("doublets" %in% var.names) {
     tmp$doublets <- percFilter(filter.data, "doublets") %>% 
-      sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>%
+      sapply(\(x) {if (x < 0.05) "Low" else if (x > 0.1) "High" else "Medium"}) %>%
       {data.frame(sample = names(.), value = .)}
   }
   
