@@ -281,19 +281,21 @@ addSummaryMetrics <- function(data.path,
   # extract and combine metrics summary for all samples 
   metrics <- samples %>% 
     plapply(\(s) {
-      tmp <- read.table(dir(paste(data.path,s,"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>% 
-        mutate(sample = s) %>% 
+      tmp <- read.table(dir(paste(data.path,s,"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
         mutate(., across(.cols = grep("%", .),
-                         ~ as.numeric(gsub("%", "", .x)) / 100))
+                         ~ as.numeric(gsub("%", "", .x)) / 100),
+               across(.cols = grep(",", .),
+                         ~ as.numeric(gsub(",", "", .x))))
       
       # Take into account multiomics
       if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
                   
-        tmp %>% 
-          pivot_longer(cols = -c(sample),
+      tmp %>%
+        mutate(sample = s) %>% 
+        pivot_longer(cols = -c(sample),
                      names_to = "metric",
                      values_to = "value") %>% 
-          mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE))
+        mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE))
     }, n.cores = n.cores) %>% 
     bind_rows()
   if (verbose) message(paste0(Sys.time()," Done!"))
