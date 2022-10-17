@@ -1,6 +1,5 @@
 #' @importFrom stats chisq.test fisher.test
 #' @importFrom utils combn read.delim glob2rx
-#' @importFrom readr cols read_csv
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
 #' @importFrom utils globalVariables

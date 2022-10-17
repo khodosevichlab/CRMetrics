@@ -19,7 +19,6 @@ Imports:
     magrittr,
     Matrix,
     methods,
-    readr,
     R6,
     scales,
     sccore,
