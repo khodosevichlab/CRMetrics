@@ -416,7 +416,7 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
 
 \item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
 
-\item{\code{sep.cells}}{character Sample-cell separator. Unly relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
+\item{\code{sep.cells}}{character Sample-cell separator. Only relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
 
 \item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).}
 
@@ -872,7 +872,7 @@ Save summary metrics to text file.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-Tab-seprated table
+Tab-separated table
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -954,7 +954,7 @@ Detect doublet cells.
 
 \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
 
-\item{\code{verbose}}{logical Print messages or not (defeults = self$verbose)}
+\item{\code{verbose}}{logical Print messages or not (default = self$verbose)}
 
 \item{\code{args}}{list A list with additional arguments for either \code{DoubletDetection} or \code{scrublet}. Please check the respective manuals.}
 }
@@ -1177,7 +1177,7 @@ selection.metrics <- crm$selectMetrics(c(1:4))
 \if{html}{\out{<a id="method-CRMetrics-plotFilteredCells"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotFilteredCells}{}}}
 \subsection{Method \code{plotFilteredCells()}}{
-Plot filetered cells in an embedding, in a bar plot, on a tile or export the data frame
+Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotFilteredCells(
   type = c("embedding", "bar", "tile", "export"),
@@ -1404,7 +1404,7 @@ crm$prepareCellbender()
 
 \item{\code{expected.cells}}{named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
 
-\item{\code{total.droplets}}{namd numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
+\item{\code{total.droplets}}{named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
 
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
@@ -1764,7 +1764,7 @@ Run SoupX ambient RNA estimation and correction
 
 \item{\code{arg.autoEstCont}}{list A list with additional parameters for \code{SoupX::autoEstCont} (default = list())}
 
-\item{\code{arg.adjustCounts}}{list A list with additional paramters for \code{SoupX::adjustCounts} (default = list())}
+\item{\code{arg.adjustCounts}}{list A list with additional parameters for \code{SoupX::adjustCounts} (default = list())}
 }
 \if{html}{\out{</div>}}
 }

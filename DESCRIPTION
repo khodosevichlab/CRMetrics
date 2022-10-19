@@ -1,25 +1,24 @@
 Package: CRMetrics
 Title: Cell Ranger Output Filtering and Metrics Visualisation
-Version: 0.2
+Version: 0.2.1
 Authors@R: c(person("Rasmus", "Rydbirk", email = "rasmus.rydbirk@bric.ku.dk", role = c("aut", "cre")), person("Fabienne", "Kick", email="fabienne.kick@bric.ku.dk", role="aut"), person("Henrietta","Holze", email="@bric.ku.dk", role="aut"), person("Xian", "Xin", email="xian.xin@bric.ku.dk", role="ctb"))
 Description: Sample and cell filtering and visualisation of Cell Ranger output metrics.
 License: GPL-3
 Encoding: UTF-8
 Depends:
-    R (>= 4.0.0),
-    ggplot2
+    R (>= 4.0.0)
 biocViews:
 Imports:
     cowplot,
     dplyr,
     ggbeeswarm,
+    ggplot2,
     ggpmisc,
     ggpubr,
     ggrepel,
     magrittr,
     Matrix,
     methods,
-    readr,
     R6,
     scales,
     sccore,

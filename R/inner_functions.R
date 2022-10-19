@@ -1,12 +1,11 @@
 #' @importFrom stats chisq.test fisher.test
 #' @importFrom utils combn read.delim glob2rx
-#' @importFrom readr cols read_csv
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
-#' @importFrom utils globalVariables
+#' @importFrom utils globalVariables read.table
 NULL
 
-utils::globalVariables(c(".","value","variable","V1","V2"))
+utils::globalVariables(c(".","value","variable","V1","V2","metric"))
 
 #' @title Set correct 'comp.group' parameter
 #' @description Set comp.group to 'category' if null.
@@ -147,7 +146,7 @@ addDetailedMetricsInner <- function(cms,
         mutate(., metric = "UMI_count", barcode = rownames(.))
       
       cm.bin <- cm
-      cm.bin[cm.bin > 0] = 1
+      cm.bin[cm.bin > 0] <- 1
       
       totalGenes <- cm.bin %>% 
         sparseMatrixStats::colSums2() %>% 
@@ -276,19 +275,27 @@ addSummaryMetrics <- function(data.path,
   samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample %>% unique())
   
-  if(length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data.path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
+  if (length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data.path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
   if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
   metrics <- samples %>% 
     plapply(\(s) {
-      read_csv(paste(data.path,s,"/outs/metrics_summary.csv", sep = "/"), col_types = cols()) %>% 
+      tmp <- read.table(dir(paste(data.path,s,"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
+        mutate(., across(.cols = grep("%", .),
+                         ~ as.numeric(gsub("%", "", .x)) / 100),
+               across(.cols = grep(",", .),
+                         ~ as.numeric(gsub(",", "", .x))))
+      
+      # Take into account multiomics
+      if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
+                  
+      tmp %>%
         mutate(sample = s) %>% 
-        mutate_at(.vars = vars(`Valid Barcodes`:`Fraction Reads in Cells`),
-                  ~ as.numeric(gsub("%", "", .x)) / 100) %>%
         pivot_longer(cols = -c(sample),
                      names_to = "metric",
-                     values_to = "value")
+                     values_to = "value") %>% 
+        mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
     }, n.cores = n.cores) %>% 
     bind_rows()
   if (verbose) message(paste0(Sys.time()," Done!"))
@@ -304,7 +311,7 @@ addSummaryMetrics <- function(data.path,
 #' \dontrun{
 #' plot.geom <- plotGeom(plot.geom = "point")
 #' }
-plotGeom = function(plot.geom, 
+plotGeom <- function(plot.geom, 
                     col){
   if (plot.geom == "point"){
     geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
@@ -336,7 +343,7 @@ percFilter <- function(filter.data,
     split(value, sample) %>% 
     lapply(sum)
   
-  perc <- 1:length(cells.per.sample) %>% 
+  perc <- seq_len(length(cells.per.sample)) %>% 
     sapply(\(x) {
       variable.count[[x]] / cells.per.sample[x]
     }) %>% 
@@ -362,19 +369,19 @@ labelsFilter <- function(filter.data) {
   
   if ("mito" %in% var.names) {
     tmp$mito <- percFilter(filter.data, "mito") %>% 
-      sapply(\(x) {if (x < 0.01) "Low" else if(x > 0.05) "High" else "Medium"}) %>% 
+      sapply(\(x) {if (x < 0.01) "Low" else if (x > 0.05) "High" else "Medium"}) %>% 
       {data.frame(sample = names(.), value = .)}
   }
   
   if ("depth" %in% var.names) {
     tmp$depth <- percFilter(filter.data, "depth") %>% 
-      sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>% 
+      sapply(\(x) {if (x < 0.05) "Low" else if (x > 0.1) "High" else "Medium"}) %>% 
       {data.frame(sample = names(.), value = .)}
   }
   
   if ("doublets" %in% var.names) {
     tmp$doublets <- percFilter(filter.data, "doublets") %>% 
-      sapply(\(x) {if (x < 0.05) "Low" else if(x > 0.1) "High" else "Medium"}) %>%
+      sapply(\(x) {if (x < 0.05) "Low" else if (x > 0.1) "High" else "Medium"}) %>%
       {data.frame(sample = names(.), value = .)}
   }
   
@@ -416,7 +423,7 @@ read10xH5 <- function(data.path,
   
   full.path <- getH5Paths(data.path, sample.names, type)
   
-  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores <- length(full.path)) n.cores else length(full.path)," cores"))
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores < length(full.path)) n.cores else length(full.path)," cores"))
   out <- full.path %>%
     plapply(\(path) {
       h5 <- rhdf5::h5read(path, "matrix")
