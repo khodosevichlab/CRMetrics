@@ -5,7 +5,7 @@
   [![License: GPL-3](https://img.shields.io/badge/license-GPL--3-blue.svg)](https://cran.r-project.org/web/licenses/GPL-3)
   <!-- badges: end -->
 
-<img src="https://github.com/khodosevichlab/CRMetrics/blob/main/doc/CRmetrics_logo.png" align="right" height="140">
+<img src="https://github.com/khodosevichlab/CRMetrics/blob/main/inst/doc/CRmetrics_logo.png" align="right" height="140">
 
 CRMetrics
 ================
@@ -42,14 +42,14 @@ A CRMetrics object can be initialized in different ways using
 # Vignette
 
 For usage, please see the
-[vignette](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.md)
-([code](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.Rmd), [html](https://htmlpreview.github.io/?https://raw.githubusercontent.com/khodosevichlab/CRMetrics/main/doc/walkthrough.html))
+[vignette](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/doc/walkthrough.md)
+([code](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/doc/walkthrough.Rmd), [html](http://kkh.bric.ku.dk/rasmus/CRMetrics/walkthrough.html))
 
 # Python integrations
 
 CRMetrics makes use of several Python packages, most of them through the
 `reticulate` package in R. For these to work, we included an [example
-workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/doc/walkthrough.md#using-python-modules)
+workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/doc/walkthrough.md#using-python-modules)
 in the vignette.
 
 # Cite
