@@ -304,8 +304,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Plot all the other metrics
-    plotList <- metrics %T>% 
-      {options(warn = -1)} %>% 
+    plotList <- metrics %>%
       lapply(function (met) {
         tmp <- summary.metrics %>%
           filter(metric == met) %>%
@@ -366,8 +365,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         g <- g + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
         
         return(g)
-      }) %T>% 
-      {options(warn=0)}
+      })
     
     # To return the plots
     if (exists("sample.plot")) {
@@ -428,8 +426,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Plot all the other metrics
-    plotList <- metrics %T>% 
-      {options(warn = -1)} %>% 
+    plotList <- metrics %>%
       lapply(function (met) {
         tmp <- detailed.metrics %>%
           filter(metric == met) %>%
@@ -456,8 +453,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         ))
         
         return(g)
-      }) %T>% 
-      {options(warn=0)}
+      })
     
     # To return the plots
     if (length(plotList) == 1) {
