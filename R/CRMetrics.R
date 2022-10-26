@@ -623,7 +623,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         } else {
           g <- g +
             geom_area(fill = "#A65141") +
-            geom_area(mapping = aes(x = ifelse(x > plot.cutoff , x, NA)), fill = "#E7CDC2")
+            geom_area(data = tmp.plot %>% filter(x > plot.cutoff), aes(x), fill = "#E7CDC2")
         }
         
         return(g)
