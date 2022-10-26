@@ -588,35 +588,47 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
       bind_rows()
     
+    ncol.plot <- samples %>% 
+      length() %>% 
+      pmin(3)
+    
     # Plot
     depth.plot <- tmp %>% 
       pull(sample) %>% 
       unique() %>% 
       lapply(\(id) {
+        tmp.plot <- tmp %>% 
+          filter(sample == id)
+        
+        xmax <- tmp.plot$x %>% 
+          max() %>% 
+          pmin(2e4)
+        
+        g <- ggplot(tmp.plot, aes(x,y)) +
+          self$theme +
+          geom_line() +
+          xlim(0,xmax) +
+          theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
+          labs(title = id, y = "Density [AU]", x = "")
+        
         if (length(cutoff) == 1) {
-          g <- tmp %>% filter(sample == id) %>%  
-            ggplot(aes(x,y)) +
-            self$theme +
-            geom_line() +
-            geom_area(fill = "#A65141") +
-            geom_area(mapping = aes(x = ifelse(x>cutoff , x, NA)), fill = "#E7CDC2") +
-            xlim(0,2e4) +
-            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
-            labs(title = id, y = "Density [AU]", x = "")
+          plot.cutoff <- cutoff
         } else {
-          g <- tmp %>% filter(sample == id) %>%  
-            ggplot(aes(x,y)) +
-            self$theme +
-            geom_line() +
-            geom_area(fill = "#A65141") +
-            geom_area(mapping = aes(x = ifelse(x>cutoff[names(cutoff) == id] , x, NA)), fill = "#E7CDC2") +
-            xlim(0,2e4) +
-            theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
-            labs(title = id, y = "Density [AU]", x = "")
+          plot.cutoff <- cutoff[names(cutoff) == id]
         }
+        
+        if (all(tmp.plot$x < plot.cutoff)) {
+          g <- g + 
+            geom_area(fill = "#A65141")
+        } else {
+          g <- g +
+            geom_area(fill = "#A65141") +
+            geom_area(mapping = aes(x = ifelse(x > plot.cutoff , x, NA)), fill = "#E7CDC2")
+        }
+        
         return(g)
       }) %>% 
-      plot_grid(plotlist = ., ncol = 3,label_size = 5)
+      plot_grid(plotlist = ., ncol = ncol.plot, label_size = 5)
     
     return(depth.plot)
   },
@@ -627,10 +639,24 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @return ggplot2 object
   #' @examples 
-  #' \dontrun{
-  #' crm$addDetailedMetrics()
+  #' \donttest{
+  #' # Simulate data
+  #' testdata.cms <- lapply(seq_len(2), \(x) {
+  #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+  #' out[out < 0] <- 1
+  #' dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+  #' sapply(seq_len(1e3), \(x) paste0("cell",x)))
+  #' return(out)
+  #' })
+  #' 
+  #' # Initialize
+  #' crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+  #' 
+  #' # Create embedding
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
+  #' 
+  #' # Plot
   #' crm$plotMitoFraction()
   #' }
   plotMitoFraction = function(cutoff = 0.05, 
