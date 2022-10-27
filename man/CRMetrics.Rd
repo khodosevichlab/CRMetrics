@@ -61,6 +61,7 @@ crm$addComparison(comp.group = "sex")
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
+\dontrun{ 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -79,6 +80,7 @@ crm$metadata$condition <- c("a","b")
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSummaryMetrics`
@@ -889,7 +891,8 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+\preformatted{\dontrun{ 
+# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -907,6 +910,7 @@ crm$metadata$condition <- c("a","b")
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
+}
 }
 \if{html}{\out{</div>}}
 

@@ -237,7 +237,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @param second.comp.group character Second comparison metric, must match a column name of metadata (default = NULL).
   #' @return ggplot2 object
-  #' @examples 
+  #' @examples
+  #' \dontrun{ 
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -256,6 +257,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Plot
   #' crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
+  #' }
   plotSamples = function(comp.group = self$comp.group, 
                          h.adj = 0.05, 
                          exact = FALSE, 
