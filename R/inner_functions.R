@@ -14,10 +14,6 @@ utils::globalVariables(c(".","value","variable","V1","V2","metric"))
 #' @param verbose Print messages (default = TRUE).
 #' @keywords internal
 #' @return vector
-#' @examples 
-#' \dontrun{
-#' comp.group <- checkCompGroup(comp.group = "sex")
-#' }
 checkCompGroup <- function(comp.group, 
                            category, 
                            verbose = TRUE) {
@@ -34,10 +30,6 @@ checkCompGroup <- function(comp.group,
 #' @param metadata Metadata for samples.
 #' @keywords internal
 #' @return nothing or stop
-#' @examples 
-#' \dontrun{
-#' checkCompMeta(comp.group = "sex", metadata = crm$metadata)
-#' }
 checkCompMeta <- function(comp.group, 
                           metadata) {
   if (!is.null(comp.group) && (!comp.group %in% colnames(metadata))) stop("'comp.group' doesn't match any column name in metadata.")
@@ -124,10 +116,6 @@ read10x <- function(data.path,
 #' @param n.cores Number of cores for the calculations (default = 1).
 #' @keywords internal
 #' @return data frame
-#' @examples 
-#' \dontrun{
-#' detailed.metrics <- addDetailedMetricsInner(cms = cms, n.cores = n.cores)
-#' }
 addDetailedMetricsInner <- function(cms, 
                                     verbose = TRUE, 
                                     n.cores = 1) {
@@ -185,10 +173,6 @@ addDetailedMetricsInner <- function(cms,
 #' @param exact Whether to calculate exact p values (default = FALSE).
 #' @keywords internal
 #' @return ggplot2 object
-#' @examples 
-#' \dontrun{
-#' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, stat.test = "kruskal.test")
-#' }
 addPlotStats <- function(p, 
                          comp.group, 
                          metadata, 
@@ -226,10 +210,6 @@ addPlotStats <- function(p,
 #' @param second.comp.group Second comparison metric.
 #' @keywords internal
 #' @return ggplot2 object
-#' @examples 
-#' \dontrun{
-#' addPlotStats(p, comp.group = "sex", metadata = crm$metadata, second.comp.group = "condition")
-#' }
 addPlotStatsSamples <- function(p, 
                                 comp.group, 
                                 metadata, 
@@ -262,12 +242,6 @@ addPlotStatsSamples <- function(p,
 #' @param verbose Print messages (default = TRUE).
 #' @keywords internal
 #' @return data frame
-#' @examples 
-#' \dontrun{
-#' summary.metrics <- addSummaryMetrics(data.path = crm$data.path, 
-#' metadata = crm$metadata, 
-#' n.cores = crm$n.cores)
-#' }
 addSummaryMetrics <- function(data.path, 
                               metadata, 
                               n.cores = 1, 
@@ -307,10 +281,6 @@ addSummaryMetrics <- function(data.path,
 #' @param plot.geom The plot.geom to use, "point", "bar", "histogram", or "violin".
 #' @keywords internal
 #' @return geom
-#' @examples 
-#' \dontrun{
-#' plot.geom <- plotGeom(plot.geom = "point")
-#' }
 plotGeom <- function(plot.geom, 
                     col){
   if (plot.geom == "point"){
@@ -331,10 +301,6 @@ plotGeom <- function(plot.geom,
 #' @param filter The variable to filter (default = "mito").
 #' @keywords internal
 #' @return vector
-#' @examples 
-#' \dontrun{
-#' perc <- percFilter(filter.data, filter = "depth")
-#' }
 percFilter <- function(filter.data, 
                        filter = "mito") {
   cells.per.sample <- filter.data$sample %>% table() %>% c()
@@ -357,10 +323,6 @@ percFilter <- function(filter.data,
 #' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample.
 #' @keywords internal
 #' @return data frame
-#' @examples 
-#' \dontrun{
-#' filtered <- labelsFilter(filter.data)
-#' }
 labelsFilter <- function(filter.data) {
   var.names <- filter.data$variable %>% 
     unique()
@@ -404,11 +366,11 @@ labelsFilter <- function(filter.data) {
 #' @param verbose logical Print progress (default = TRUE)
 #' @param unique.names logical Create unique cell IDs (default = FALSE)
 #' @return list with sparse count matrices
-#' @export
 #' @examples 
 #' \dontrun{
 #' cms.h5 <- read10xH5(data.path = ".")
 #' }
+#' @export
 read10xH5 <- function(data.path, 
                       sample.names = NULL, 
                       type = c("raw","filtered","cellbender","cellbender_filtered"), 
@@ -471,13 +433,11 @@ read10xH5 <- function(data.path,
 #' @param sample.names character Optional, list of sample names
 #' @param sep character Separator between sample IDs and cell IDs (default = "!!")
 #' @keywords internal
-#' @examples 
-#' \dontrun{
-#' cms <- creatUniqueCellNames(cms = cms)
-#' }
 createUniqueCellNames <- function(cms, 
                                   sample.names, 
                                   sep = "!!") {
+  names(cms) <- sample.names
+  
   sample.names %>%
     lapply(\(sample) {
       cms[[sample]] %>% 
@@ -492,10 +452,6 @@ createUniqueCellNames <- function(cms,
 #' @param samples character Sample names to include (default = NULL)
 #' @param type character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")
 #' @keywords internal
-#' @examples
-#' \dontrun{
-#' paths <- getH5Paths(data.path = ".")
-#' }
 getH5Paths <- function(data.path, 
                        samples = NULL, 
                        type = NULL) {
@@ -542,7 +498,7 @@ getH5Paths <- function(data.path,
   }
   
   if (!is.null(miss)) {
-    stop(cat("Not all files exist. Missing the following: \n",paste(miss, sep = "\n"),"\n"))
+    stop(message("Not all files exist. Missing the following: \n",paste(miss, sep = "\n")))
   }
   
   return(paths)
@@ -556,14 +512,6 @@ getH5Paths <- function(data.path,
 #' @param samples character Sample IDs
 #' @param sep character Separator to split cells by into sample-wise lists (default = "!!")
 #' @keywords internal
-#' @examples 
-#' \dontrun{
-#' filter <- filterVector(num.vec = 1:10 %>% 
-#' setNames(c(rep("sample1!!cell",5),rep("sample2!!cell",5))), 
-#' name = "test", 
-#' filter = c(3,7) %>% setNames(c("sample1","sample2")), 
-#' samples = c("sample1","sample2"))
-#' }
 filterVector <- function(num.vec, 
                          name, 
                          filter, 
@@ -597,10 +545,6 @@ filterVector <- function(num.vec,
 #' @description Helper function to check that data.path is not NULL
 #' @param data.path character Path to be checked
 #' @keywords internal
-#' @examples 
-#' \dontrun{
-#' checkDataPath(data.path = "a")
-#' }
 checkDataPath <- function(data.path) {
   if (is.null(data.path)) stop("'data.path' cannot be NULL.")
 }
