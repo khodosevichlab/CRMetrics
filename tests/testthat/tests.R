@@ -1,12 +1,12 @@
-# Setuå
+# Setup
 
 library(CRMetrics)
 library(magrittr)
-# library(conos)
 library(Matrix)
 
+# Simulate data
 set.seed(123)
-testdata.cms <- lapply(1:4, \(x) {
+testdata.cms <- lapply(seq_len(4), \(x) {
   out <- rsparsematrix(1e4, 3e3, 0.1)
   out[out < 0] <- 1
   dimnames(out) <- list(sapply(1:1e4, \(x) paste0("gene",x)), sapply(1:3e3, \(x) paste0("cell",x)))
@@ -18,6 +18,7 @@ testdata.cms <- lapply(1:4, \(x) {
 # Initialize and add summary
 crm <- CRMetrics$new(cms = testdata.cms, n.cores = 1)
 
+# Tests
 test_that("Check metadata object", {
   expect_equal(nrow(crm$metadata), 4)
 })
