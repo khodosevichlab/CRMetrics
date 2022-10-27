@@ -1228,8 +1228,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       
       tmp$filter[tmp$filter == ""] <- "kept"
       tmp$filter %<>% 
-        factor() %>% 
-        relevel(ref = "kept")
+        factor()
+      
+      if ("kept" %in% levels(tmp$filter)) {
+        tmp$filter %<>% relevel(ref = "kept")
+        colstart <- 1
+      } else {
+        colstart <- 2
+      }
     } else {
       tmp %<>%
         apply(2, \(x) x != "") %>% 
@@ -1243,7 +1249,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Embedding plot
     if (type == "embedding"){
       g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
-        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[1:(tmp$filter %>% levels() %>% length())])
+        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[colstart:(tmp$filter %>% levels() %>% length())])
     }
     # Bar plot
     if (type == "bar") {
