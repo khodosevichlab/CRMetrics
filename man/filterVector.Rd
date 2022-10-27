@@ -20,13 +20,4 @@ filterVector(num.vec, name, filter, samples, sep = "!!")
 \description{
 Create logical filtering vector based on a numeric vector and a (sample-wise) cutoff
 }
-\examples{
-\dontrun{
-filter <- filterVector(num.vec = 1:10 \%>\% 
-setNames(c(rep("sample1!!cell",5),rep("sample2!!cell",5))), 
-name = "test", 
-filter = c(3,7) \%>\% setNames(c("sample1","sample2")), 
-samples = c("sample1","sample2"))
-}
-}
 \keyword{internal}

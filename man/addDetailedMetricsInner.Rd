@@ -19,9 +19,4 @@ data frame
 \description{
 Add detailed metrics, requires to load raw count matrices using pagoda2.
 }
-\examples{
-\dontrun{
-detailed.metrics <- addDetailedMetricsInner(cms = cms, n.cores = n.cores)
-}
-}
 \keyword{internal}

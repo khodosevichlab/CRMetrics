@@ -16,9 +16,4 @@ getH5Paths(data.path, samples = NULL, type = NULL)
 \description{
 Get file paths for H5 files
 }
-\examples{
-\dontrun{
-paths <- getH5Paths(data.path = ".")
-}
-}
 \keyword{internal}

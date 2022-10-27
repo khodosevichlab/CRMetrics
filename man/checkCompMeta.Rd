@@ -17,9 +17,4 @@ nothing or stop
 \description{
 Checks whether 'comp.group' is any of the column names in metadata.
 }
-\examples{
-\dontrun{
-checkCompMeta(comp.group = "sex", metadata = crm$metadata)
-}
-}
 \keyword{internal}

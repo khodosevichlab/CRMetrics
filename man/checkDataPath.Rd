@@ -12,9 +12,4 @@ checkDataPath(data.path)
 \description{
 Helper function to check that data.path is not NULL
 }
-\examples{
-\dontrun{
-checkDataPath(data.path = "a")
-}
-}
 \keyword{internal}

@@ -13,49 +13,117 @@ Functions to analyse Cell Ranger count data
 ## ------------------------------------------------
 
 \dontrun{
-crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 }
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addDetailedMetrics`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Run function
 crm$addDetailedMetrics()
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addComparison`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add metadata
+crm$metadata$sex <- c("male","female")
+
+# Add comparison group
 crm$addComparison(comp.group = "sex")
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add metadata
+crm$metadata$sex <- c("male","female")
+crm$metadata$condition <- c("a","b")
+
+# Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSummaryMetrics`
 ## ------------------------------------------------
 
-\dontrun{
-metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
-crm$plotSummaryMetrics(metrics = metrics.to.plot, plot.geom = "point")
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summary metrics
+crm$addSummaryFromCms()
+
+crm$plotSummaryMetrics(plot.geom = "point")
 }
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotDetailedMetrics`
 ## ------------------------------------------------
 
-\dontrun{
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add detailed metrics
 crm$addDetailedMetrics()
-metrics.to.plot <- crm$detailed.metrics$metric \%>\% unique()
+
+# Plot
 crm$plotDetailedMetrics()
 }
 
@@ -63,26 +131,48 @@ crm$plotDetailedMetrics()
 ## Method `CRMetrics$plotEmbedding`
 ## ------------------------------------------------
 
-\dontrun{
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding() 
+
 crm$plotEmbedding()
-# Color cells for low depth
-crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
-# Colors cells for mitochondrial fraction
-crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
-# Colors cells by doublet scores
-crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
 }
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotDepth`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Plot
 crm$plotDepth()
 }
 
@@ -90,10 +180,24 @@ crm$plotDepth()
 ## Method `CRMetrics$plotMitoFraction`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Plot
 crm$plotMitoFraction()
 }
 
@@ -101,25 +205,65 @@ crm$plotMitoFraction()
 ## Method `CRMetrics$saveSummaryMetrics`
 ## ------------------------------------------------
 
-\dontrun{
-crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
-}
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summaries
+crm$addSummaryFromCms()
+
+# Save data
+# crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
 
 ## ------------------------------------------------
 ## Method `CRMetrics$saveDetailedMetrics`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add detailed metrics
 crm$addDetailedMetrics()
-crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
-}
+
+# Save data
+# crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
 
 ## ------------------------------------------------
 ## Method `CRMetrics$detectDoublets`
 ## ------------------------------------------------
 
 \dontrun{
-crm$addDetailedMetrics()
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+
+# Detect doublets
 crm$detectDoublets(method = "scrublet", 
 conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 }
@@ -128,8 +272,20 @@ conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 ## Method `CRMetrics$doPreprocessing`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
 }
 
@@ -137,8 +293,20 @@ crm$doPreprocessing(preprocess = "pagoda2")
 ## Method `CRMetrics$createEmbedding`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
 }
@@ -147,44 +315,96 @@ crm$createEmbedding()
 ## Method `CRMetrics$filterCms`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
-crm$detectDoublets() # Optional
-crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+
+
+# Filter CMs
+crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05)
 }
 
 ## ------------------------------------------------
 ## Method `CRMetrics$selectMetrics`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Select metrics
 crm$selectMetrics()
 selection.metrics <- crm$selectMetrics(c(1:4))
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotFilteredCells`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
-crm$detectDoublets() # Optional
-crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
-filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
+
+# Plot and extract result
+crm$plotFilteredCells(type = "embedding")
+filtered.cells <- crm$plotFilteredCells(type = "export")
 }
 
 ## ------------------------------------------------
 ## Method `CRMetrics$getConosDepth`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Get Conos depth
 crm$getConosDepth()
 }
 
@@ -192,10 +412,24 @@ crm$getConosDepth()
 ## Method `CRMetrics$getMitoFraction`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addDetailedMetrics()
+\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Get mito. fraction
 crm$getMitoFraction(species = c("human", "mouse"))
 }
 
@@ -204,6 +438,7 @@ crm$getMitoFraction(species = c("human", "mouse"))
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data")
 crm$prepareCellbender()
 }
 
@@ -212,6 +447,7 @@ crm$prepareCellbender()
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 }
@@ -220,24 +456,63 @@ crm$saveCellbenderScript()
 ## Method `CRMetrics$getExpectedCells`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Get summary
+crm$addSummaryFromCms()
+
+# Get no. cells
 crm$getExpectedCells()
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$getTotalDroplets`
 ## ------------------------------------------------
 
-\dontrun{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summary
+crm$addSummaryFromCms()
+
+# Get no. droplets
 crm$getTotalDroplets()
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addCms`
 ## ------------------------------------------------
 
 \dontrun{
-crm$addCms(cms = cms.list)
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+crm$addCms(cms = testdata.cms)
 }
 
 ## ------------------------------------------------
@@ -245,6 +520,7 @@ crm$addCms(cms = cms.list)
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -256,6 +532,7 @@ crm$plotCbTraining()
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run the CellBender script
@@ -267,6 +544,7 @@ crm$plotCbCellProbs()
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -278,6 +556,7 @@ crm$plotCbAmbExp()
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -288,16 +567,27 @@ crm$plotCbAmbGenes()
 ## Method `CRMetrics$addSummaryFromCms`
 ## ------------------------------------------------
 
-\dontrun{
-crm$addCms()
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summary
 crm$addSummaryFromCms()
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$runSoupX`
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$runSoupX()
 }
 
@@ -306,6 +596,7 @@ crm$runSoupX()
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$runSoupX()
 crm$plotSoupX()
 }
@@ -315,6 +606,7 @@ crm$plotSoupX()
 ## ------------------------------------------------
 
 \dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -438,7 +730,7 @@ CRMetrics object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/data/CRMetrics_testdata")
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 }
 }
 \if{html}{\out{</div>}}
@@ -496,9 +788,20 @@ Count matrices
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Run function
 crm$addDetailedMetrics()
-}
 }
 \if{html}{\out{</div>}}
 
@@ -528,9 +831,23 @@ Vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add metadata
+crm$metadata$sex <- c("male","female")
+
+# Add comparison group
 crm$addComparison(comp.group = "sex")
-}
 }
 \if{html}{\out{</div>}}
 
@@ -572,9 +889,24 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add metadata
+crm$metadata$sex <- c("male","female")
+crm$metadata$condition <- c("a","b")
+
+# Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
-}
 }
 \if{html}{\out{</div>}}
 
@@ -640,9 +972,23 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-metrics.to.plot <- crm$selectMetrics(ids = c(1:4, 6, 18, 19)) 
-crm$plotSummaryMetrics(metrics = metrics.to.plot, plot.geom = "point")
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summary metrics
+crm$addSummaryFromCms()
+
+crm$plotSummaryMetrics(plot.geom = "point")
 }
 }
 \if{html}{\out{</div>}}
@@ -691,9 +1037,23 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add detailed metrics
 crm$addDetailedMetrics()
-metrics.to.plot <- crm$detailed.metrics$metric \%>\% unique()
+
+# Plot
 crm$plotDetailedMetrics()
 }
 }
@@ -752,16 +1112,24 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding() 
+
 crm$plotEmbedding()
-# Color cells for low depth
-crm$plotEmbedding(depth = TRUE, depth.cutoff = 1e3)
-# Colors cells for mitochondrial fraction
-crm$plotEmbedding(mito.frac = TRUE, mito.cutoff = 0.05, species = "human")
-# Colors cells by doublet scores
-crm$plotEmbedding(doublet.method = "scrublet", doublet.scores = TRUE)
 }
 }
 \if{html}{\out{</div>}}
@@ -794,10 +1162,24 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Plot
 crm$plotDepth()
 }
 }
@@ -814,6 +1196,7 @@ Plot the mitochondrial fraction in histogram.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMitoFraction(
   cutoff = 0.05,
+  species = c("human", "mouse"),
   samples = self$metadata$sample,
   sep = "!!"
 )}\if{html}{\out{</div>}}
@@ -822,9 +1205,11 @@ Plot the mitochondrial fraction in histogram.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cutoff}}{numeric The mito. fraction cutoff to color the embedding (default = 0.05).}
+\item{\code{cutoff}}{numeric The mito. fraction cutoff to color the embedding (default = 0.05)}
 
-\item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
+\item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human")}
+
+\item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 }
@@ -835,10 +1220,24 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Plot
 crm$plotMitoFraction()
 }
 }
@@ -876,9 +1275,23 @@ Tab-separated table
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
-}
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summaries
+crm$addSummaryFromCms()
+
+# Save data
+# crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
 }
 \if{html}{\out{</div>}}
 
@@ -914,10 +1327,23 @@ Tab-separated table
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add detailed metrics
 crm$addDetailedMetrics()
-crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
-}
+
+# Save data
+# crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
 }
 \if{html}{\out{</div>}}
 
@@ -966,7 +1392,20 @@ data.frame
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-crm$addDetailedMetrics()
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+
+# Detect doublets
 crm$detectDoublets(method = "scrublet", 
 conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 }
@@ -1026,8 +1465,20 @@ Conos object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
 }
 }
@@ -1074,8 +1525,20 @@ Conos object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
 }
@@ -1129,12 +1592,26 @@ list of filtered count matrices
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
-crm$detectDoublets() # Optional
-crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05, doublets = "scrublet")
+
+
+# Filter CMs
+crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05)
 }
 }
 \if{html}{\out{</div>}}
@@ -1163,10 +1640,21 @@ vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Select metrics
 crm$selectMetrics()
 selection.metrics <- crm$selectMetrics(c(1:4))
-}
 }
 \if{html}{\out{</div>}}
 
@@ -1223,13 +1711,26 @@ ggplot2 object or data frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
-crm$detectDoublets() # Optional
-crm$plotFilteredCells(type = "embedding", doublet.method = "scrublet")
-filtered.cells <- crm$plotFilteredCells(type = "export", doublet.method = "scrublet")
+
+# Plot and extract result
+crm$plotFilteredCells(type = "embedding")
+filtered.cells <- crm$plotFilteredCells(type = "export")
 }
 }
 \if{html}{\out{</div>}}
@@ -1246,22 +1747,29 @@ Extract sequencing depth from Conos object.
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{force}}{logical Force update of stored vector (default = FALSE)}
-}
-\if{html}{\out{</div>}}
-}
 \subsection{Returns}{
 data frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Get Conos depth
 crm$getConosDepth()
 }
 }
@@ -1276,7 +1784,7 @@ crm$getConosDepth()
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = "human")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"))}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1293,10 +1801,24 @@ data frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addDetailedMetrics()
+\preformatted{\donttest{
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+
+# Get mito. fraction
 crm$getMitoFraction(species = c("human", "mouse"))
 }
 }
@@ -1365,6 +1887,7 @@ ggplot2 object and bash script
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data")
 crm$prepareCellbender()
 }
 }
@@ -1420,6 +1943,7 @@ bash script
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 }
@@ -1450,9 +1974,23 @@ A numeric vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Get summary
+crm$addSummaryFromCms()
+
+# Get no. cells
 crm$getExpectedCells()
-}
 }
 \if{html}{\out{</div>}}
 
@@ -1482,9 +2020,23 @@ A numeric vector
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summary
+crm$addSummaryFromCms()
+
+# Get no. droplets
 crm$getTotalDroplets()
-}
 }
 \if{html}{\out{</div>}}
 
@@ -1527,7 +2079,18 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
-crm$addCms(cms = cms.list)
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+crm$addCms(cms = testdata.cms)
 }
 }
 \if{html}{\out{</div>}}
@@ -1562,6 +2125,7 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -1600,6 +2164,7 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run the CellBender script
@@ -1641,6 +2206,7 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -1682,6 +2248,7 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
@@ -1722,10 +2289,20 @@ data.frame
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm$addCms()
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+
+# Add summary
 crm$addSummaryFromCms()
-}
 }
 \if{html}{\out{</div>}}
 
@@ -1774,6 +2351,7 @@ List containing a list with corrected counts, and a data.frame containing plotti
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$runSoupX()
 }
 }
@@ -1804,6 +2382,7 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$runSoupX()
 crm$plotSoupX()
 }
@@ -1840,6 +2419,7 @@ A ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script

@@ -15,9 +15,4 @@ geom
 \description{
 Plot the data as points, barplot, histogram or violin
 }
-\examples{
-\dontrun{
-plot.geom <- plotGeom(plot.geom = "point")
-}
-}
 \keyword{internal}

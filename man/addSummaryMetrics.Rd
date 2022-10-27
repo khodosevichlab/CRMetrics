@@ -21,11 +21,4 @@ data frame
 \description{
 Add summary metrics by reading Cell Ranger metrics summary files.
 }
-\examples{
-\dontrun{
-summary.metrics <- addSummaryMetrics(data.path = crm$data.path, 
-metadata = crm$metadata, 
-n.cores = crm$n.cores)
-}
-}
 \keyword{internal}

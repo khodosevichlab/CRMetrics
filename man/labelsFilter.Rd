@@ -15,9 +15,4 @@ data frame
 \description{
 Labels the percentage of filtered cells based on mitochondrial fraction, sequencing depth and doublets as low, medium or high
 }
-\examples{
-\dontrun{
-filtered <- labelsFilter(filter.data)
-}
-}
 \keyword{internal}

@@ -16,9 +16,4 @@ createUniqueCellNames(cms, sample.names, sep = "!!")
 \description{
 Create unique cell names from sample IDs and cell IDs
 }
-\examples{
-\dontrun{
-cms <- creatUniqueCellNames(cms = cms)
-}
-}
 \keyword{internal}

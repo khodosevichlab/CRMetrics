@@ -17,9 +17,4 @@ vector
 \description{
 Calculate percentage of filtered cells based on the filter
 }
-\examples{
-\dontrun{
-perc <- percFilter(filter.data, filter = "depth")
-}
-}
 \keyword{internal}
