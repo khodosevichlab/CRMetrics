@@ -29,13 +29,13 @@ test_that("Check comparison group", {
   expect_equal(crm$comp.group, "sample")
 })
 
-crm$doPreprocessing(nPcs = 10, min.transcripts.per.cell = 0, min.cells.per.gene = 0)
+crm$doPreprocessing(min.transcripts.per.cell = 0, min.cells.per.gene = 0)
 
 test_that("Check preprocessing", {
   expect_equal(length(crm$cms.preprocessed), 4)
 })
 
-crm$createEmbedding(arg.buildGraph = list(ncomps = 25), arg.embedGraph = list(method = "largeVis"))
+crm$createEmbedding(arg.embedGraph = list(method = "largeVis"))
 
 test_that("Check embedding object", {
   expect_equal(nrow(crm$con$embedding), 1.2e4)
