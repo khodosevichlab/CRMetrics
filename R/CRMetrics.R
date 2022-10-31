@@ -815,64 +815,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(mf.plot)
   },
   
-  #' @description Save summary metrics to text file.
-  #' @param file character Output file (default = "Summary_metrics.txt").
-  #' @param dec character How the decimals are defined (default = ".").
-  #' @param sep character What separator to use (default = `\t`).
-  #' @return Tab-separated table
-  #' @examples
-  #' # Simulate data
-  #' testdata.cms <- lapply(seq_len(2), \(x) {
-  #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-  #' out[out < 0] <- 1
-  #' dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-  #' sapply(seq_len(1e3), \(x) paste0("cell",x)))
-  #' return(out)
-  #' })
-  #' 
-  #' # Initialize
-  #' crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
-  #' 
-  #' # Add summaries
-  #' crm$addSummaryFromCms()
-  #' 
-  #' # Save data
-  #' # crm$saveSummaryMetrics(file = paste0(tempdir(),"/Summary_metrics.tsv")
-  saveSummaryMetrics = function(file = "Summary_metrics.tsv", 
-                                dec = ".", 
-                                sep = "\t") {
-    write.table(self$summary.metrics, file, sep = sep, dec = dec)
-  },
-  
-  #' @description Save detailed metrics to text file.
-  #' @param file character Output file (default = "Detailed_metrics.tsv").
-  #' @param dec character How the decimals are defined (default = ".").
-  #' @param sep character What separator to use (default = `\t`).
-  #' @return Tab-separated table
-  #' @examples
-  #' # Simulate data
-  #' testdata.cms <- lapply(seq_len(2), \(x) {
-  #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-  #' out[out < 0] <- 1
-  #' dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-  #' sapply(seq_len(1e3), \(x) paste0("cell",x)))
-  #' return(out)
-  #' })
-  #' 
-  #' # Initialize
-  #' crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
-  #' 
-  #' # Add detailed metrics
-  #' crm$addDetailedMetrics()
-  #' 
-  #' # Save data
-  #' # crm$saveDetailedMetrics(file = paste0(tempdir(),"/Detailed_metrics.tsv")
-  saveDetailedMetrics = function(file = "Detailed_metrics.tsv", 
-                                 dec = ".", 
-                                 sep = "\t") {
-    write.table(self$detailed.metrics, file, sep = sep, dec = dec)
-  },
-  
   #' @description Detect doublet cells.
   #' @param method character Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
   #' @param cms list List containing the count matrices (default=self$cms).
