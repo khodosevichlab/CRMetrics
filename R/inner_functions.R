@@ -48,7 +48,7 @@ checkCompMeta <- function(comp.group,
 #' @return data frame
 #' @examples 
 #' \dontrun{
-#' cms <- read10x(data.path = crm$data.path, 
+#' cms <- read10x(data.path = "/path/to/count/data", 
 #' samples = crm$metadata$samples, 
 #' raw = FALSE, 
 #' symbol = TRUE, 
@@ -368,7 +368,7 @@ labelsFilter <- function(filter.data) {
 #' @return list with sparse count matrices
 #' @examples 
 #' \dontrun{
-#' cms.h5 <- read10xH5(data.path = ".")
+#' cms.h5 <- read10xH5(data.path = "/path/to/count/data")
 #' }
 #' @export
 read10xH5 <- function(data.path, 

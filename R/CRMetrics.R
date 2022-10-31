@@ -837,7 +837,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$addSummaryFromCms()
   #' 
   #' # Save data
-  #' # crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
+  #' # crm$saveSummaryMetrics(file = paste0(tempdir(),"/Summary_metrics.tsv")
   saveSummaryMetrics = function(file = "Summary_metrics.tsv", 
                                 dec = ".", 
                                 sep = "\t") {
@@ -866,7 +866,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$addDetailedMetrics()
   #' 
   #' # Save data
-  #' # crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
+  #' # crm$saveDetailedMetrics(file = paste0(tempdir(),"/Detailed_metrics.tsv")
   saveDetailedMetrics = function(file = "Detailed_metrics.tsv", 
                                  dec = ".", 
                                  sep = "\t") {
@@ -1652,7 +1652,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' @param file character File name for CellBender script (default: cellbender_script.sh)
+  #' @param file character File name for CellBender script. Will be stored in `data.path` (default: "cellbender_script.sh")
   #' @param fpr numeric False positive rate for CellBender (default = 0.01)
   #' @param epochs integer Number of epochs for CellBender (default = 150)
   #' @param use.gpu logical Use CUDA capable GPU (default = TRUE)
@@ -1695,7 +1695,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     out <- list("#! /bin/sh", script.list) %>% 
       unlist()
     
-    cat(out, file = file, sep = "\n")
+    cat(out, file = paste0(data.path,file), sep = "\n")
   },
   
   #' @description Extract the expected number of cells per sample based on the Cell Ranger summary metrics

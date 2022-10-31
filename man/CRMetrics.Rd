@@ -223,7 +223,7 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 crm$addSummaryFromCms()
 
 # Save data
-# crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
+# crm$saveSummaryMetrics(file = paste0(tempdir(),"/Summary_metrics.tsv")
 
 ## ------------------------------------------------
 ## Method `CRMetrics$saveDetailedMetrics`
@@ -245,7 +245,7 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 crm$addDetailedMetrics()
 
 # Save data
-# crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
+# crm$saveDetailedMetrics(file = paste0(tempdir(),"/Detailed_metrics.tsv")
 
 ## ------------------------------------------------
 ## Method `CRMetrics$detectDoublets`
@@ -1295,7 +1295,7 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 crm$addSummaryFromCms()
 
 # Save data
-# crm$saveSummaryMetrics(file = "Summary_metrics.tsv")
+# crm$saveSummaryMetrics(file = paste0(tempdir(),"/Summary_metrics.tsv")
 }
 \if{html}{\out{</div>}}
 
@@ -1347,7 +1347,7 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 crm$addDetailedMetrics()
 
 # Save data
-# crm$saveDetailedMetrics(file = "Detailed_metrics.tsv")
+# crm$saveDetailedMetrics(file = paste0(tempdir(),"/Detailed_metrics.tsv")
 }
 \if{html}{\out{</div>}}
 
@@ -1921,7 +1921,7 @@ crm$prepareCellbender()
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{file}}{character File name for CellBender script (default: cellbender_script.sh)}
+\item{\code{file}}{character File name for CellBender script. Will be stored in \code{data.path} (default: "cellbender_script.sh")}
 
 \item{\code{fpr}}{numeric False positive rate for CellBender (default = 0.01)}
 
