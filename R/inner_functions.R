@@ -201,7 +201,7 @@ addPlotStats <- function(p,
 }
 
 #' @title Add statistics to plot
-#' @description Use ggpubr to add statistics to samples ar plot
+#' @description Use ggpubr to add statistics to samples or plot
 #' @param p Plot to add statistics to. 
 #' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
