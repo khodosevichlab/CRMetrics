@@ -29,20 +29,22 @@ test_that("Check comparison group", {
   expect_equal(crm$comp.group, "sample")
 })
 
-crm$doPreprocessing(min.transcripts.per.cell = 0, min.cells.per.gene = 0)
-
 test_that("Check preprocessing", {
+  skip_if_not_installed("pagoda2")
+  crm$doPreprocessing(min.transcripts.per.cell = 0, min.cells.per.gene = 0)
   expect_equal(length(crm$cms.preprocessed), 4)
 })
 
-crm$createEmbedding(arg.embedGraph = list(method = "largeVis"))
-
 test_that("Check embedding object", {
+  skip_if_not_installed("pagoda2")
+  skip_if_not_installed("conos")
+  crm$createEmbedding(arg.embedGraph = list(method = "largeVis"))
   expect_equal(nrow(crm$con$embedding), 1.2e4)
 })
 
-crm$getConosDepth()
-
 test_that("Check depth vector", {
+  skip_if_not_installed("pagoda2")
+  skip_if_not_installed("conos")
+  crm$getConosDepth()
   expect_equal(length(crm$getConosDepth()), 1.2e4)
 })
