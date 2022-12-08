@@ -180,6 +180,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 sample.names = self$metadata$sample, 
                                 n.cores = self$n.cores, 
                                 verbose = self$verbose) {
+    # Read data
     if (is.null(self$cms)) {
       if (cellbender) {
         self$cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
@@ -191,9 +192,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Check for unrealistic large samples
-    size.check <- self$cms %>% sapply(dim) %>% apply(2, prod) %>% {. > 2^31-1}
+    size.check <- self$cms %>% 
+      sapply(dim) %>% 
+      apply(2, prod) %>% 
+      {. > 2^31-1}
     if (any(size.check)) warning(message(paste0("Unrealistic large samples detected that are larger than what can be handled in R. Consider removing ",paste(size.check[size.check] %>% names(), collapse = " "),". If kept, you may experience errors.")))
     
+    # Calculate metrics
     if (is.null(self$detailed.metrics)) {
       if (min.transcripts.per.cell > 0) cms <- self$cms %>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
       self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
@@ -545,6 +550,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return ggplot2 object
   #' @examples
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -562,6 +569,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$createEmbedding() 
   #' 
   #' crm$plotEmbedding()
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   plotEmbedding = function(depth = FALSE, 
                            doublet.method = NULL, 
@@ -573,6 +586,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                            size = 0.3,
                            sep = "!!",
                            ...) {
+    checkPackageInstalled("conos", cran = TRUE)
     if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'embedding').")
     
     species %<>% 
@@ -633,6 +647,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -651,11 +667,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Plot
   #' crm$plotDepth()
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   plotDepth = function(cutoff = 1e3, 
                        samples = self$metadata$sample,
                        sep = "!!"){
     # Checks
+    checkPackageInstalled("conos", cran = TRUE)
     if (is.null(self$con)) {
       stop("No Conos object found, please run createEmbedding.")
     }
@@ -727,6 +750,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -745,12 +770,19 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Plot
   #' crm$plotMitoFraction()
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   plotMitoFraction = function(cutoff = 0.05, 
                               species = c("human","mouse"),
                               samples = self$metadata$sample,
                               sep = "!!"){
     # Checks
+    checkPackageInstalled("conos", cran = TRUE)
     if (is.null(self$con)) {
       stop("No Conos object found, please run createEmbedding.")
     }
@@ -906,7 +938,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Prep environment
     if (verbose) message("Loading prerequisites...")
-    requireNamespace("reticulate")
+    checkPackageInstalled("reticulate", cran = TRUE)
     reticulate::use_condaenv(condaenv = env, conda = conda.path, required = TRUE)
     if (!reticulate::py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
     reticulate::source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
@@ -970,6 +1002,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return Conos object
   #' @examples
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -984,6 +1017,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Perform preprocessing
   #' crm$doPreprocessing(preprocess = "pagoda2")
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   doPreprocessing = function(cms = self$cms,
                              preprocess = c("pagoda2","seurat"),
@@ -1004,7 +1040,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (preprocess == "pagoda2") {
       if (verbose) message('Running preprocessing using pagoda2...')
-      requireNamespace("pagoda2")
+      checkPackageInstalled("pagoda2", cran = TRUE)
       tmp <- lapply(
         cms, 
         pagoda2::basicP2proc,
@@ -1016,7 +1052,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         ...)
     } else if (preprocess == "seurat") {
       if (verbose) message('Running preprocessing using Seurat...')
-      requireNamespace("conos")
+      checkPackageInstalled("conos", cran = TRUE)
       tmp <- lapply(
         cms, 
         conos::basicSeuratProc, 
@@ -1042,6 +1078,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return Conos object
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1057,6 +1095,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' # Create embedding
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   createEmbedding = function(cms = self$cms.preprocessed,
                              verbose = self$verbose, 
@@ -1064,7 +1108,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                              arg.buildGraph = list(),
                              arg.findCommunities = list(n.iterations = 1),
                              arg.embedGraph = list(method = "UMAP")) {
-    requireNamespace("conos")
+    checkPackageInstalled("conos", cran = TRUE)
     if (is.null(cms)) {
       stop("No preprocessed count matrices found, please run doPreprocessing.")
     }
@@ -1105,6 +1149,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return list of filtered count matrices
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1124,6 +1170,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Filter CMs
   #' crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05)
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   filterCms = function(min.transcripts.per.cell = 100,
                        depth.cutoff = NULL, 
@@ -1133,7 +1185,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        samples.to.exclude = NULL,
                        verbose = self$verbose,
                        sep = "!!") {
-    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
     # Preparations
     species %<>%
       tolower() %>% 
@@ -1263,6 +1314,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return ggplot2 object or data frame
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1282,6 +1335,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' # Plot and extract result
   #' crm$plotFilteredCells(type = "embedding")
   #' filtered.cells <- crm$plotFilteredCells(type = "export")
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   plotFilteredCells = function(type = c("embedding","bar","tile","export"), 
                                depth = TRUE, 
@@ -1301,6 +1360,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Prepare data
     if (depth) {
+      checkPackageInstalled("conos", cran = TRUE)
       depths <- self$getConosDepth() %>% 
         filterVector("depth.cutoff", depth.cutoff, depth.cutoff %>% names(), sep) %>% 
         {ifelse(!., "depth", "")}
@@ -1309,6 +1369,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     if (mito.frac) {
+      checkPackageInstalled("conos", cran = TRUE)
       mf <- self$getMitoFraction(species = species) %>% 
         filterVector("mito.cutoff", mito.cutoff, mito.cutoff %>% names(), sep) %>% 
         {ifelse(., "mito", "")}
@@ -1413,6 +1474,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return data frame
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1431,6 +1494,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Get Conos depth
   #' crm$getConosDepth()
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   getConosDepth = function() {
     tmp <- self$con$samples %>% 
@@ -1453,6 +1522,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @return data frame
   #' @examples 
   #' \donttest{
+  #' if (requireNamespace("pagoda2", quietly = TRUE)) {
+  #' if (requireNamespace("conos", quietly = TRUE)) {
   #' # Simulate data
   #' testdata.cms <- lapply(seq_len(2), \(x) {
   #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1471,9 +1542,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Get mito. fraction
   #' crm$getMitoFraction(species = c("human", "mouse"))
+  #' } else {
+  #' message("Package 'conos' not available.")
+  #' }
+  #' } else {
+  #' message("Package 'pagoda2' not available.")
+  #' }
   #' }
   getMitoFraction = function(species = c("human", "mouse")) {
-    
+    checkPackageInstalled("conos", cran = TRUE)
     species %<>% 
       match.arg(c("human", "mouse"))
     
@@ -2014,7 +2091,7 @@ runSoupX = function(data.path = self$data.path,
                     arg.autoEstCont = list(),
                     arg.adjustCounts = list()) {
   checkDataPath(data.path)
-  requireNamespace("SoupX")
+  checkPackageInstalled("SoupX", cran = TRUE)
   if (verbose) message(paste0(Sys.time()," Running using ", if (n.cores <- length(samples)) n.cores else length(samples)," cores"))
   
   # Create SoupX objects

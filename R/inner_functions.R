@@ -63,7 +63,7 @@ read10x <- function(data.path,
                     unique.names = TRUE, 
                     n.cores = 1, 
                     verbose = TRUE) {
-  requireNamespace("data.table")
+  checkPackageInstalled("data.table", cran = TRUE)
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
   full.path <- sample.names %>% 
@@ -119,7 +119,6 @@ read10x <- function(data.path,
 addDetailedMetricsInner <- function(cms, 
                                     verbose = TRUE, 
                                     n.cores = 1) {
-  checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
   if (verbose) message(Sys.time()," Counting using ", if (n.cores < length(cms)) n.cores else length(cms)," cores")
   samples <- cms %>% 
     names()
