@@ -1,6 +1,6 @@
 # CRMetrics 0.2.3
 
-* Updated tests to pass CRAN checks
+* Updated tests and examples to pass CRAN checks
 
 # CRMetrics 0.2.2
 

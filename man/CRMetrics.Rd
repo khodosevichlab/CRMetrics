@@ -4,7 +4,7 @@
 \alias{CRMetrics}
 \title{CRMetrics class object}
 \description{
-Functions to analyse Cell Ranger count data
+Functions to analyze Cell Ranger count data
 }
 \examples{
 
@@ -61,7 +61,6 @@ crm$addComparison(comp.group = "sex")
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
-\dontrun{ 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -80,7 +79,6 @@ crm$metadata$condition <- c("a","b")
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
-}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$plotSummaryMetrics`
@@ -134,6 +132,8 @@ crm$plotDetailedMetrics()
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -151,6 +151,12 @@ crm$doPreprocessing()
 crm$createEmbedding() 
 
 crm$plotEmbedding()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -158,6 +164,8 @@ crm$plotEmbedding()
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -176,6 +184,12 @@ crm$createEmbedding()
 
 # Plot
 crm$plotDepth()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -183,6 +197,8 @@ crm$plotDepth()
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -201,51 +217,13 @@ crm$createEmbedding()
 
 # Plot
 crm$plotMitoFraction()
+} else {
+message("Package 'conos' not available.")
 }
-
-## ------------------------------------------------
-## Method `CRMetrics$saveSummaryMetrics`
-## ------------------------------------------------
-
-# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
-
-# Add summaries
-crm$addSummaryFromCms()
-
-# Save data
-# crm$saveSummaryMetrics(file = paste0(tempdir(),"/Summary_metrics.tsv")
-
-## ------------------------------------------------
-## Method `CRMetrics$saveDetailedMetrics`
-## ------------------------------------------------
-
-# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
-
-# Add detailed metrics
-crm$addDetailedMetrics()
-
-# Save data
-# crm$saveDetailedMetrics(file = paste0(tempdir(),"/Detailed_metrics.tsv")
+} else {
+message("Package 'pagoda2' not available.")
+}
+}
 
 ## ------------------------------------------------
 ## Method `CRMetrics$detectDoublets`
@@ -275,6 +253,7 @@ conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -289,6 +268,9 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 
 # Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -296,6 +278,8 @@ crm$doPreprocessing(preprocess = "pagoda2")
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -311,6 +295,12 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 # Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -318,6 +308,8 @@ crm$createEmbedding()
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -337,6 +329,12 @@ crm$createEmbedding()
 
 # Filter CMs
 crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05)
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -364,6 +362,8 @@ selection.metrics <- crm$selectMetrics(c(1:4))
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -383,6 +383,12 @@ crm$createEmbedding()
 # Plot and extract result
 crm$plotFilteredCells(type = "embedding")
 filtered.cells <- crm$plotFilteredCells(type = "export")
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -390,6 +396,8 @@ filtered.cells <- crm$plotFilteredCells(type = "export")
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -408,6 +416,12 @@ crm$createEmbedding()
 
 # Get Conos depth
 crm$getConosDepth()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -415,6 +429,8 @@ crm$getConosDepth()
 ## ------------------------------------------------
 
 \donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -433,6 +449,12 @@ crm$createEmbedding()
 
 # Get mito. fraction
 crm$getMitoFraction(species = c("human", "mouse"))
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 
 ## ------------------------------------------------
@@ -649,8 +671,6 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-plotEmbedding}{\code{CRMetrics$plotEmbedding()}}
 \item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
 \item \href{#method-CRMetrics-plotMitoFraction}{\code{CRMetrics$plotMitoFraction()}}
-\item \href{#method-CRMetrics-saveSummaryMetrics}{\code{CRMetrics$saveSummaryMetrics()}}
-\item \href{#method-CRMetrics-saveDetailedMetrics}{\code{CRMetrics$saveDetailedMetrics()}}
 \item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
 \item \href{#method-CRMetrics-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
 \item \href{#method-CRMetrics-createEmbedding}{\code{CRMetrics$createEmbedding()}}
@@ -891,8 +911,7 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{ 
-# Simulate data
+\preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -910,7 +929,6 @@ crm$metadata$condition <- c("a","b")
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
-}
 }
 \if{html}{\out{</div>}}
 
@@ -1117,6 +1135,8 @@ ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1134,6 +1154,12 @@ crm$doPreprocessing()
 crm$createEmbedding() 
 
 crm$plotEmbedding()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1167,6 +1193,8 @@ ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1185,6 +1213,12 @@ crm$createEmbedding()
 
 # Plot
 crm$plotDepth()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1225,6 +1259,8 @@ ggplot2 object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1243,111 +1279,13 @@ crm$createEmbedding()
 
 # Plot
 crm$plotMitoFraction()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
 }
 }
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-saveSummaryMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-saveSummaryMetrics}{}}}
-\subsection{Method \code{saveSummaryMetrics()}}{
-Save summary metrics to text file.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveSummaryMetrics(
-  file = "Summary_metrics.tsv",
-  dec = ".",
-  sep = "\\t"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{file}}{character Output file (default = "Summary_metrics.txt").}
-
-\item{\code{dec}}{character How the decimals are defined (default = ".").}
-
-\item{\code{sep}}{character What separator to use (default = \verb{\\t}).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Tab-separated table
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
-
-# Add summaries
-crm$addSummaryFromCms()
-
-# Save data
-# crm$saveSummaryMetrics(file = paste0(tempdir(),"/Summary_metrics.tsv")
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-saveDetailedMetrics"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-saveDetailedMetrics}{}}}
-\subsection{Method \code{saveDetailedMetrics()}}{
-Save detailed metrics to text file.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveDetailedMetrics(
-  file = "Detailed_metrics.tsv",
-  dec = ".",
-  sep = "\\t"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{file}}{character Output file (default = "Detailed_metrics.tsv").}
-
-\item{\code{dec}}{character How the decimals are defined (default = ".").}
-
-\item{\code{sep}}{character What separator to use (default = \verb{\\t}).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Tab-separated table
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
-
-# Add detailed metrics
-crm$addDetailedMetrics()
-
-# Save data
-# crm$saveDetailedMetrics(file = paste0(tempdir(),"/Detailed_metrics.tsv")
 }
 \if{html}{\out{</div>}}
 
@@ -1470,6 +1408,7 @@ Conos object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1484,6 +1423,9 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 
 # Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1530,6 +1472,8 @@ Conos object
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1545,6 +1489,12 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 # Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1597,6 +1547,8 @@ list of filtered count matrices
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1616,6 +1568,12 @@ crm$createEmbedding()
 
 # Filter CMs
 crm$filterCms(depth.cutoff = 1e3, mito.cutoff = 0.05)
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1716,6 +1674,8 @@ ggplot2 object or data frame
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1735,6 +1695,12 @@ crm$createEmbedding()
 # Plot and extract result
 crm$plotFilteredCells(type = "embedding")
 filtered.cells <- crm$plotFilteredCells(type = "export")
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1757,6 +1723,8 @@ data frame
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1775,6 +1743,12 @@ crm$createEmbedding()
 
 # Get Conos depth
 crm$getConosDepth()
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}
@@ -1806,6 +1780,8 @@ data frame
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\donttest{
+if (requireNamespace("pagoda2", quietly = TRUE)) {
+if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1824,6 +1800,12 @@ crm$createEmbedding()
 
 # Get mito. fraction
 crm$getMitoFraction(species = c("human", "mouse"))
+} else {
+message("Package 'conos' not available.")
+}
+} else {
+message("Package 'pagoda2' not available.")
+}
 }
 }
 \if{html}{\out{</div>}}

@@ -30,6 +30,6 @@ addPlotStatsSamples(
 ggplot2 object
 }
 \description{
-Use ggpubr to add statistics to samples ar plot
+Use ggpubr to add statistics to samples or plot
 }
 \keyword{internal}
