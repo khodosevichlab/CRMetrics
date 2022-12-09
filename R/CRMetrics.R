@@ -258,7 +258,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' condition = c("a","b"))
   #' 
   #' # Initialize
-  #' crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), metadata = metadata, n.cores = 1)
+  #' crm <- CRMetrics$new(cms = testdata.cms, 
+  #' sample.names = c("sample1", "sample2"), 
+  #' metadata = metadata, 
+  #' n.cores = 1)
   #' 
   #' # Plot
   #' crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
