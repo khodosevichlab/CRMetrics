@@ -252,12 +252,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' return(out)
   #' })
   #' 
-  #' # Initialize
-  #' crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+  #' # Create metadata
+  #' metadata <- data.frame(sample = c("sample1", "sample2"),
+  #' sex = c("male","female"),
+  #' condition = c("a","b"))
   #' 
-  #' # Add metadata
-  #' crm$metadata$sex <- c("male","female")
-  #' crm$metadata$condition <- c("a","b")
+  #' # Initialize
+  #' crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), metadata = metadata, n.cores = 1)
   #' 
   #' # Plot
   #' crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
@@ -276,7 +277,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
 
     g <- metadata %>%
       select(comp.group, second.comp.group) %>%
-      table(dnn = comp.group) %>%
+      table() %>%
       data.frame() %>%
       ggplot(aes(!!sym(comp.group), Freq, fill = !!sym(second.comp.group))) +
       geom_bar(stat = "identity", position = "dodge") +

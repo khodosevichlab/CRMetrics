@@ -70,12 +70,13 @@ sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
 
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+# Create metadata
+metadata <- data.frame(sample = c("sample1", "sample2"),
+sex = c("male","female"),
+condition = c("a","b"))
 
-# Add metadata
-crm$metadata$sex <- c("male","female")
-crm$metadata$condition <- c("a","b")
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), metadata = metadata, n.cores = 1)
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
@@ -920,12 +921,13 @@ sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
 
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+# Create metadata
+metadata <- data.frame(sample = c("sample1", "sample2"),
+sex = c("male","female"),
+condition = c("a","b"))
 
-# Add metadata
-crm$metadata$sex <- c("male","female")
-crm$metadata$condition <- c("a","b")
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), metadata = metadata, n.cores = 1)
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
