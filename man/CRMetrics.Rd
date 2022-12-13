@@ -61,6 +61,8 @@ crm$addComparison(comp.group = "sex")
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
+sample.names <- c("sample1", "sample2")
+
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -69,14 +71,15 @@ dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
 sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
+names(testdata.cms) <- sample.names
 
 # Create metadata
-metadata <- data.frame(sample = c("sample1", "sample2"),
+metadata <- data.frame(sample = sample.names,
 sex = c("male","female"),
 condition = c("a","b"))
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), metadata = metadata, n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, metadata = metadata, n.cores = 1)
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
@@ -912,7 +915,9 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+\preformatted{sample.names <- c("sample1", "sample2")
+
+# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -920,14 +925,15 @@ dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
 sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
+names(testdata.cms) <- sample.names
 
 # Create metadata
-metadata <- data.frame(sample = c("sample1", "sample2"),
+metadata <- data.frame(sample = sample.names,
 sex = c("male","female"),
 condition = c("a","b"))
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), metadata = metadata, n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, metadata = metadata, n.cores = 1)
 
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
