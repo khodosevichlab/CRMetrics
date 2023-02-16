@@ -48,7 +48,7 @@ checkCompMeta <- function(comp.group,
 #' @return data frame
 #' @examples 
 #' \dontrun{
-#' cms <- read10x(data.path = crm$data.path, 
+#' cms <- read10x(data.path = "/path/to/count/data", 
 #' samples = crm$metadata$samples, 
 #' raw = FALSE, 
 #' symbol = TRUE, 
@@ -63,7 +63,7 @@ read10x <- function(data.path,
                     unique.names = TRUE, 
                     n.cores = 1, 
                     verbose = TRUE) {
-  requireNamespace("data.table")
+  checkPackageInstalled("data.table", cran = TRUE)
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
   full.path <- sample.names %>% 
@@ -119,7 +119,6 @@ read10x <- function(data.path,
 addDetailedMetricsInner <- function(cms, 
                                     verbose = TRUE, 
                                     n.cores = 1) {
-  checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
   if (verbose) message(Sys.time()," Counting using ", if (n.cores < length(cms)) n.cores else length(cms)," cores")
   samples <- cms %>% 
     names()
@@ -201,7 +200,7 @@ addPlotStats <- function(p,
 }
 
 #' @title Add statistics to plot
-#' @description Use ggpubr to add statistics to samples ar plot
+#' @description Use ggpubr to add statistics to samples or plot
 #' @param p Plot to add statistics to. 
 #' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
@@ -368,7 +367,7 @@ labelsFilter <- function(filter.data) {
 #' @return list with sparse count matrices
 #' @examples 
 #' \dontrun{
-#' cms.h5 <- read10xH5(data.path = ".")
+#' cms.h5 <- read10xH5(data.path = "/path/to/count/data")
 #' }
 #' @export
 read10xH5 <- function(data.path, 

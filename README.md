@@ -42,8 +42,8 @@ A CRMetrics object can be initialized in different ways using
 # Vignette
 
 For usage, please see the
-[vignette](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.md)
-([code](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.Rmd), [html](http://kkh.bric.ku.dk/rasmus/CRMetrics/walkthrough.html))
+[vignette](http://kkh.bric.ku.dk/rasmus/CRMetrics/walkthrough.html)
+([code](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.Rmd).
 
 # Python integrations
 

@@ -40,6 +40,6 @@ Read 10x HDF5 files
 }
 \examples{
 \dontrun{
-cms.h5 <- read10xH5(data.path = ".")
+cms.h5 <- read10xH5(data.path = "/path/to/count/data")
 }
 }

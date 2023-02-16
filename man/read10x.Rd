@@ -38,7 +38,7 @@ Load gene expression count data
 }
 \examples{
 \dontrun{
-cms <- read10x(data.path = crm$data.path, 
+cms <- read10x(data.path = "/path/to/count/data", 
 samples = crm$metadata$samples, 
 raw = FALSE, 
 symbol = TRUE, 
