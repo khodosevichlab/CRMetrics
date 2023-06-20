@@ -3,6 +3,7 @@
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
 #' @importFrom utils globalVariables read.table
+#' @importFrom sccore checkPackageInstalled
 NULL
 
 utils::globalVariables(c(".","value","variable","V1","V2","metric"))
@@ -546,32 +547,4 @@ filterVector <- function(num.vec,
 #' @keywords internal
 checkDataPath <- function(data.path) {
   if (is.null(data.path)) stop("'data.path' cannot be NULL.")
-}
-
-#' @title Check whether a package is installed
-#' @description This function is shamelessly stolen from github.com/kharchenkolab/Cacoa
-#' @keywords internal
-checkPackageInstalled <- function(pkgs, details='to run this function', install.help=NULL, bioc=FALSE, cran=FALSE) {
-  pkgs <- pkgs[!sapply(pkgs, requireNamespace, quietly=TRUE)]
-  if (length(pkgs) == 0) {
-    return(NULL)
-  }
-  
-  if (length(pkgs) > 1) {
-    pkgs <- paste0("c('", paste0(pkgs, collapse="', '"), "')")
-    error.text <- paste("Packages", pkgs, "must be installed", details)
-  } else {
-    pkgs <- paste0("'", pkgs, "'")
-    error.text <- paste(pkgs, "package must be installed", details)
-  }
-  
-  if (!is.null(install.help)) {
-    error.text <- paste0(error.text, ". Please, run `", install.help, "` to do it.")
-  } else if (bioc) {
-    error.text <- paste0(error.text, ". Please, run `BiocManager::install(", pkgs, ")", "` to do it.")
-  } else if (cran) {
-    error.text <- paste0(error.text, ". Please, run `install.packages(", pkgs, ")", "` to do it.")
-  }
-  
-  stop(error.text)
 }
