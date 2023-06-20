@@ -91,11 +91,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Check that last character is slash
     if (!is.null(data.path)) {
-      length.path <- nchar(data.path)
-      last.char <- data.path %>% 
-        substr(length.path, length.path)
-      
-      if (last.char != "/") data.path <- paste0(data.path,"/") else data.path <- data.path
+      data.path %<>% 
+        sapply(\(path) {
+        length.path <- nchar(path)
+        last.char <- path %>% 
+          substr(length.path, length.path)
+        
+        if (last.char != "/") paste0(path,"/") else path
+      })
     }
     
     # Write stuff to object
@@ -112,7 +115,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                                        full.names = FALSE))
       }
     } else {
-      if (is(metadata, "data.frame")) {
+      if (inherits(metadata, "data.frame")) {
         self$metadata <- metadata %>% 
           arrange(sample)
       } else {

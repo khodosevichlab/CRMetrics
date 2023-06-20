@@ -247,15 +247,27 @@ addSummaryMetrics <- function(data.path,
                               n.cores = 1, 
                               verbose = TRUE) {
   samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
-  samples <- intersect(samples.tmp, metadata$sample %>% unique())
+  samples <- intersect(samples.tmp, metadata$sample)
   
+  doubles <- table(samples.tmp) %>% 
+    .[. > 1] %>% 
+    names()
+  
+  if (length(doubles) > 0) stop(paste0("One or more samples are present twice in 'data.path'. Sample names must be unique. Affected sample(s): ",paste(doubles, collapse = " ")))
   if (length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data.path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
   if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
-  metrics <- samples %>% 
+  metrics <- data.path %>% 
+    lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
+             .[. %in% samples] %>% 
+             data.frame(sample = ., path = path)) %>% 
+    bind_rows() %>% 
+    t() %>% 
+    data.frame() %>% 
+    as.list() %>% 
     plapply(\(s) {
-      tmp <- read.table(dir(paste(data.path,s,"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
+      tmp <- read.table(dir(paste(s[2],s[1],"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
         mutate(., across(.cols = grep("%", .),
                          ~ as.numeric(gsub("%", "", .x)) / 100),
                across(.cols = grep(",", .),
@@ -265,13 +277,14 @@ addSummaryMetrics <- function(data.path,
       if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
                   
       tmp %>%
-        mutate(sample = s) %>% 
+        mutate(sample = s[1]) %>% 
         pivot_longer(cols = -c(sample),
                      names_to = "metric",
                      values_to = "value") %>% 
         mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
     }, n.cores = n.cores) %>% 
-    bind_rows()
+    bind_rows() %>% 
+    arrange(sample)
   if (verbose) message(paste0(Sys.time()," Done!"))
   return(metrics)
 }
