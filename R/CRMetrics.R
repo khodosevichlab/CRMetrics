@@ -884,8 +884,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                             n.cores = self$n.cores,
                             verbose = self$verbose,
                             args = list()) {
+    # Checks
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (!is.list(args)) stop("'args' must be a list.")
+    if (inherits(cms, "list")) stop("'cms' must be a list")
+    if (!all(sapply(cms, inherits, "Matrix"))) {
+      warning("All samples in 'cms' must be a matrix, trying to convert to dgCMatrix...")
+      cms %<>% lapply(as, "CsparseMatrix")
+      if (!all(sapply(cms, inherits, "Matrix"))) stop("Could not convert automatically.")
+    }
     
     # Prepare arguments
     if (method == "doubletdetection") {
@@ -1077,7 +1084,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param verbose logical Print messages or not (default = self$verbose).
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
   #' @param arg.buildGraph list A list with additional arguments for the `buildGraph` function in Conos (default = list())
-  #' @param arg.findCommunities list A list with additional arguments for the `findCommunities` function in Conos (default = list(n.iterations = 1)) # Should be updated when Conos issue #123 is resolved
+  #' @param arg.findCommunities list A list with additional arguments for the `findCommunities` function in Conos (default = list())
   #' @param arg.embedGraph list A list with additional arguments for the `embedGraph` function in Conos (default = list(method = "UMAP))
   #' @return Conos object
   #' @examples 
@@ -1110,7 +1117,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                              verbose = self$verbose, 
                              n.cores = self$n.cores,
                              arg.buildGraph = list(),
-                             arg.findCommunities = list(n.iterations = 1),
+                             arg.findCommunities = list(),
                              arg.embedGraph = list(method = "UMAP")) {
     checkPackageInstalled("conos", cran = TRUE)
     if (is.null(cms)) {
