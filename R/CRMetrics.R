@@ -1,6 +1,6 @@
 #' @import dplyr magrittr ggplot2 ggrepel
 #' @importFrom R6 R6Class
-#' @importFrom sccore plapply
+#' @importFrom sccore plapply checkPackageInstalled
 #' @importFrom Matrix t
 #' @importFrom ggpubr stat_compare_means
 #' @importFrom cowplot plot_grid
@@ -10,6 +10,7 @@
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom scales comma
+#' @importFrom sparseMatrixSats colSums2 rowSums2
 #' @importFrom utils globalVariables
 NULL
 
@@ -603,7 +604,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Depth
     if (depth) {
-      depths <- self$getConosDepth() %>% 
+      depths <- self$getDepth() %>% 
         filterVector("depth.cutoff", depth.cutoff, self$con$samples %>% names(), sep)
       if (length(depth.cutoff) > 1) {
         main <- "Cells with low depth with sample-specific cutoff"
@@ -689,7 +690,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
     
-    depths <- self$getConosDepth()
+    depths <- self$getDepth()
     
     # Preparations
     tmp <- depths %>% 
@@ -1137,14 +1138,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     do.call(con$embedGraph, arg.embedGraph)
     
     self$con <- con
-    if (!is.null(self$depth)) {
-      warning("Overwriting previous depth vector")
-      self$depth <- self$getConosDepth(force = TRUE)
-    } 
-    if (!is.null(self$mito.fraction)) {
-      warning("Overwriting previous mito.fraction vector")
-      self$mito.frac <- self$getMitoFraction(force = TRUE)
-    } 
+    
     invisible(con)
   },
   
@@ -1223,7 +1217,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Depth
     if (!is.null(depth.cutoff)) {
-      depth.filter <- self$getConosDepth() %>% 
+      depth.filter <- self$getDepth() %>% 
         filterVector("depth.cutoff", depth.cutoff, samples, sep)
     } else {
       depth.filter <- NULL
@@ -1372,7 +1366,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Prepare data
     if (depth) {
       checkPackageInstalled("conos", cran = TRUE)
-      depths <- self$getConosDepth() %>% 
+      depths <- self$getDepth() %>% 
         filterVector("depth.cutoff", depth.cutoff, depth.cutoff %>% names(), sep) %>% 
         {ifelse(!., "depth", "")}
     } else {
@@ -1503,8 +1497,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
   #' 
-  #' # Get Conos depth
-  #' crm$getConosDepth()
+  #' # Get depth
+  #' crm$getDepth()
   #' } else {
   #' message("Package 'conos' not available.")
   #' }
@@ -1512,20 +1506,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' message("Package 'pagoda2' not available.")
   #' }
   #' }
-  getConosDepth = function() {
-    tmp <- self$con$samples %>% 
-      lapply(`[[`, "depth") %>% 
-      Reduce(c, .)
+  getDepth = function() {
+    checkPackageInstalled("conos", cran = TRUE)
     
-    return(tmp)
+    self$con$samples %>% 
+      lapply(`[[`, "misc") %>% 
+      lapply(`[[`, "rawCounts") %>% 
+      lapply(\(x) `names<-`(sparseMatrixStats::rowSums2(x), rownames(x))) %>% 
+      Reduce(c, .) %>% 
+      .[lapply(self$con$samples, conos::getCellNames) %>% unlist()]
   },
-  
-  # getUmiDepth = function() {
-  #   checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
-  #   tmp <- self$cms %>% 
-  #     lapply(\(cm) setNames(cm %>% sparseMatrixStats::colSums2(), cm %>% colnames())) %>% 
-  #     Reduce(c, .)
-  # },
   
   #' @description Calculate the fraction of mitochondrial genes.
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
