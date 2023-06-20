@@ -82,9 +82,9 @@ read10x <- function(data.path,
       mat.path <- tmp.dir %>%
         .[grepl("mtx", .)]
       if (grepl("gz", mat.path)) {
-        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "dgCMatrix")
+        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "CsparseMatrix")
       } else {
-        mat <- as(Matrix::readMM(mat.path), "dgCMatrix")
+        mat <- as(Matrix::readMM(mat.path), "CsparseMatrix")
       }
 
       # Add features
