@@ -703,7 +703,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   plotDepth = function(cutoff = 1e3, 
                        samples = self$metadata$sample,
-                       sep = "!!"){
+                       sep = "!!",
+                       keep.col = "E7CDC2",
+                       filter.col = "A65141"){
     # Checks
     checkPackageInstalled("conos", cran = TRUE)
     if (is.null(self$con)) {
@@ -755,11 +757,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         
         if (all(tmp.plot$x < plot.cutoff)) {
           g <- g + 
-            geom_area(fill = "#A65141")
+            geom_area(fill = filter.col)
         } else {
           g <- g +
-            geom_area(fill = "#A65141") +
-            geom_area(data = tmp.plot %>% filter(x > plot.cutoff), aes(x), fill = "#E7CDC2")
+            geom_area(fill = filter.col) +
+            geom_area(data = tmp.plot %>% filter(x > plot.cutoff), aes(x), fill = keep.col)
         }
         
         return(g)
@@ -774,6 +776,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human")
   #' @param samples character Sample names to include for plotting (default = $metadata$sample)
   #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @param keep.col character Color for density of cells that are kept (default = "E7CDC2")
+  #' @param filter.col Character Color for density of cells to be filtered (default = "A65141")
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
@@ -807,7 +811,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotMitoFraction = function(cutoff = 0.05, 
                               species = c("human","mouse"),
                               samples = self$metadata$sample,
-                              sep = "!!"){
+                              sep = "!!",
+                              keep.col = "E7CDC2",
+                              filter.col = "A65141"){
     # Checks
     checkPackageInstalled("conos", cran = TRUE)
     if (is.null(self$con)) {
@@ -858,11 +864,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         
         if (all(tmp.plot$x < plot.cutoff)) {
           g <- g + 
-            geom_area(fill = "#A65141")
+            geom_area(fill = filter.col)
         } else {
           g <- g +
-            geom_area(fill = "#A65141") +
-            geom_area(data = tmp.plot %>% filter(x < plot.cutoff), aes(x), fill = "#E7CDC2")
+            geom_area(fill = filter.col) +
+            geom_area(data = tmp.plot %>% filter(x < plot.cutoff), aes(x), fill = keep.col)
         }
         
         return(g)
@@ -1337,6 +1343,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
   #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @param cols character Colors used for plotting (default = c("grey80","red","blue","green","yellow","black","pink","purple"))
   #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object or data frame
   #' @examples 
@@ -1378,6 +1385,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                species = c("human","mouse"),
                                size = 0.3,
                                sep = "!!",
+                               cols = c("grey80","red","blue","green","yellow","black","pink","purple"),
                                ...) {
     type %<>% 
       tolower() %>% 
@@ -1457,7 +1465,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Embedding plot
     if (type == "embedding"){
       g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
-        scale_color_manual(values = c("grey80","red","blue","green","yellow","black","pink","purple")[colstart:(tmp$filter %>% levels() %>% length())])
+        scale_color_manual(values = cols[colstart:(tmp$filter %>% levels() %>% length())])
     }
     # Bar plot
     if (type == "bar") {
@@ -1916,6 +1924,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       self$theme +
       labs(col = "") +
       facet_wrap(~sample, scales = "free_y")
+      
+      if (!is.null(pal)) g <- g + scale_color_manual(values = pal)
     
     return(g)
   },
@@ -1923,6 +1933,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the CellBender assigned cell probabilities
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param low.col character Color for low probabilities (default = "gray")
+  #' @param high.col character Color for high probabilities (default = "red")
   #' @return A ggplot2 object
   #' @examples 
   #' \dontrun{
@@ -1933,7 +1945,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$plotCbCellProbs()
   #' }
   plotCbCellProbs = function(data.path = self$data.path, 
-                             samples = self$metadata$sample) {
+                             samples = self$metadata$sample,
+                             low.col = "gray",
+                             high.col = "red") {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
@@ -1950,7 +1964,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     ggplot(cell.prob, aes(cell, prob, col = prob)) + 
       geom_point() +
-      scale_color_gradient(low="gray", high="red") +
+      scale_color_gradient(low=low.col, high=high.col) +
       self$theme +
       labs(x = "Cells", y = "Cell probability", col = "") +
       facet_wrap(~sample, scales = "free_x")
