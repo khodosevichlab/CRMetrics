@@ -291,21 +291,30 @@ addSummaryMetrics <- function(data.path,
 
 #' @title Plot the data as points, as bars as a histogram, or as a violin
 #' @description Plot the data as points, barplot, histogram or violin
+#' @param g ggplot2 object
 #' @param plot.geom The plot.geom to use, "point", "bar", "histogram", or "violin".
+#' @param pal character Palette (default = NULL)
 #' @keywords internal
 #' @return geom
-plotGeom <- function(plot.geom, 
-                    col){
+plotGeom <- function(g, plot.geom, col, pal = NULL) {
   if (plot.geom == "point"){
-    geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
+    g <- g + 
+      geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col))) +
+      if (is.null(pal)) scale_color_hue() else scale_color_manual(values = pal)
   } else if (plot.geom == "bar"){
-    geom <- geom_bar(stat = "identity", position = "dodge", aes(fill = !!sym(col)))
+    g <- g +
+      geom_bar(stat = "identity", position = "dodge", aes(fill = !!sym(col))) +
+      if (is.null(pal)) scale_fill_hue() else scale_fill_manual(values = pal)
   } else if (plot.geom == "histogram"){
-    geom <- geom_histogram(binwidth = 25, aes(fill = !!sym(col)))
+    g <- g +
+      geom_histogram(binwidth = 25, aes(fill = !!sym(col))) +
+      if (is.null(pal)) scale_fill_hue() else scale_fill_manual(values = pal)
   } else if (plot.geom == "violin"){
-    geom <- geom_violin(show.legend = TRUE, aes(fill = !!sym(col)))
+    g <- g +
+      geom_violin(show.legend = TRUE, aes(fill = !!sym(col))) +
+      if (is.null(pal)) scale_fill_hue() else scale_fill_manual(values = pal)
   }
-  return(geom)
+  return(g)
 }
 
 #' @title Calculate percentage of filtered cells

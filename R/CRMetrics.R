@@ -76,7 +76,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                         theme = theme_bw(), 
                         n.cores = 1, 
                         sep.meta = ",",
-                        raw.meta = FALSE) {
+                        raw.meta = FALSE,
+                        pal = NULL) {
     
     if ('CRMetrics' %in% class(data.path)) { # copy constructor
       for (n in ls(data.path)) {
@@ -106,6 +107,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$data.path <- data.path
     self$verbose <- verbose
     self$theme <- theme
+    self$pal <- pal
     
     # Metadata
     if (is.null(metadata)) {
@@ -245,6 +247,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param exact logical Whether to calculate exact p values (default = FALSE).
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @param second.comp.group character Second comparison metric, must match a column name of metadata (default = NULL).
+  #' @param pal character Plotting palette (default = NULL)
   #' @return ggplot2 object
   #' @examples
   #' sample.names <- c("sample1", "sample2")
@@ -273,8 +276,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                          h.adj = 0.05, 
                          exact = FALSE, 
                          metadata = self$metadata, 
-                         second.comp.group = NULL) {
-    comp.group %<>% checkCompGroup(comp.group, self$verbose)
+                         second.comp.group = NULL,
+                         pal = self$pal) {
+    comp.group %<>% checkCompGroup("sample", self$verbose)
     if (!is.null(second.comp.group)) {
       second.comp.group %<>% checkCompGroup(second.comp.group, self$verbose)
     } else {
@@ -296,6 +300,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
      g %<>% addPlotStatsSamples(comp.group, metadata, h.adj, exact, second.comp.group)
     }
     
+    if (!is.null(pal))
+      g <- g + scale_fill_manual(values = pal)
     return(g)
   },
   
@@ -313,6 +319,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param se logical For regression lines, show SE (default = FALSE)
   #' @param group.reg.lines logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)
   #' @param secondary.testing logical Whether to show post hoc testing (default = TRUE)
+  #' @param pal character Plotting palette (default = NULL)
   #' @return ggplot2 object
   #' @examples
   #' \donttest{
@@ -345,7 +352,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 plot.geom = "bar", 
                                 se = FALSE, 
                                 group.reg.lines = FALSE, 
-                                secondary.testing = TRUE) {
+                                secondary.testing = TRUE,
+                                pal = self$pal) {
     # Checks
     comp.group %<>% checkCompGroup("sample", self$verbose)
     if (is.null(plot.geom)) {
@@ -359,14 +367,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         unique()
     } else {
       # check if selected metrics are available
-      difs <- setdiff(metrics, self$summary.metrics$metric %>% unique())
+      difs <- setdiff(metrics, summary.metrics$metric %>% unique())
       if ("samples per group" %in% difs) difs <- difs[difs != "samples per group"]
       if (length(difs) > 0) stop(paste0("The following 'metrics' are not valid: ",paste(difs, collapse=" ")))
     }
     
     # if samples per group is one of the metrics to plot use the plotSamples function to plot
     if ("samples per group" %in% metrics){
-      sample.plot <- self$plotSamples(comp.group, h.adj, exact, metadata, second.comp.group)
+      sample.plot <- self$plotSamples(comp.group, h.adj, exact, metadata, second.comp.group, pal)
       metrics <- metrics[metrics != "samples per group"]
     }
     
@@ -377,18 +385,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filter(metric == met) %>%
           merge(metadata, by = "sample")
         
+        # Create ggplot object
+        g <- tmp %>% 
+          ggplot(aes(!!sym(comp.group), value)) + 
+          self$theme
+        
+        # Add geom + palette
         if (is.null(second.comp.group)) {
-          g <- tmp %>%
-            ggplot(aes(x = !!sym(comp.group), y = value)) +
-            plotGeom(plot.geom, col = comp.group) + 
-            labs(y = met, x = element_blank()) +
-            self$theme
+          g %<>% 
+            plotGeom(plot.geom, col = comp.group, pal)
+          g <- g + 
+            labs(y = met, x = element_blank())
         } else {
-          g <- tmp %>% 
-            ggplot(aes(!!sym(comp.group), value)) +
-            plotGeom(plot.geom, col = second.comp.group) + 
-            labs(y = met, x = comp.group) +
-            self$theme
+          g %<>% 
+            plotGeom(plot.geom, col = second.comp.group, pal)
+          g <- g +
+            labs(y = met, x = comp.group)
         }
         
         if (is.numeric(metadata[[comp.group]])) {
@@ -459,8 +471,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @param metrics character Metrics to plot. NULL plots both plots (default = NULL).
   #' @param plot.geom character How to plot the data (default = "violin").
-  #' @param data.path character Path to cellranger count data (default = self$data.path).
+  #' @param data.path character Path to Cell Ranger count data (default = self$data.path).
   #' @param hline logical Whether to show median as horizontal line (default = TRUE)
+  #' @param pal character Plotting palette (default = NULL)
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
@@ -486,9 +499,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                  detailed.metrics = self$detailed.metrics, 
                                  metadata = self$metadata, 
                                  metrics = NULL, 
-                                 plot.geom = "violin", 
-                                 data.path = self$data.path, 
-                                 hline = TRUE){
+                                 plot.geom = "violin",
+                                 hline = TRUE,
+                                 pal = self$pal){
     # Checks
     if (is.null(detailed.metrics)) stop("'detailed.metrics' not calculated. Please run 'addDetailedMetrics()'.")
     comp.group %<>% checkCompGroup("sample", self$verbose)
@@ -513,8 +526,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filter(metric == met) %>%
           merge(metadata, by = "sample")
         
-        g <- ggplot(tmp, aes(x = sample, y = value)) +
-          plotGeom(plot.geom, col = comp.group) +  
+        g <- ggplot(tmp, aes(x = sample, y = value))
+        g %<>% 
+          plotGeom(plot.geom, comp.group, pal)
+        g <-  g +  
           {if (plot.geom == "violin") scale_y_log10()} +
           {if (hline) geom_hline(yintercept = median(tmp$value))} +
           labs(y = met, x = element_blank()) +
@@ -554,6 +569,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
   #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @param pal character Plotting palette (default = NULL)
   #' @param ... Plotting parameters passed to `sccore::embeddingPlot`.
   #' @return ggplot2 object
   #' @examples
@@ -593,6 +609,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                            species = c("human","mouse"), 
                            size = 0.3,
                            sep = "!!",
+                           pal = self$pal,
                            ...) {
     checkPackageInstalled("conos", cran = TRUE)
     if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'embedding').")
@@ -629,7 +646,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         label <- "labels"
       } 
       doublets %<>% setNames(rownames(dres))
-      g <- self$con$plotGraph(colors = doublets, title = paste(doublet.method,label, collapse = " "), size = size, ...)
+      g <- self$con$plotGraph(colors = doublets, title = paste(doublet.method,label, collapse = " "), size = size, palette = pal, ...)
     }
     
     # Mitochondrial fraction
@@ -644,7 +661,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         g <- self$con$plotGraph(colors = mf * 1, title = main, size = size, ...)
     }
     
-    if (!exists("g")) g <- self$con$plotGraph(...)
+    if (!exists("g")) g <- self$con$plotGraph(palette = pal, ...)
     return(g)
   },
   
@@ -652,6 +669,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric The depth cutoff to color the cells in the embedding (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @param keep.col character Color for density of cells that are kept (default = "E7CDC2")
+  #' @param filter.col Character Color for density of cells to be filtered (default = "A65141")
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
@@ -1850,6 +1869,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the results from the CellBender estimations
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param pal character Plotting palette (default = NULL)
   #' @return A ggplot2 object
   #' @examples 
   #' \dontrun{
@@ -1860,7 +1880,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$plotCbTraining()
   #' }
   plotCbTraining = function(data.path = self$data.path, 
-                            samples = self$metadata$sample) {
+                            samples = self$metadata$sample,
+                            pal = self$pal) {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
@@ -2011,13 +2032,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       arrange(desc(Freq)) %>%
       mutate(Freq = Freq / length(samples),
              Var1 = factor(Var1, levels = Var1))
-
-ggplot(amb, aes(Var1, Freq, fill = Var1)) +
-  geom_bar(stat = "identity") +
-  self$theme +
-  labs(x = "", y = "Proportion") +
-  theme(axis.text.x = element_text(angle = 90)) + 
-  guides(fill = "none")
+    
+    g <- ggplot(amb, aes(Var1, Freq, fill = Var1)) +
+      geom_bar(stat = "identity") +
+      self$theme +
+      labs(x = "", y = "Proportion") +
+      theme(axis.text.x = element_text(angle = 90)) + 
+      guides(fill = "none")
+    
+    if (!is.null(pal)) g <- g + scale_fill_manual(values = pal)
+    
+    return(g)
   },
 
 #' @description Add summary metrics from a list of count matrices
