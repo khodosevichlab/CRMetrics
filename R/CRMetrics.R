@@ -10,7 +10,7 @@
 #' @importFrom tibble add_column
 #' @importFrom ggpmisc stat_poly_eq
 #' @importFrom scales comma
-#' @importFrom sparseMatrixSats colSums2 rowSums2
+#' @importFrom sparseMatrixStats colSums2 rowSums2
 #' @importFrom utils globalVariables
 NULL
 
@@ -18,48 +18,61 @@ utils::globalVariables(c("Valid Barcodes","Fraction Reads in Cells"))
 
 #' CRMetrics class object
 #' 
-#' @description Functions to analyze Cell Ranger count data
+#' @description Functions to analyze Cell Ranger count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
 #' @export
 CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE, 
  public = list(
-   #' @field metadata (default = NULL)
+   #' @field metadata data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
    metadata = NULL,
    
-   #' @field data.path (default = NULL)
+   #' @field data.path character Path(s) to Cell Ranger count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)
    data.path = NULL, 
    
-   #' @field summary.metrics (default = NULL)
+   #' @field cms list List with count matrices (default = NULL)
+   cms = NULL,
+   
+   #' @field cms.preprocessed list List with preprocessed count matrices after $doPreprocessing() (default = NULL)
+   cms.preprocessed = NULL,
+   
+   #' @field cms.raw list List with raw, unfiltered count matrices, i.e., including all CBs detected also empty droplets (default = NULL)
+   cms.raw = NULL,
+   
+   #' @field summary.metrics data.frame Summary metrics from Cell Ranger (default = NULL)
    summary.metrics = NULL,
    
-   #' @field detailed.metrics (default = NULL)
+   #' @field detailed.metrics data.frame Detailed metrics, i.e., no. genes and UMIs per cell (default = NULL)
    detailed.metrics = NULL, 
    
-   #' @field comp.group (default = NULL)
+   #' @field comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)
    comp.group = NULL,
    
-   #' @field verbose (default = TRUE)
+   #' @field verbose logical Print messages or not (default = TRUE)
    verbose = TRUE,
    
-   #' @field theme (default = NULL)
-   theme = NULL,
+   #' @field theme ggplot2 theme (default: theme_bw())
+   theme = ggplot2::theme_bw(),
    
-   #' @field n.cores (default = 1)
+   #' @field pal Plotting palette (default = NULL)
+   pal = NULL,
+   
+   #' @field n.cores numeric Number of cores for calculations (default = 1)
    n.cores = 1,
   
   #' Initialize a CRMetrics object
   #' @description To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
   #' @param data.path character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).
-  #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL).
+  #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
   #' @param cms list List with count matrices (default = NULL)
   #' @param sample.names character Sample names. Only relevant is cms is provided (default = NULL)
   #' @param unique.names logical Create unique cell names. Only relevant if cms is provided (default = TRUE)
   #' @param sep.cells character Sample-cell separator. Only relevant if cms is provided and `unique.names=TRUE` (default = "!!")
-  #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).
-  #' @param verbose logical Print messages or not (default = TRUE).
-  #' @param theme ggplot2 theme (default: theme_bw()).
-  #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
+  #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)
+  #' @param verbose logical Print messages or not (default = TRUE)
+  #' @param theme ggplot2 theme (default: theme_bw())
+  #' @param n.cores integer Number of cores for the calculations (default = self$n.cores)
   #' @param sep.meta character Separator for metadata file (default = ",")
   #' @param raw.meta logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)
+  #' @param pal character Plotting palette (default = NULL)
   #' @return CRMetrics object
   #' @examples
   #' \dontrun{

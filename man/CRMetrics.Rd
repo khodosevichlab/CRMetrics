@@ -4,7 +4,7 @@
 \alias{CRMetrics}
 \title{CRMetrics class object}
 \description{
-Functions to analyze Cell Ranger count data
+Functions to analyze Cell Ranger count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
 }
 \examples{
 
@@ -396,7 +396,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$getConosDepth`
+## Method `CRMetrics$getDepth`
 ## ------------------------------------------------
 
 \donttest{
@@ -418,8 +418,8 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 crm$doPreprocessing()
 crm$createEmbedding()
 
-# Get Conos depth
-crm$getConosDepth()
+# Get depth
+crm$getDepth()
 } else {
 message("Package 'conos' not available.")
 }
@@ -644,21 +644,29 @@ crm$plotCbCells()
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{metadata}}{(default = NULL)}
+\item{\code{metadata}}{data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
-\item{\code{data.path}}{(default = NULL)}
+\item{\code{data.path}}{character Path(s) to Cell Ranger count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)}
 
-\item{\code{summary.metrics}}{(default = NULL)}
+\item{\code{cms}}{list List with count matrices (default = NULL)}
 
-\item{\code{detailed.metrics}}{(default = NULL)}
+\item{\code{cms.preprocessed}}{list List with preprocessed count matrices after $doPreprocessing() (default = NULL)}
 
-\item{\code{comp.group}}{(default = NULL)}
+\item{\code{cms.raw}}{list List with raw, unfiltered count matrices, i.e., including all CBs detected also empty droplets (default = NULL)}
 
-\item{\code{verbose}}{(default = TRUE)}
+\item{\code{summary.metrics}}{data.frame Summary metrics from Cell Ranger (default = NULL)}
 
-\item{\code{theme}}{(default = NULL)}
+\item{\code{detailed.metrics}}{data.frame Detailed metrics, i.e., no. genes and UMIs per cell (default = NULL)}
 
-\item{\code{n.cores}}{(default = 1)
+\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
+
+\item{\code{verbose}}{logical Print messages or not (default = TRUE)}
+
+\item{\code{theme}}{ggplot2 theme (default: theme_bw())}
+
+\item{\code{pal}}{Plotting palette (default = NULL)}
+
+\item{\code{n.cores}}{numeric Number of cores for calculations (default = 1)
 Initialize a CRMetrics object}
 }
 \if{html}{\out{</div>}}
@@ -681,7 +689,7 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-filterCms}{\code{CRMetrics$filterCms()}}
 \item \href{#method-CRMetrics-selectMetrics}{\code{CRMetrics$selectMetrics()}}
 \item \href{#method-CRMetrics-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
-\item \href{#method-CRMetrics-getConosDepth}{\code{CRMetrics$getConosDepth()}}
+\item \href{#method-CRMetrics-getDepth}{\code{CRMetrics$getDepth()}}
 \item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
 \item \href{#method-CRMetrics-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
 \item \href{#method-CRMetrics-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
@@ -717,7 +725,8 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
   theme = theme_bw(),
   n.cores = 1,
   sep.meta = ",",
-  raw.meta = FALSE
+  raw.meta = FALSE,
+  pal = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -726,7 +735,7 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
 \describe{
 \item{\code{data.path}}{character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).}
 
-\item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL).}
+\item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
 \item{\code{cms}}{list List with count matrices (default = NULL)}
 
@@ -736,17 +745,19 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
 
 \item{\code{sep.cells}}{character Sample-cell separator. Only relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
 
-\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).}
+\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
 
-\item{\code{verbose}}{logical Print messages or not (default = TRUE).}
+\item{\code{verbose}}{logical Print messages or not (default = TRUE)}
 
-\item{\code{theme}}{ggplot2 theme (default: theme_bw()).}
+\item{\code{theme}}{ggplot2 theme (default: theme_bw())}
 
-\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores)}
 
 \item{\code{sep.meta}}{character Separator for metadata file (default = ",")}
 
 \item{\code{raw.meta}}{logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)}
+
+\item{\code{pal}}{character Plotting palette (default = NULL)}
 }
 \if{html}{\out{</div>}}
 }
@@ -891,7 +902,8 @@ Plot the number of samples.
   h.adj = 0.05,
   exact = FALSE,
   metadata = self$metadata,
-  second.comp.group = NULL
+  second.comp.group = NULL,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -907,6 +919,8 @@ Plot the number of samples.
 \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
 
 \item{\code{second.comp.group}}{character Second comparison metric, must match a column name of metadata (default = NULL).}
+
+\item{\code{pal}}{character Plotting palette (default = NULL)}
 }
 \if{html}{\out{</div>}}
 }
@@ -962,7 +976,8 @@ Plot all summary stats or a selected list.
   plot.geom = "bar",
   se = FALSE,
   group.reg.lines = FALSE,
-  secondary.testing = TRUE
+  secondary.testing = TRUE,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -994,6 +1009,8 @@ Plot all summary stats or a selected list.
 \item{\code{group.reg.lines}}{logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)}
 
 \item{\code{secondary.testing}}{logical Whether to show post hoc testing (default = TRUE)}
+
+\item{\code{pal}}{character Palette (default = self$pol)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1038,8 +1055,8 @@ Plot detailed metrics from the detailed.metrics object
   metadata = self$metadata,
   metrics = NULL,
   plot.geom = "violin",
-  data.path = self$data.path,
-  hline = TRUE
+  hline = TRUE,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -1056,9 +1073,11 @@ Plot detailed metrics from the detailed.metrics object
 
 \item{\code{plot.geom}}{character How to plot the data (default = "violin").}
 
-\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
-
 \item{\code{hline}}{logical Whether to show median as horizontal line (default = TRUE)}
+
+\item{\code{pal}}{character Plotting palette (default = NULL)}
+
+\item{\code{data.path}}{character Path to Cell Ranger count data (default = self$data.path).}
 }
 \if{html}{\out{</div>}}
 }
@@ -1108,6 +1127,7 @@ Plot cells in embedding using Conos and color by depth and doublets.
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
+  pal = self$pal,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -1132,6 +1152,8 @@ Plot cells in embedding using Conos and color by depth and doublets.
 \item{\code{size}}{numeric Dot size (default = 0.3)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{pal}}{character Plotting palette (default = NULL)}
 
 \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
 }
@@ -1181,7 +1203,13 @@ message("Package 'pagoda2' not available.")
 \subsection{Method \code{plotDepth()}}{
 Plot the sequencing depth in histogram.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(cutoff = 1000, samples = self$metadata$sample, sep = "!!")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(
+  cutoff = 1000,
+  samples = self$metadata$sample,
+  sep = "!!",
+  keep.col = "E7CDC2",
+  filter.col = "A65141"
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1192,6 +1220,10 @@ Plot the sequencing depth in histogram.
 \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{keep.col}}{character Color for density of cells that are kept (default = "E7CDC2")}
+
+\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "A65141")}
 }
 \if{html}{\out{</div>}}
 }
@@ -1244,7 +1276,9 @@ Plot the mitochondrial fraction in histogram.
   cutoff = 0.05,
   species = c("human", "mouse"),
   samples = self$metadata$sample,
-  sep = "!!"
+  sep = "!!",
+  keep.col = "E7CDC2",
+  filter.col = "A65141"
 )}\if{html}{\out{</div>}}
 }
 
@@ -1258,6 +1292,10 @@ Plot the mitochondrial fraction in histogram.
 \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{keep.col}}{character Color for density of cells that are kept (default = "E7CDC2")}
+
+\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "A65141")}
 }
 \if{html}{\out{</div>}}
 }
@@ -1452,7 +1490,7 @@ Create Conos embedding.
   verbose = self$verbose,
   n.cores = self$n.cores,
   arg.buildGraph = list(),
-  arg.findCommunities = list(n.iterations = 1),
+  arg.findCommunities = list(),
   arg.embedGraph = list(method = "UMAP")
 )}\if{html}{\out{</div>}}
 }
@@ -1468,7 +1506,7 @@ Create Conos embedding.
 
 \item{\code{arg.buildGraph}}{list A list with additional arguments for the \code{buildGraph} function in Conos (default = list())}
 
-\item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list(n.iterations = 1)) # Should be updated when Conos issue #123 is resolved}
+\item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list())}
 
 \item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP))}
 }
@@ -1524,7 +1562,8 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
   species = c("human", "mouse"),
   samples.to.exclude = NULL,
   verbose = self$verbose,
-  sep = "!!"
+  sep = "!!",
+  raw = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1546,6 +1585,8 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \item{\code{verbose}}{logical Show progress (default = self$verbose)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{raw}}{boolean Filter on raw, unfiltered count matrices. Usually not intended (default = FALSE)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1647,6 +1688,7 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
+  cols = c("grey80", "red", "blue", "green", "yellow", "black", "pink", "purple"),
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -1671,6 +1713,8 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
 \item{\code{size}}{numeric Dot size (default = 0.3)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{cols}}{character Colors used for plotting (default = c("grey80","red","blue","green","yellow","black","pink","purple"))}
 
 \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
 }
@@ -1717,12 +1761,12 @@ message("Package 'pagoda2' not available.")
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-getConosDepth"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-getConosDepth}{}}}
-\subsection{Method \code{getConosDepth()}}{
+\if{html}{\out{<a id="method-CRMetrics-getDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getDepth}{}}}
+\subsection{Method \code{getDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getDepth()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
@@ -1749,8 +1793,8 @@ crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"),
 crm$doPreprocessing()
 crm$createEmbedding()
 
-# Get Conos depth
-crm$getConosDepth()
+# Get depth
+crm$getDepth()
 } else {
 message("Package 'conos' not available.")
 }
@@ -2100,7 +2144,8 @@ Plot the results from the CellBender estimations
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbTraining(
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -2110,6 +2155,8 @@ Plot the results from the CellBender estimations
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{pal}}{character Plotting palette (default = NULL)}
 }
 \if{html}{\out{</div>}}
 }
@@ -2139,7 +2186,9 @@ Plot the CellBender assigned cell probabilities
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCellProbs(
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  low.col = "gray",
+  high.col = "red"
 )}\if{html}{\out{</div>}}
 }
 
@@ -2149,6 +2198,10 @@ Plot the CellBender assigned cell probabilities
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{low.col}}{character Color for low probabilities (default = "gray")}
+
+\item{\code{high.col}}{character Color for high probabilities (default = "red")}
 }
 \if{html}{\out{</div>}}
 }

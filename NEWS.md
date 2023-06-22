@@ -1,3 +1,12 @@
+# CRMetrics 0.3.0
+
+* Updated createEmbedding upon resolve of https://github.com/kharchenkolab/conos/issues/123
+* Updated DESCRIPTION
+* Added checks for detectDoublets
+* Added possibility for multiple paths for "data.path" argument in initialize
+* Changed depth calculation from Conos depth to raw depth (= colSums)
+* Added plotting palette to object
+
 # CRMetrics 0.2.3
 
 * Updated tests and examples to pass CRAN checks
