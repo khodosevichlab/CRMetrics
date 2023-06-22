@@ -1179,6 +1179,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param samples.to.exclude character Sample names to exclude (default = NULL)
   #' @param verbose logical Show progress (default = self$verbose)
   #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @param raw boolean Filter on raw, unfiltered count matrices. Usually not intended (default = FALSE)
   #' @return list of filtered count matrices
   #' @examples 
   #' \donttest{
@@ -1217,16 +1218,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        species = c("human","mouse"),
                        samples.to.exclude = NULL,
                        verbose = self$verbose,
-                       sep = "!!") {
+                       sep = "!!",
+                       raw = FALSE) {
     # Preparations
     species %<>%
       tolower() %>% 
       match.arg(c("human","mouse"))
     
     # Extract CMs
-    cms <- self$cms
+    if (!raw) cms <- self$cms else cms <- self$cms.raw
     
-    if (is.null(cms)) stop("$cms is NULL. filterCms depends on this object. Aborting")
+    if (is.null(cms)) stop(if (raw) "$cms.raw" else "$cms"," is NULL. filterCms depends on this object. Aborting")
     
     # Exclude samples
     if (!is.null(samples.to.exclude)) {
