@@ -682,8 +682,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric The depth cutoff to color the cells in the embedding (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
-  #' @param keep.col character Color for density of cells that are kept (default = "E7CDC2")
-  #' @param filter.col Character Color for density of cells to be filtered (default = "A65141")
+  #' @param keep.col character Color for density of cells that are kept (default = "#E7CDC2")
+  #' @param filter.col Character Color for density of cells to be filtered (default = "#A65141")
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
@@ -717,8 +717,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotDepth = function(cutoff = 1e3, 
                        samples = self$metadata$sample,
                        sep = "!!",
-                       keep.col = "E7CDC2",
-                       filter.col = "A65141"){
+                       keep.col = "#E7CDC2",
+                       filter.col = "#A65141"){
     # Checks
     checkPackageInstalled("conos", cran = TRUE)
     if (is.null(self$con)) {
@@ -789,8 +789,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human")
   #' @param samples character Sample names to include for plotting (default = $metadata$sample)
   #' @param sep character Separator for creating unique cell names (default = "!!")
-  #' @param keep.col character Color for density of cells that are kept (default = "E7CDC2")
-  #' @param filter.col Character Color for density of cells to be filtered (default = "A65141")
+  #' @param keep.col character Color for density of cells that are kept (default = "#E7CDC2")
+  #' @param filter.col Character Color for density of cells to be filtered (default = "#A65141")
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
@@ -825,8 +825,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                               species = c("human","mouse"),
                               samples = self$metadata$sample,
                               sep = "!!",
-                              keep.col = "E7CDC2",
-                              filter.col = "A65141"){
+                              keep.col = "#E7CDC2",
+                              filter.col = "#A65141"){
     # Checks
     checkPackageInstalled("conos", cran = TRUE)
     if (is.null(self$con)) {

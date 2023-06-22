@@ -1010,7 +1010,7 @@ Plot all summary stats or a selected list.
 
 \item{\code{secondary.testing}}{logical Whether to show post hoc testing (default = TRUE)}
 
-\item{\code{pal}}{character Palette (default = self$pol)}
+\item{\code{pal}}{character Plotting palette (default = NULL)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1207,8 +1207,8 @@ Plot the sequencing depth in histogram.
   cutoff = 1000,
   samples = self$metadata$sample,
   sep = "!!",
-  keep.col = "E7CDC2",
-  filter.col = "A65141"
+  keep.col = "#E7CDC2",
+  filter.col = "#A65141"
 )}\if{html}{\out{</div>}}
 }
 
@@ -1221,9 +1221,9 @@ Plot the sequencing depth in histogram.
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 
-\item{\code{keep.col}}{character Color for density of cells that are kept (default = "E7CDC2")}
+\item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
 
-\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "A65141")}
+\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
 }
 \if{html}{\out{</div>}}
 }
@@ -1277,8 +1277,8 @@ Plot the mitochondrial fraction in histogram.
   species = c("human", "mouse"),
   samples = self$metadata$sample,
   sep = "!!",
-  keep.col = "E7CDC2",
-  filter.col = "A65141"
+  keep.col = "#E7CDC2",
+  filter.col = "#A65141"
 )}\if{html}{\out{</div>}}
 }
 
@@ -1293,9 +1293,9 @@ Plot the mitochondrial fraction in histogram.
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 
-\item{\code{keep.col}}{character Color for density of cells that are kept (default = "E7CDC2")}
+\item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
 
-\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "A65141")}
+\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
 }
 \if{html}{\out{</div>}}
 }
