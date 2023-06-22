@@ -1720,7 +1720,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Preparations
     checkDataPath(data.path)
     inputs <- getH5Paths(data.path, samples, "raw")
-    outputs <- sapply(samples, \(sample) paste0(data.path,sample,"/outs/cellbender.h5")) %>% 
+    outputs <- data.path %>% 
+      pathsToList(samples) %>% 
+      sapply(\(sample) paste0(sample[2],sample[1],"/outs/cellbender.h5")) %>% 
       setNames(samples)
     
     if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
@@ -2125,9 +2127,10 @@ runSoupX = function(data.path = self$data.path,
   
   # Create SoupX objects
   if (verbose) message(paste0(Sys.time()," Loading data"))
-  soupx.list <- samples %>% 
+  soupx.list <- data.path %>% 
+    pathsToList(samples) %>% 
     plapply(\(sample) {
-      arg <- list(dataDir = paste(data.path,sample,"outs", sep = "/")) %>% 
+      arg <- list(dataDir = paste(sample[2],sample[1],"outs", sep = "/")) %>% 
         append(arg.load10X)
       out <- do.call(SoupX::load10X, arg)
       return(out)

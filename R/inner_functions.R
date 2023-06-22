@@ -67,10 +67,11 @@ read10x <- function(data.path,
   checkPackageInstalled("data.table", cran = TRUE)
   if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full.path <- sample.names %>% 
+  full.path <- data.path %>% 
+    pathsToList(sample.names) %>% 
     sapply(\(sample) {
       if (raw) pat <- glob2rx("raw_*_bc_matri*") else pat <- glob2rx("filtered_*_bc_matri*")
-      dir(paste(data.path,sample,"outs", sep = "/"), pattern = pat, full.names = TRUE) %>% 
+      dir(paste(sample[2],sample[1],"outs", sep = "/"), pattern = pat, full.names = TRUE) %>% 
         .[!grepl(".h5", .)]
     })
   
@@ -259,13 +260,7 @@ addSummaryMetrics <- function(data.path,
   if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
   metrics <- data.path %>% 
-    lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
-             .[. %in% samples] %>% 
-             data.frame(sample = ., path = path)) %>% 
-    bind_rows() %>% 
-    t() %>% 
-    data.frame() %>% 
-    as.list() %>% 
+    pathsToList(metadata$sample) %>% 
     plapply(\(s) {
       tmp <- read.table(dir(paste(s[2],s[1],"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
         mutate(., across(.cols = grep("%", .),
@@ -483,12 +478,13 @@ getH5Paths <- function(data.path,
     match.arg(c("raw","filtered","cellbender","cellbender_filtered"))
   
   # Get H5 paths
-  paths <- samples %>% 
+  paths <- data.path %>% 
+    pathsToList(samples) %>% 
     sapply(\(sample) {
       if (grepl("cellbender", type)) {
-        paste0(data.path,"/",sample,"/outs/",type,".h5")
+        paste0(sample[2],"/",sample[1],"/outs/",type,".h5")
       } else {
-        dir(paste0(data.path,sample,"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
+        dir(paste0(sample[2],sample[1],"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
       }
     }) %>% 
     setNames(samples)
@@ -569,4 +565,15 @@ filterVector <- function(num.vec,
 #' @keywords internal
 checkDataPath <- function(data.path) {
   if (is.null(data.path)) stop("'data.path' cannot be NULL.")
+}
+
+pathsToList <- function(data.path, samples) {
+  tmp <- data.path %>% 
+    lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
+             {if (!is.null(samples)) .[. %in% samples] else . } %>% 
+             data.frame(sample = ., path = path)) %>% 
+    bind_rows() %>% 
+    t() %>% 
+    data.frame() %>% 
+    as.list()
 }
