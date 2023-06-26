@@ -260,7 +260,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param exact logical Whether to calculate exact p values (default = FALSE).
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @param second.comp.group character Second comparison metric, must match a column name of metadata (default = NULL).
-  #' @param pal character Plotting palette (default = NULL)
+  #' @param pal character Plotting palette (default = self$pal)
   #' @return ggplot2 object
   #' @examples
   #' sample.names <- c("sample1", "sample2")
@@ -332,7 +332,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param se logical For regression lines, show SE (default = FALSE)
   #' @param group.reg.lines logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)
   #' @param secondary.testing logical Whether to show post hoc testing (default = TRUE)
-  #' @param pal character Plotting palette (default = NULL)
+  #' @param pal character Plotting palette (default = self$pal)
   #' @return ggplot2 object
   #' @examples
   #' \donttest{
@@ -486,7 +486,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param plot.geom character How to plot the data (default = "violin").
   #' @param data.path character Path to Cell Ranger count data (default = self$data.path).
   #' @param hline logical Whether to show median as horizontal line (default = TRUE)
-  #' @param pal character Plotting palette (default = NULL)
+  #' @param pal character Plotting palette (default = self$pal)
   #' @return ggplot2 object
   #' @examples 
   #' \donttest{
@@ -622,7 +622,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                            species = c("human","mouse"), 
                            size = 0.3,
                            sep = "!!",
-                           pal = self$pal,
+                           pal = NULL,
                            ...) {
     checkPackageInstalled("conos", cran = TRUE)
     if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'embedding').")
@@ -1894,7 +1894,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the results from the CellBender estimations
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
-  #' @param pal character Plotting palette (default = NULL)
+  #' @param pal character Plotting palette (default = self$pal)
   #' @return A ggplot2 object
   #' @examples 
   #' \dontrun{
@@ -2031,6 +2031,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric Cutoff of ambient gene expression to use to extract ambient genes per sample
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param pal character Plotting palette (default = self$pal)
   #' @return A ggplot2 object
   #' @examples 
   #' \dontrun{
@@ -2042,7 +2043,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   plotCbAmbGenes = function(cutoff = 0.005, 
                             data.path = self$data.path, 
-                            samples = self$metadata$sample) {
+                            samples = self$metadata$sample,
+                            pal = self$pal) {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
     paths <- getH5Paths(data.path, samples, "cellbender")
@@ -2057,21 +2059,27 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           filter(exp >= cutoff)
       }) %>% 
       setNames(samples) %>% 
-      bind_rows() %>%
-      {table(.$gene.names)} %>%
+      bind_rows() %$%
+      table(gene.names) %>%
       as.data.frame() %>% 
       arrange(desc(Freq)) %>%
       mutate(Freq = Freq / length(samples),
-             Var1 = factor(Var1, levels = Var1))
+             gene.names = factor(gene.names, levels = gene.names))
     
-    g <- ggplot(amb, aes(Var1, Freq, fill = Var1)) +
+    g <- ggplot(amb, aes(gene.names, Freq, fill = gene.names)) +
       geom_bar(stat = "identity") +
       self$theme +
       labs(x = "", y = "Proportion") +
       theme(axis.text.x = element_text(angle = 90)) + 
       guides(fill = "none")
     
-    if (!is.null(pal)) g <- g + scale_fill_manual(values = pal)
+    if (!is.null(pal)) {
+      gene.len <- amb$gene.names %>% 
+        unique() %>% 
+        length()
+      
+      if (length(pal) < gene.len) warning(paste0("Palette has ",length(pal)," colors but there are ",gene.len," genes, omitting palette.")) else g <- g + scale_fill_manual(values = pal)
+    }
     
     return(g)
   },
