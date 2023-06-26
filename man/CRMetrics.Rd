@@ -920,7 +920,7 @@ Plot the number of samples.
 
 \item{\code{second.comp.group}}{character Second comparison metric, must match a column name of metadata (default = NULL).}
 
-\item{\code{pal}}{character Plotting palette (default = NULL)}
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1010,7 +1010,7 @@ Plot all summary stats or a selected list.
 
 \item{\code{secondary.testing}}{logical Whether to show post hoc testing (default = TRUE)}
 
-\item{\code{pal}}{character Plotting palette (default = NULL)}
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1075,7 +1075,7 @@ Plot detailed metrics from the detailed.metrics object
 
 \item{\code{hline}}{logical Whether to show median as horizontal line (default = TRUE)}
 
-\item{\code{pal}}{character Plotting palette (default = NULL)}
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 
 \item{\code{data.path}}{character Path to Cell Ranger count data (default = self$data.path).}
 }
@@ -1127,7 +1127,7 @@ Plot cells in embedding using Conos and color by depth and doublets.
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
-  pal = self$pal,
+  pal = NULL,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -2156,7 +2156,7 @@ Plot the results from the CellBender estimations
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
 
-\item{\code{pal}}{character Plotting palette (default = NULL)}
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -2274,7 +2274,8 @@ Plot the most abundant estimated ambient genes from the CellBender calculations
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbGenes(
   cutoff = 0.005,
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -2286,6 +2287,8 @@ Plot the most abundant estimated ambient genes from the CellBender calculations
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
