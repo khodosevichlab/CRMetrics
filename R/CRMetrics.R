@@ -1184,8 +1184,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
-  #' @param min.transcripts.per.cell numeric Minimal transcripts per cell (default = 100)
-  #' @param depth.cutoff numeric Depth cutoff (default = NULL).
+  #' @param depth.cutoff numeric Depth (transcripts per cell) cutoff (default = NULL).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = NULL).
   #' @param doublets character Doublet detection method to use (default = NULL).
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
@@ -1224,8 +1223,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' message("Package 'pagoda2' not available.")
   #' }
   #' }
-  filterCms = function(min.transcripts.per.cell = 100,
-                       depth.cutoff = NULL, 
+  filterCms = function(depth.cutoff = NULL, 
                        mito.cutoff = NULL, 
                        doublets = NULL,
                        species = c("human","mouse"),
@@ -1233,6 +1231,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                        verbose = self$verbose,
                        sep = "!!",
                        raw = FALSE) {
+    
+    if (verbose) {
+      filters <- c()
+      if (!is.null(depth.cutoff)) filters %<>% c(paste0("depth.cutoff = ",depth.cutoff))
+      if (!is.null(mito.cutoff)) filters %<>% c(paste0("mito.cutoff = ",mito.cutoff," and species = ",species))
+      if (!is.null(doublets)) filters %<>% c(paste0("doublet method = ",doublets))
+      
+      message(paste0("Filtering based on: ",paste(filters, collapse="; ")))
+    }
+    
     # Preparations
     species %<>%
       tolower() %>% 
@@ -1255,9 +1263,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     samples <- cms %>% 
       names()
     
-    # Apply min.transcripts.per.cell
-    if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) >= min.transcripts.per.cell])
-    
     # Depth
     if (!is.null(depth.cutoff)) {
       depth.filter <- self$getDepth() %>% 
@@ -1268,7 +1273,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Mitochondrial fraction
     if (!is.null(mito.cutoff)) {
-      mito.filter <- self$getMitoFraction() %>% 
+      mito.filter <- self$getMitoFraction(species = species) %>% 
         filterVector("mito.cutoff", mito.cutoff, samples, sep) %>% 
         !. # NB, has to be negative
     } else {
@@ -1287,10 +1292,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Get cell index
-    cell.idx <- cms %>% 
-      sapply(colnames) %>% 
-      unlist() %>% 
-      unname()
+    cell.idx <- list(names(depth.filter), 
+                     names(mito.filter), 
+                     names(doublets.filter)) %>% 
+      Reduce(intersect, .)
     
     # Create split vector
     split.vec <- strsplit(cell.idx, sep) %>% 
@@ -1302,13 +1307,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                         doublets = doublets.filter) %>% 
       .[!sapply(., is.null)] %>% 
       lapply(\(filter) filter[cell.idx]) %>% # Ensure same order of cells
-      bind_cols() %>% 
+      bind_cols() %>%
       apply(1, all) %>% 
       split(split.vec)
       
     if (verbose) {
+      cells.total <- cms %>% 
+        sapply(ncol) %>% 
+        sum()
       cells.remove <- sum(!filter.list %>% unlist())
-      cells.total <- length(cell.idx)
+      if (!any(is.null(depth.filter), is.null(mito.filter))) cells.remove <- cells.remove + cells.total - nrow(self$con$embedding)
       cells.percent <- cells.remove / cells.total * 100
       message(paste0(Sys.time()," Removing ",cells.remove," of ", cells.total," cells (",formatC(cells.percent, digits = 3),"%)"))
     }

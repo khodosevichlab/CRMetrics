@@ -1555,7 +1555,6 @@ message("Package 'pagoda2' not available.")
 Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
-  min.transcripts.per.cell = 100,
   depth.cutoff = NULL,
   mito.cutoff = NULL,
   doublets = NULL,
@@ -1570,9 +1569,7 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{min.transcripts.per.cell}}{numeric Minimal transcripts per cell (default = 100)}
-
-\item{\code{depth.cutoff}}{numeric Depth cutoff (default = NULL).}
+\item{\code{depth.cutoff}}{numeric Depth (transcripts per cell) cutoff (default = NULL).}
 
 \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
 
