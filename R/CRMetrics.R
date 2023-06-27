@@ -835,11 +835,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
     
-    mf <- self$getMitoFraction()
+    mf <- self$getMitoFraction(species = species)
     
     mf.zero <- sum(mf == 0) / length(mf) * 100
     
-    if (mf.zero > 95) warning(paste0(mf.zero,"% of all cells does not express mitochondrial genes. Plotting may behave unexpected."))
+    if (mf.zero > 95) warning(paste0(mf.zero,"% of all cells do not express mitochondrial genes. Plotting may behave unexpected."))
     
     # Preparations
     tmp <- mf %>% 
