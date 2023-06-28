@@ -1562,8 +1562,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   #' }
   getDepth = function(cms = self$cms) {
-    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
-    
     cms %>% 
       lapply(\(cm) `names<-`(sparseMatrixStats::colSums2(cm), colnames(cm))) %>% 
       Reduce(c, .)
@@ -1602,23 +1600,29 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' message("Package 'pagoda2' not available.")
   #' }
   #' }
-  getMitoFraction = function(species = c("human", "mouse")) {
-    checkPackageInstalled("conos", cran = TRUE)
+  getMitoFraction = function(species = c("human", "mouse"), cms = self$cms) {
+    # Checks
     species %<>% 
       match.arg(c("human", "mouse"))
-    
+    if (is.null(cms)) stop("Cms is NULL, aborting.")
     if (species=="human") symb <- "MT-" else if (species=="mouse") symb <- "mt-" else stop("Species must either be 'human' or 'mouse'.")
-    tmp <- self$con$samples %>% 
-      lapply(`[[`, "counts") %>% 
+    
+    # Calculate
+    tmp <- cms %>% 
       lapply(\(cm) {
-        tmp.mat <- cm[,grep(symb, colnames(cm))]
-        if (is(tmp.mat, "numeric")) {
+        tmp.mat <- cm[grep(symb, rownames(cm)),]
+        
+        if (inherits(tmp.mat, "numeric")) {
           nom <- tmp.mat
         } else {
-          nom <- sparseMatrixStats::rowSums2(tmp.mat)
+          nom <- sparseMatrixStats::colSums2(tmp.mat)
         }
-        (nom / sparseMatrixStats::rowSums2(cm)) %>% 
-          setNames(cm %>% rownames())
+        
+        out <- (nom / sparseMatrixStats::colSums2(cm)) %>%
+          `names<-`(colnames(cm))
+        out[is.na(out)] <- 0
+        
+        return(out)
       }) %>% 
       Reduce(c, .)
     
@@ -2115,7 +2119,7 @@ addSummaryFromCms = function(cms = self$cms,
                              n.cores = self$n.cores, 
                              verbose = self$verbose) {
   checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
-  if (!is.null(self$summary.metrics)) warning("Overvriting existing summary metrics")
+  if (!is.null(self$summary.metrics)) warning("Overwriting existing summary metrics \n")
   
   if (verbose) message(paste0(Sys.time()," Calculating ",length(cms)," summaries using ", if (n.cores < length(cms)) n.cores else length(cms)," cores"))
   
