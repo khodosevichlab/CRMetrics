@@ -125,9 +125,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Metadata
     if (is.null(metadata)) {
       if (!is.null(data.path)) {
-        self$metadata <- data.frame(sample = list.dirs(data.path, 
-                                                       recursive = FALSE, 
-                                                       full.names = FALSE))
+        self$metadata <- list.dirs(data.path, 
+                                   recursive = FALSE, 
+                                   full.names = FALSE) %>% 
+   .[pathsToList(data.path, .) %>% sapply(\(path) file.exists(paste0(path[2],"/",path[1],"/outs")))] %>% 
+          {data.frame(sample = .)}
       }
     } else {
       if (inherits(metadata, "data.frame")) {
