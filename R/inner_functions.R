@@ -568,7 +568,7 @@ checkDataPath <- function(data.path) {
 }
 
 pathsToList <- function(data.path, samples) {
-  tmp <- data.path %>% 
+  data.path %>% 
     lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
              {if (!is.null(samples)) .[. %in% samples] else . } %>% 
              data.frame(sample = ., path = path)) %>% 
