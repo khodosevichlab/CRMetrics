@@ -1561,15 +1561,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' message("Package 'pagoda2' not available.")
   #' }
   #' }
-  getDepth = function() {
-    checkPackageInstalled("conos", cran = TRUE)
+  getDepth = function(cms = self$cms) {
+    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
     
-    self$con$samples %>% 
-      lapply(`[[`, "misc") %>% 
-      lapply(`[[`, "rawCounts") %>% 
-      lapply(\(x) `names<-`(sparseMatrixStats::rowSums2(x), rownames(x))) %>% 
-      Reduce(c, .) %>% 
-      .[lapply(self$con$samples, conos::getCellNames) %>% unlist()]
+    cms %>% 
+      lapply(\(cm) `names<-`(sparseMatrixStats::colSums2(cm), colnames(cm))) %>% 
+      Reduce(c, .)
   },
   
   #' @description Calculate the fraction of mitochondrial genes.
