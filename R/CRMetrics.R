@@ -676,7 +676,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         g <- self$con$plotGraph(colors = mf * 1, title = main, size = size, ...)
     }
     
-    if (!exists("g")) g <- self$con$plotGraph(palette = pal, ...)
+    if (!exists("g")) g <- self$con$plotGraph(palette = pal, size = size, ...)
     return(g)
   },
   
@@ -1297,6 +1297,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     cell.idx <- list(names(depth.filter), 
                      names(mito.filter), 
                      names(doublets.filter)) %>% 
+      .[!sapply(., is.null)] %>% 
       Reduce(intersect, .)
     
     # Create split vector
