@@ -782,14 +782,8 @@ crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 Function to read in detailed metrics. This is not done upon initialization for speed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
+  cms = self$cms,
   min.transcripts.per.cell = 100,
-  raw = FALSE,
-  symbol = TRUE,
-  sep = "!!",
-  cellbender = FALSE,
-  unique.names = TRUE,
-  data.path = self$data.path,
-  sample.names = self$metadata$sample,
   n.cores = self$n.cores,
   verbose = self$verbose
 )}\if{html}{\out{</div>}}
@@ -798,21 +792,9 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+
 \item{\code{min.transcripts.per.cell}}{numeric Minimal number of transcripts per cell (default = 100)}
-
-\item{\code{raw}}{logical Add raw count matrices from Cell Ranger output. Cannot be combined with \code{cellbender=TRUE} (default = FALSE)}
-
-\item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
-
-\item{\code{sep}}{character Separator for cell names (default = "!!").}
-
-\item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
-
-\item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
-
-\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
-
-\item{\code{sample.names}}{character Vector containing sample names (default = self$metadata$sample).}
 
 \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
 
@@ -1763,9 +1745,16 @@ message("Package 'pagoda2' not available.")
 \subsection{Method \code{getDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getDepth()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getDepth(cms = self$cms)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 data frame
 }
@@ -1811,7 +1800,7 @@ message("Package 'pagoda2' not available.")
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"), cms = self$cms)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1819,7 +1808,7 @@ Calculate the fraction of mitochondrial genes.
 \describe{
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
 
-\item{\code{force}}{logical Force update of stored vector (default = FALSE)}
+\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
 }
 \if{html}{\out{</div>}}
 }
@@ -2085,31 +2074,46 @@ crm$getTotalDroplets()
 Add a list of count matrices to the CRMetrics object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
-  cms,
-  sample.names = NULL,
+  cms = NULL,
+  data.path = self$data.path,
+  sample.names = self$metadata$sample,
+  cellbender = FALSE,
+  raw = FALSE,
+  symbol = TRUE,
   unique.names = TRUE,
   sep = "!!",
-  n.cores = self$n.cores
+  n.cores = self$n.cores,
+  verbose = self$verbose
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{list List of count matrices}
+\item{\code{cms}}{list List of (sparse) count matrices (default = NULL)}
 
-\item{\code{sample.names}}{character Vector of sample names. If NULL, sample.names are extracted from cms (default = NULL)}
+\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
 
-\item{\code{unique.names}}{logical Create unique cell names (default = TRUE)}
+\item{\code{sample.names}}{character Vector of sample names. If NULL, sample.names are extracted from cms (default = self$metadata$sample)}
+
+\item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
+
+\item{\code{raw}}{logical Add raw count matrices from Cell Ranger output. Cannot be combined with \code{cellbender=TRUE} (default = FALSE)}
+
+\item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
+
+\item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
 
 \item{\code{sep}}{character Separator used to create unique cell names (default = "!!")}
 
 \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
+
+\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A ggplot2 object
+Add list of (sparse) count matrices to R6 class object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}

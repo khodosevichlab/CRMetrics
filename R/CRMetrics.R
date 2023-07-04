@@ -165,14 +165,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
+  #' @param cms list List of (sparse) count matrices (default = self$cms)
   #' @param min.transcripts.per.cell numeric Minimal number of transcripts per cell (default = 100)
-  #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE` (default = FALSE)
-  #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
-  #' @param sep character Separator for cell names (default = "!!").
-  #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
-  #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
-  #' @param data.path character Path to cellranger count data (default = self$data.path).
-  #' @param sample.names character Vector containing sample names (default = self$metadata$sample).
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
   #' @param verbose logical Print messages or not (default = self$verbose).
   #' @return Count matrices
@@ -191,41 +185,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Run function
   #' crm$addDetailedMetrics()
-  addDetailedMetrics = function(min.transcripts.per.cell = 100, 
-                                raw = FALSE,
-                                symbol = TRUE, 
-                                sep = "!!", 
-                                cellbender = FALSE, 
-                                unique.names = TRUE, 
-                                data.path = self$data.path, 
-                                sample.names = self$metadata$sample, 
+  addDetailedMetrics = function(cms = self$cms,
+                                min.transcripts.per.cell = 100,
                                 n.cores = self$n.cores, 
                                 verbose = self$verbose) {
-    # Read data
-    if (is.null(self$cms)) {
-      if (cellbender) {
-        self$cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
-      } else {
-        self$cms <- read10x(data.path = data.path, sample.names = sample.names, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose)
-      }
-    } else {
-      message("CMs already present. To overwrite, set $cms = NULL and rerun this function.")
-    }
-    
-    # Check for unrealistic large samples
-    size.check <- self$cms %>% 
+    # Checks
+    if (is.null(self$detailed.metrics)) stop("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
+      
+    size.check <- cms %>% 
       sapply(dim) %>% 
       apply(2, prod) %>% 
       {. > 2^31-1}
     if (any(size.check)) warning(message(paste0("Unrealistic large samples detected that are larger than what can be handled in R. Consider removing ",paste(size.check[size.check] %>% names(), collapse = " "),". If kept, you may experience errors.")))
     
     # Calculate metrics
-    if (is.null(self$detailed.metrics)) {
-      if (min.transcripts.per.cell > 0) cms <- self$cms %>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
-      self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
-    } else {
-      message("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
-    }
+    if (min.transcripts.per.cell > 0) cms %<>% lapply(\(cm) cm[,sparseMatrixStats::colSums2(cm) > min.transcripts.per.cell])
+    
+    self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
   },
   
   #' @description Add comparison group for statistical testing.
@@ -1532,6 +1508,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Extract sequencing depth from Conos object.
+  #' @param cms list List of (sparse) count matrices (default = self$cms)
   #' @return data frame
   #' @examples 
   #' \donttest{
@@ -1570,7 +1547,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' @description Calculate the fraction of mitochondrial genes.
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
-  #' @param force logical Force update of stored vector (default = FALSE)
+  #' @param cms list List of (sparse) count matrices (default = self$cms)
   #' @return data frame
   #' @examples 
   #' \donttest{
@@ -1837,12 +1814,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Add a list of count matrices to the CRMetrics object.
-  #' @param cms list List of count matrices
-  #' @param sample.names character Vector of sample names. If NULL, sample.names are extracted from cms (default = NULL)
-  #' @param unique.names logical Create unique cell names (default = TRUE)
+  #' @param cms list List of (sparse) count matrices (default = NULL)
+  #' @param data.path character Path to cellranger count data (default = self$data.path).
+  #' @param sample.names character Vector of sample names. If NULL, sample.names are extracted from cms (default = self$metadata$sample)
+  #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
+  #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE` (default = FALSE)
+  #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
+  #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
   #' @param sep character Separator used to create unique cell names (default = "!!")
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
-  #' @return A ggplot2 object
+  #' @param verbose boolean Print progress (default = self$verbose)
+  #' @return Add list of (sparse) count matrices to R6 class object
   #' @examples 
   #' \dontrun{
   #' crm <- CRMetrics$new(data.path = "/path/to/count/data/")
@@ -1858,49 +1840,67 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' crm$addCms(cms = testdata.cms)
   #' }
-  addCms = function(cms, 
-                    sample.names = NULL, 
+  addCms = function(cms = NULL, 
+                    data.path = self$data.path,
+                    sample.names = self$metadata$sample,
+                    cellbender = FALSE,
+                    raw = FALSE,
+                    symbol = TRUE,
                     unique.names = TRUE, 
                     sep = "!!", 
-                    n.cores = self$n.cores) {
-    # Checks begin
-    if (!is.list(cms)) stop("'cms' must be a list of count matrices")
+                    n.cores = self$n.cores,
+                    verbose = self$verbose) {
+    # Check
+    if (is.null(cms) && is.null(data.path)) stop("Either 'cms' or 'data.path' must be provided.")
+    if (!is.null(self$cms)) stop("CMs already present. To overwrite, set $cms = NULL and rerun this function.")
     
-    sample.class <- sapply(cms, class) %>% 
-      unlist() %>% 
-      sapply(\(x) grepl("Matrix", x))
-    if (!any(sample.class)) {
-      warning(paste0("Some samples are not a matrix (maybe they only contain 1 cell). Removing the following samples: ",paste(sample.class[!sample.class] %>% names(), collapse = " ")))
-      cms %<>% .[sample.class]
-    } 
-    
-    sample.cells <- sapply(cms, ncol) %>% unlist()
-    if (any(sample.cells == 0)) {
-      warning(paste0("Some samples does not contain cells. Removing the following samples: ",paste(sample.cells[sample.cells == 0] %>% names(), collapse=" ")))
-      cms %<>% .[sample.cells > 0]
+    if (!is.null(cms)) {
+      # Add from cms argument
+      
+      ## Checks
+      if (!is.list(cms)) stop("'cms' must be a list of count matrices")
+      
+      if (verbose) message(paste0("Adding list of ",length(cms)," count matrices."))
+                           
+      sample.class <- sapply(cms, class) %>% 
+        unlist() %>% 
+        sapply(\(x) grepl("Matrix", x))
+      if (!any(sample.class)) {
+        warning(paste0("Some samples are not a matrix (maybe they only contain 1 cell). Removing the following samples: ",paste(sample.class[!sample.class] %>% names(), collapse = " ")))
+        cms %<>% .[sample.class]
+      } 
+      
+      sample.cells <- sapply(cms, ncol) %>% unlist()
+      if (any(sample.cells == 0)) {
+        warning(paste0("Some samples does not contain cells. Removing the following samples: ",paste(sample.cells[sample.cells == 0] %>% names(), collapse=" ")))
+        cms %<>% .[sample.cells > 0]
+      }
+      
+      if (is.null(sample.names)) sample.names <- names(cms)
+      if (is.null(sample.names)) stop("Either 'cms' must be named or 'sample.names' cannot be NULL")
+      if (length(sample.names) != length(cms)) stop("Length of 'sample.names' does not match length of 'cms'.")
+      
+      ## Create unique names
+      if (unique.names) cms %<>% createUniqueCellNames(sample.names, sep)
+    } else {
+      # Add from data.path argument
+      if (cellbender) {
+        cms <- read10xH5(data.path = data.path, sample.names = sample.names, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+      } else {
+        cms <- read10x(data.path = data.path, sample.names = sample.names, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+      }
     }
-    
-    if (is.null(sample.names)) sample.names <- names(cms)
-    if (is.null(sample.names)) stop("Either cms must be named or names cannot be NULL")
-    if (length(sample.names) != length(cms)) stop("Length of 'sample.names' does not match length of 'cms'.")
-    # Checks end
-    
-    if (unique.names) cms %<>% createUniqueCellNames(sample.names, sep)
     
     self$cms <- cms
     
     if (!is.null(self$metadata)) {
-      if (length(cms) != nrow(self$metadata)) {
-        warning("Overwriting metadata")
-        self$metadata <- data.frame(sample = sample.names)
-      }
-    } else {
+      warning("Overwriting metadata")
       self$metadata <- data.frame(sample = sample.names)
     }
     
-    if (!is.null(self$detailed.metrics)) warning("Consider updating detailed metrics by setting $detailed.metrics <- NULL and running $addDetailedMetrics()")
-    if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding()")
-    if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets()")
+    if (!is.null(self$detailed.metrics)) warning("Consider updating detailed metrics by setting $detailed.metrics <- NULL and running $addDetailedMetrics(). ")
+    if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding(). ")
+    if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets(). ")
   },
   
   #' @description Plot the results from the CellBender estimations
