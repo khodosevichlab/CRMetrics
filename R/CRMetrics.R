@@ -872,11 +872,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Detect doublet cells.
   #' @param method character Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
   #' @param cms list List containing the count matrices (default=self$cms).
+  #' @param sample.names character Vector of sample names. If NULL, sample.names are extracted from cms (default = self$metadata$sample)
   #' @param env character Environment to run python in (default="r-reticulate").
   #' @param conda.path character Path to conda environment (default=system("whereis conda")).
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
   #' @param verbose logical Print messages or not (default = self$verbose)
   #' @param args list A list with additional arguments for either `DoubletDetection` or `scrublet`. Please check the respective manuals.
+  #' @param export boolean Export CMs in order to detect doublets outside R (default = FALSE)
+  #' @param data.path character Path to write data, only relevant if `export = TRUE`. Last character must be `/` (default = self$data.path)
   #' @return data.frame
   #' @examples 
   #' \dontrun{
@@ -898,21 +901,25 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
   #' }
   detectDoublets = function(method = c("scrublet","doubletdetection"), 
-                            cms = self$cms, 
+                            cms = self$cms,
+                            sample.names = self$metadata$sample,
                             env = "r-reticulate", 
                             conda.path = system("whereis conda"), 
                             n.cores = self$n.cores,
                             verbose = self$verbose,
-                            args = list()) {
+                            args = list(),
+                            export = FALSE,
+                            data.path = self$data.path) {
     # Checks
     method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
     if (!is.list(args)) stop("'args' must be a list.")
-    if (inherits(cms, "list")) stop("'cms' must be a list")
+    if (!inherits(cms, "list")) stop("'cms' must be a list")
     if (!all(sapply(cms, inherits, "Matrix"))) {
       warning("All samples in 'cms' must be a matrix, trying to convert to dgCMatrix...")
       cms %<>% lapply(as, "CsparseMatrix")
       if (!all(sapply(cms, inherits, "Matrix"))) stop("Could not convert automatically.")
     }
+    if (export && is.null(data.path)) stop("When 'export = TRUE', 'data.path' must be provided.") 
     
     # Prepare arguments
     if (method == "doubletdetection") {
@@ -967,56 +974,95 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       args.std[[i]] <- as.integer(args.std[[i]])
     }
     
-    # Prep environment
-    if (verbose) message("Loading prerequisites...")
-    checkPackageInstalled("reticulate", cran = TRUE)
-    reticulate::use_condaenv(condaenv = env, conda = conda.path, required = TRUE)
-    if (!reticulate::py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
-    reticulate::source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
-    
-    if (verbose) message("Identifying doublets using '",method,"'...")
-    
-    # Calculate
-    tmp <- cms %>% 
-      names() %>% 
-      lapply(\(cm) {
-        if (verbose) message(paste0("Running sample '",cm,"'..."))
-        args.out <- list(cm = Matrix::t(cms[[cm]])) %>% append(args.std)
-        
-        if (method == "doubletdetection") {
-          tmp.out <- do.call("doubletdetection_py", args.out)
-        } else {
-          tmp.out <- do.call("scrublet_py", args.out)
-        }
-        
-        tmp.out %<>%
-          setNames(c("labels","scores","output"))
-      }) %>% 
-      setNames(cms %>% names())
-    
-    df <- tmp %>% 
-      names() %>% 
-      lapply(\(name) {
-        tmp[[name]] %>% 
-          .[c("labels","scores")] %>% 
-          bind_rows() %>%
-          as.data.frame() %>% 
-          mutate(sample = name) %>% 
-          `rownames<-`(cms[[name]] %>% colnames())
-      }) %>% 
-      bind_rows()
-    
-    df[is.na(df)] <- FALSE
-    
-    df %<>% mutate(labels = as.logical(labels))
-    
-    output <- tmp %>% lapply(`[[`, 3) %>% 
-      setNames(tmp %>% names())
-    
-    res <- list(result = df,
-                output = output)
-    if (verbose) message("Detected ",sum(df$labels, na.rm = TRUE)," possible doublets out of ",nrow(df)," cells.")
-    self$doublets[[method]] <- res
+    if (!export) {
+      # Prep environment
+      if (verbose) message(paste0(Sys.time()," Loading prerequisites..."))
+      checkPackageInstalled("reticulate", cran = TRUE)
+      reticulate::use_condaenv(condaenv = env, conda = conda.path, required = TRUE)
+      if (!reticulate::py_module_available(method)) stop(paste0("'",method,"' is not installed in your current conda environment.")) 
+      reticulate::source_python(paste(system.file(package="CRMetrics"), paste0(method,".py"), sep ="/"))
+      
+      if (verbose) message(paste0(Sys.time()," Identifying doublets using '",method,"'..."))
+      
+      # Calculate
+      tmp <- cms %>% 
+        names() %>% 
+        lapply(\(cm) {
+          if (verbose) message(paste0(Sys.time()," Running sample '",cm,"'..."))
+          args.out <- list(cm = Matrix::t(cms[[cm]])) %>% append(args.std)
+          
+          if (method == "doubletdetection") {
+            tmp.out <- do.call("doubletdetection_py", args.out)
+          } else {
+            tmp.out <- do.call("scrublet_py", args.out)
+          }
+          
+          tmp.out %<>%
+            setNames(c("labels","scores","output"))
+        }) %>% 
+        setNames(cms %>% names())
+      
+      df <- tmp %>% 
+        names() %>% 
+        lapply(\(name) {
+          tmp[[name]] %>% 
+            .[c("labels","scores")] %>% 
+            bind_rows() %>%
+            as.data.frame() %>% 
+            mutate(sample = name) %>% 
+            `rownames<-`(cms[[name]] %>% colnames())
+        }) %>% 
+        bind_rows()
+      
+      df[is.na(df)] <- FALSE
+      
+      df %<>% mutate(labels = as.logical(labels))
+      
+      output <- tmp %>% lapply(`[[`, 3) %>% 
+        setNames(tmp %>% names())
+      
+      res <- list(result = df,
+                  output = output)
+      if (verbose) message(paste0(Sys.time()," Detected ",sum(df$labels, na.rm = TRUE)," possible doublets out of ",nrow(df)," cells."))
+      self$doublets[[method]] <- res
+    } else {
+      # Check for existing files
+      files <- setdiff(sample.names %>% sapply(paste0, ".mtx"), dir(data.path)) %>% 
+        strsplit(".mtx",) %>% 
+        sapply('[[', 1)
+      
+      diff <- length(sample.names) - length(files)
+      
+      # Save data
+      if (verbose) message(paste0(Sys.time()," Saving ",length(cms)," CMs"))
+      if (diff > 0) message("Existing save files already found, skipping ",diff," samples: ",paste(c("",setdiff(sample.names, files)), collapse = "\n"))
+      
+      for (i in files) {
+        cms[[i]] %>% 
+          Matrix::t() %>% 
+          Matrix::writeMM(paste0(data.path,i,".mtx"))
+      }
+      
+      if (verbose) message(paste0(Sys.time()," Done! Python script is saved as ",data.path,toupper(method),".py"))
+      # Create Python script
+      args.std %<>%
+        `names<-`(sapply(names(.), paste0, "X")) %>% 
+        lapply(\(x) {
+          if (is.null(x)) return("None")
+          if (is.logical(x) && x) return("True")
+          if (is.logical(x) && !x) return("False")
+          if (is.character(x)) return(paste0('"',x,'"'))
+          return(x)
+        }) %>% 
+        append(list(data.path = data.path,
+                    method = method))
+      
+      tmp  <- readLines(paste(system.file(package="CRMetrics"), paste0(method,"_manual.py"), sep ="/"))
+      for (i in names(args.std)) {
+        tmp %<>% gsub(pattern = i, replace = args.std[i], x = .)
+      }
+      writeLines(tmp, con=paste0(data.path,toupper(method),".py"))
+    }
   },
   
   #' @description Perform conos preprocessing.

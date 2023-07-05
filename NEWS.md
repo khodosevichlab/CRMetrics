@@ -8,6 +8,7 @@
 * Added plotting palette to object
 * Fixed bug for `filterCms` where "species"" was not forwarded to `getMitoFraction` internally
 * Moved adding list of CMs to CRMetrics object from addDetailedMetrics() to addCms() since this is more logical
+* `detectDoublets` can now export Python script with argument `export = TRUE`
 
 # CRMetrics 0.2.3
 
