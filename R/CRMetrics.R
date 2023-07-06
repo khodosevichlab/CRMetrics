@@ -175,7 +175,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     checkCompMeta(comp.group, self$metadata)
     
     # Add summary metrics
-    if (is.null(cms)) self$summary.metrics <- addSummaryMetrics(data.path, self$metadata, verbose)
+    if (is.null(cms)) self$summary.metrics <- addSummaryMetrics(data.path = data.path, metadata = self$metadata, n.cores = self$n.cores, verbose = verbose)
   },
   
   #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
@@ -1958,15 +1958,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (add.metadata) {
       if (!is.null(self$metadata)) {
-        warning("Overwriting metadata")
+        warning("Overwriting metadata\n")
       }
       
       self$metadata <- data.frame(sample = samples)
     }
     
-    if (!is.null(self$detailed.metrics)) warning("Consider updating detailed metrics by setting $detailed.metrics <- NULL and running $addDetailedMetrics(). ")
-    if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding(). ")
-    if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets(). ")
+    if (!is.null(self$detailed.metrics)) warning("Consider updating detailed metrics by setting $detailed.metrics <- NULL and running $addDetailedMetrics().\n")
+    if (!is.null(self$con)) warning("Consider updating embedding by setting $cms.preprocessed <- NULL and $con <- NULL, and running $doPreprocessing() and $createEmbedding().\n")
+    if (!is.null(self$doublets)) warning("Consider updating doublet scores by setting $doublets <- NULL and running $detectDoublets().\n")
   },
   
   #' @description Plot the results from the CellBender estimations
@@ -2342,6 +2342,7 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
 #' @description Plot CellBender cell estimations against the estimated cell numbers from Cell Ranger
 #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
 #' @param samples character Sample names to include (default = self$metadata$sample)
+#' @param pal character Plotting palette (default = self$pal)
 #' @return A ggplot2 object
 #' @examples 
 #' \dontrun{
@@ -2352,7 +2353,8 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
 #' crm$plotCbCells()
 #' }
 plotCbCells = function(data.path = self$data.path, 
-                       samples = self$metadata$sample) {
+                       samples = self$metadata$sample,
+                       pal = self$pal) {
   checkDataPath(data.path)
   checkPackageInstalled("rhdf5", bioc = TRUE)
   paths <- getH5Paths(data.path, samples, "cellbender_filtered")
@@ -2373,13 +2375,17 @@ plotCbCells = function(data.path = self$data.path,
                                         "Expected cells",
                                         "Relative difference to exp. cells")))
   
-  ggplot(df, aes(sample, value, fill = sample)) +
+  g <- ggplot(df, aes(sample, value, fill = sample)) +
     geom_bar(stat = "identity") +
     self$theme + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     guides(fill = "none") +
     labs(x = "", y = "") +
     facet_wrap(~variable, scales = "free_y", nrow = 2, ncol = 2)
+  
+  if (!is.null(pal)) g <- g + scale_fill_manual(values = pal)
+  
+  return(g)
 },
 
 #' @description Add doublet results created from exported Python script

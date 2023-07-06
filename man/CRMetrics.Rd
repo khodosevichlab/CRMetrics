@@ -2475,7 +2475,8 @@ Plot CellBender cell estimations against the estimated cell numbers from Cell Ra
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCells(
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -2485,6 +2486,8 @@ Plot CellBender cell estimations against the estimated cell numbers from Cell Ra
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
