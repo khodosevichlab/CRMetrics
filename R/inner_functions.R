@@ -57,7 +57,7 @@ checkCompMeta <- function(comp.group,
 #' }
 #' @export
 read10x <- function(data.path, 
-                    sampes = NULL, 
+                    samples = NULL, 
                     raw = FALSE, 
                     symbol = TRUE, 
                     sep = "!!", 

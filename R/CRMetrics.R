@@ -1,4 +1,4 @@
-#' @import dplyr magrittr ggplot2 ggrepel
+#' @import dplyr magrittr ggplot2 ggrepel ggpmisc
 #' @importFrom R6 R6Class
 #' @importFrom sccore plapply checkPackageInstalled
 #' @importFrom Matrix t
@@ -8,7 +8,6 @@
 #' @importFrom tidyr pivot_longer replace_na
 #' @importFrom ggbeeswarm geom_quasirandom
 #' @importFrom tibble add_column
-#' @importFrom ggpmisc stat_poly_eq
 #' @importFrom scales comma
 #' @importFrom sparseMatrixStats colSums2 rowSums2
 #' @importFrom utils globalVariables
@@ -205,6 +204,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 verbose = self$verbose) {
     # Checks
     if (!is.null(self$detailed.metrics)) stop("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
+    if (is.null(cms)) stop("No CMs found, run $addCms first.")
       
     size.check <- cms %>% 
       sapply(dim) %>% 
@@ -411,12 +411,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         if (is.numeric(metadata[[comp.group]])) {
           if (!group.reg.lines) {
             g <- g + 
-              ggpmisc::stat_poly_eq(color = "black", aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))) +
-              ggpmisc::stat_poly_line(color = "black", se = se)
+              stat_poly_eq(color = "black", aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"))) +
+              stat_poly_line(color = "black", se = se)
           } else {
             g <- g + 
-              ggpmisc::stat_poly_eq(aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"), col = !!sym(second.comp.group))) +
-              ggpmisc::stat_poly_line(aes(col = !!sym(second.comp.group)), se = se)
+              stat_poly_eq(aes(label = paste(after_stat(rr.label), after_stat(p.value.label), sep = "*\", \"*"), col = !!sym(second.comp.group))) +
+              stat_poly_line(aes(col = !!sym(second.comp.group)), se = se)
           }
         }
         
@@ -1950,7 +1950,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (cellbender) {
         cms <- read10xH5(data.path = data.path, samples = samples, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       } else {
-        cms <- read10x(data.path = data.path, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        cms <- read10x(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       }
     }
     
