@@ -30,7 +30,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Run function
 crm$addDetailedMetrics()
@@ -49,10 +49,10 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add metadata
-crm$metadata$sex <- c("male","female")
+crm$metadata <- data.frame(sex = c("male","female"))
 
 # Add comparison group
 crm$addComparison(comp.group = "sex")
@@ -61,7 +61,7 @@ crm$addComparison(comp.group = "sex")
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
-sample.names <- c("sample1", "sample2")
+samples <- c("sample1", "sample2")
 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -71,10 +71,10 @@ dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
 sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
-names(testdata.cms) <- sample.names
+names(testdata.cms) <- samples
 
 # Create metadata
-metadata <- data.frame(sample = sample.names,
+metadata <- data.frame(sample = samples,
 sex = c("male","female"),
 condition = c("a","b"))
 
@@ -99,7 +99,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary metrics
 crm$addSummaryFromCms()
@@ -122,7 +122,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add detailed metrics
 crm$addDetailedMetrics()
@@ -148,7 +148,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -180,7 +180,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -213,7 +213,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -244,7 +244,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 
 # Detect doublets
@@ -268,7 +268,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
@@ -294,7 +294,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -324,7 +324,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -355,7 +355,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Select metrics
 crm$selectMetrics()
@@ -378,7 +378,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -412,7 +412,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -445,7 +445,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -494,7 +494,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Get summary
 crm$addSummaryFromCms()
@@ -516,7 +516,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -605,7 +605,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -639,6 +639,17 @@ crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
+}
+
+## ------------------------------------------------
+## Method `CRMetrics$addDoublets`
+## ------------------------------------------------
+
+\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+crm$detectDoublets(export = TRUE)
+## Run Python script
+crm$addDoublets()
 }
 }
 \section{Public fields}{
@@ -704,6 +715,7 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-runSoupX}{\code{CRMetrics$runSoupX()}}
 \item \href{#method-CRMetrics-plotSoupX}{\code{CRMetrics$plotSoupX()}}
 \item \href{#method-CRMetrics-plotCbCells}{\code{CRMetrics$plotCbCells()}}
+\item \href{#method-CRMetrics-addDoublets}{\code{CRMetrics$addDoublets()}}
 \item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
 }
 }
@@ -717,7 +729,7 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
   data.path = NULL,
   metadata = NULL,
   cms = NULL,
-  sample.names = NULL,
+  samples = NULL,
   unique.names = TRUE,
   sep.cells = "!!",
   comp.group = NULL,
@@ -739,7 +751,7 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
 
 \item{\code{cms}}{list List with count matrices (default = NULL)}
 
-\item{\code{sample.names}}{character Sample names. Only relevant is cms is provided (default = NULL)}
+\item{\code{samples}}{character Sample names. Only relevant is cms is provided (default = NULL)}
 
 \item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
 
@@ -817,7 +829,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Run function
 crm$addDetailedMetrics()
@@ -860,10 +872,10 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add metadata
-crm$metadata$sex <- c("male","female")
+crm$metadata <- data.frame(sex = c("male","female"))
 
 # Add comparison group
 crm$addComparison(comp.group = "sex")
@@ -911,7 +923,7 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{sample.names <- c("sample1", "sample2")
+\preformatted{samples <- c("sample1", "sample2")
 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -921,10 +933,10 @@ dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
 sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
-names(testdata.cms) <- sample.names
+names(testdata.cms) <- samples
 
 # Create metadata
-metadata <- data.frame(sample = sample.names,
+metadata <- data.frame(sample = samples,
 sex = c("male","female"),
 condition = c("a","b"))
 
@@ -1012,7 +1024,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary metrics
 crm$addSummaryFromCms()
@@ -1079,7 +1091,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add detailed metrics
 crm$addDetailedMetrics()
@@ -1159,7 +1171,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1227,7 +1239,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1299,7 +1311,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1329,11 +1341,14 @@ Detect doublet cells.
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
   method = c("scrublet", "doubletdetection"),
   cms = self$cms,
+  samples = self$metadata$sample,
   env = "r-reticulate",
   conda.path = system("whereis conda"),
   n.cores = self$n.cores,
   verbose = self$verbose,
-  args = list()
+  args = list(),
+  export = FALSE,
+  data.path = self$data.path
 )}\if{html}{\out{</div>}}
 }
 
@@ -1344,6 +1359,8 @@ Detect doublet cells.
 
 \item{\code{cms}}{list List containing the count matrices (default=self$cms).}
 
+\item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
+
 \item{\code{env}}{character Environment to run python in (default="r-reticulate").}
 
 \item{\code{conda.path}}{character Path to conda environment (default=system("whereis conda")).}
@@ -1353,6 +1370,10 @@ Detect doublet cells.
 \item{\code{verbose}}{logical Print messages or not (default = self$verbose)}
 
 \item{\code{args}}{list A list with additional arguments for either \code{DoubletDetection} or \code{scrublet}. Please check the respective manuals.}
+
+\item{\code{export}}{boolean Export CMs in order to detect doublets outside R (default = FALSE)}
+
+\item{\code{data.path}}{character Path to write data, only relevant if \code{export = TRUE}. Last character must be \code{/} (default = self$data.path)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1372,7 +1393,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 
 # Detect doublets
@@ -1447,7 +1468,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
@@ -1512,7 +1533,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1587,7 +1608,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1640,7 +1661,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Select metrics
 crm$selectMetrics()
@@ -1717,7 +1738,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1773,7 +1794,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1830,7 +1851,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -2008,7 +2029,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Get summary
 crm$addSummaryFromCms()
@@ -2054,7 +2075,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -2076,12 +2097,13 @@ Add a list of count matrices to the CRMetrics object.
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
   cms = NULL,
   data.path = self$data.path,
-  sample.names = self$metadata$sample,
+  samples = self$metadata$sample,
   cellbender = FALSE,
   raw = FALSE,
   symbol = TRUE,
   unique.names = TRUE,
   sep = "!!",
+  add.metadata = TRUE,
   n.cores = self$n.cores,
   verbose = self$verbose
 )}\if{html}{\out{</div>}}
@@ -2094,7 +2116,7 @@ Add a list of count matrices to the CRMetrics object.
 
 \item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
 
-\item{\code{sample.names}}{character Vector of sample names. If NULL, sample.names are extracted from cms (default = self$metadata$sample)}
+\item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
 
 \item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
 
@@ -2105,6 +2127,8 @@ Add a list of count matrices to the CRMetrics object.
 \item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
 
 \item{\code{sep}}{character Separator used to create unique cell names (default = "!!")}
+
+\item{\code{add.metadata}}{boolean Add metadata from cms or not (default = TRUE)}
 
 \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
 
@@ -2350,7 +2374,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -2475,6 +2499,53 @@ crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CRMetrics-addDoublets"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-addDoublets}{}}}
+\subsection{Method \code{addDoublets()}}{
+Add doublet results created from exported Python script
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDoublets(
+  method = c("scrublet", "doubletdetection"),
+  data.path = self$data.path,
+  samples = self$metadata$sample,
+  cms = self$cms,
+  verbose = self$verbose
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{method}}{character Which method to use, either \code{scrublet} or \code{doubletdetection} (default is both).}
+
+\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+
+\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{cms}}{list List containing the count matrices (default = self$cms).}
+
+\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+List of doublet results
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+crm$detectDoublets(export = TRUE)
+## Run Python script
+crm$addDoublets()
 }
 }
 \if{html}{\out{</div>}}

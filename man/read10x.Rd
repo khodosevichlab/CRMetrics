@@ -6,7 +6,7 @@
 \usage{
 read10x(
   data.path,
-  sample.names = NULL,
+  sampes = NULL,
   raw = FALSE,
   symbol = TRUE,
   sep = "!!",
@@ -18,8 +18,6 @@ read10x(
 \arguments{
 \item{data.path}{Path to cellranger count data.}
 
-\item{sample.names}{Vector of sample names (default = NULL)}
-
 \item{raw}{logical Add raw count matrices (default = FALSE)}
 
 \item{symbol}{The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).}
@@ -29,6 +27,8 @@ read10x(
 \item{n.cores}{Number of cores for the calculations (default = 1).}
 
 \item{verbose}{Print messages (default = TRUE).}
+
+\item{samples}{Vector of sample names (default = NULL)}
 }
 \value{
 data frame

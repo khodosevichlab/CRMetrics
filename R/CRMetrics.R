@@ -236,7 +236,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
   #' 
   #' # Add metadata
-  #' crm$metadata$sex <- c("male","female")
+  #' crm$metadata <- data.frame(sex = c("male","female"))
   #' 
   #' # Add comparison group
   #' crm$addComparison(comp.group = "sex")
@@ -1883,6 +1883,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
   #' @param sep character Separator used to create unique cell names (default = "!!")
+  #' @param add.metadata boolean Add metadata from cms or not (default = TRUE)
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
   #' @param verbose boolean Print progress (default = self$verbose)
   #' @return Add list of (sparse) count matrices to R6 class object
@@ -2381,7 +2382,21 @@ plotCbCells = function(data.path = self$data.path,
     facet_wrap(~variable, scales = "free_y", nrow = 2, ncol = 2)
 },
 
-addDoublets = function(method = c("doubletdetection","scrublet"),
+#' @description Add doublet results created from exported Python script
+#' @param method character Which method to use, either `scrublet` or `doubletdetection` (default is both).
+#' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
+#' @param samples character Sample names to include (default = self$metadata$sample)
+#' @param cms list List containing the count matrices (default = self$cms).
+#' @param verbose boolean Print progress (default = self$verbose)
+#' @return List of doublet results
+#' @examples 
+#' \dontrun{
+#' crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+#' crm$detectDoublets(export = TRUE)
+#' ## Run Python script
+#' crm$addDoublets()
+#' }
+addDoublets = function(method = c("scrublet","doubletdetection"),
                        data.path = self$data.path,
                        samples = self$metadata$sample,
                        cms = self$cms,
