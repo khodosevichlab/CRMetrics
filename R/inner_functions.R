@@ -39,7 +39,7 @@ checkCompMeta <- function(comp.group,
 #' @title Load 10x count matrices
 #' @description Load gene expression count data
 #' @param data.path Path to cellranger count data.
-#' @param sample.names Vector of sample names (default = NULL)
+#' @param samples Vector of sample names (default = NULL)
 #' @param raw logical Add raw count matrices (default = FALSE)
 #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
 #' @param sep Separator for cell names (default = "!!").
@@ -57,7 +57,7 @@ checkCompMeta <- function(comp.group,
 #' }
 #' @export
 read10x <- function(data.path, 
-                    sample.names = NULL, 
+                    sampes = NULL, 
                     raw = FALSE, 
                     symbol = TRUE, 
                     sep = "!!", 
@@ -65,10 +65,10 @@ read10x <- function(data.path,
                     n.cores = 1, 
                     verbose = TRUE) {
   checkPackageInstalled("data.table", cran = TRUE)
-  if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
   full.path <- data.path %>% 
-    pathsToList(sample.names) %>% 
+    pathsToList(samples) %>% 
     sapply(\(sample) {
       if (raw) pat <- glob2rx("raw_*_bc_matri*") else pat <- glob2rx("filtered_*_bc_matri*")
       dir(paste(sample[2],sample[1],"outs", sep = "/"), pattern = pat, full.names = TRUE) %>% 
@@ -102,9 +102,9 @@ read10x <- function(data.path,
       colnames(mat) <- barcodes %>% pull(V1)
       return(mat)
     }, n.cores = n.cores) %>%
-    setNames(sample.names)
+    setNames(samples)
   
-  if (unique.names) tmp %<>% createUniqueCellNames(sample.names, sep)
+  if (unique.names) tmp %<>% createUniqueCellNames(samples, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -375,7 +375,7 @@ labelsFilter <- function(filter.data) {
 
 #' @title Read 10x HDF5 files
 #' @param data.path character
-#' @param sample.names character vector, select specific samples for processing (default = NULL)
+#' @param samples character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
 #' @param symbol logical Use gene SYMBOLs (TRUE) or ENSEMBL IDs (FALSE) (default = TRUE)
 #' @param sep character Separator for creating unique cell names from sample IDs and cell IDs (default = "!!")
@@ -389,7 +389,7 @@ labelsFilter <- function(filter.data) {
 #' }
 #' @export
 read10xH5 <- function(data.path, 
-                      sample.names = NULL, 
+                      samples = NULL, 
                       type = c("raw","filtered","cellbender","cellbender_filtered"), 
                       symbol = TRUE, 
                       sep = "!!", 
@@ -398,9 +398,9 @@ read10xH5 <- function(data.path,
                       unique.names = FALSE) {
   checkPackageInstalled("rhdf5", bioc = TRUE)
   
-  if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full.path <- getH5Paths(data.path, sample.names, type)
+  full.path <- getH5Paths(data.path, samples, type)
   
   if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores < length(full.path)) n.cores else length(full.path)," cores"))
   out <- full.path %>%
@@ -435,9 +435,9 @@ read10xH5 <- function(data.path,
       
       return(tmp)
     }, n.cores = n.cores) %>% 
-    setNames(sample.names)
+    setNames(samples)
   
-  if (unique.names) out %<>% createUniqueCellNames(sample.names, sep)
+  if (unique.names) out %<>% createUniqueCellNames(samples, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -447,20 +447,20 @@ read10xH5 <- function(data.path,
 #' @title Create unique cell names
 #' @description Create unique cell names from sample IDs and cell IDs
 #' @param cms list List of count matrices, should be named (optional)
-#' @param sample.names character Optional, list of sample names
+#' @param samples character Optional, list of sample names
 #' @param sep character Separator between sample IDs and cell IDs (default = "!!")
 #' @keywords internal
 createUniqueCellNames <- function(cms, 
-                                  sample.names, 
+                                  samples, 
                                   sep = "!!") {
-  names(cms) <- sample.names
+  names(cms) <- samples
   
-  sample.names %>%
+  samples %>%
     lapply(\(sample) {
       cms[[sample]] %>% 
         `colnames<-`(., paste0(sample,sep,colnames(.)))
     }) %>%
-    setNames(sample.names)
+    setNames(samples)
 }
 
 #' @title Get H5 file paths
