@@ -130,6 +130,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                    full.names = FALSE) %>% 
    .[pathsToList(data.path, .) %>% sapply(\(path) file.exists(paste0(path[2],"/",path[1],"/outs")))] %>% 
           {data.frame(sample = .)}
+      } else {
+        if (is.null(names(cms))) {
+          if (is.null(samples)) {
+            stop("Either `samples` must be provided, or `cms` must be named.")
+            } else {
+              sample.out <- samples
+            } 
+        } else {
+          sample.out <- names(cms)
+        }
+        self$metadata <- data.frame(sample = sample.out) %>% 
+          arrange(sample)
       }
     } else {
       if (inherits(metadata, "data.frame")) {
@@ -155,7 +167,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                   samples = samples, 
                   unique.names = unique.names, 
                   sep = sep.cells, 
-                  n.cores = self$n.cores)
+                  n.cores = self$n.cores,
+                  add.metadata = FALSE,
+                  verbose = verbose)
     } 
     
     checkCompMeta(comp.group, self$metadata)
@@ -190,7 +204,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 n.cores = self$n.cores, 
                                 verbose = self$verbose) {
     # Checks
-    if (is.null(self$detailed.metrics)) stop("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
+    if (!is.null(self$detailed.metrics)) stop("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
       
     size.check <- cms %>% 
       sapply(dim) %>% 
@@ -1895,6 +1909,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                     symbol = TRUE,
                     unique.names = TRUE, 
                     sep = "!!", 
+                    add.metadata = TRUE,
                     n.cores = self$n.cores,
                     verbose = self$verbose) {
     # Check
@@ -1934,14 +1949,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (cellbender) {
         cms <- read10xH5(data.path = data.path, samples = samples, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       } else {
-        cms <- read10x(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        cms <- read10x(data.path = data.path, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       }
     }
     
     self$cms <- cms
     
-    if (!is.null(self$metadata)) {
-      warning("Overwriting metadata")
+    if (add.metadata) {
+      if (!is.null(self$metadata)) {
+        warning("Overwriting metadata")
+      }
+      
       self$metadata <- data.frame(sample = samples)
     }
     
