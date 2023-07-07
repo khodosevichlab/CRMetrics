@@ -54,4 +54,6 @@ in the vignette.
 
 # Cite
 
-To cite this work, please run `citation(CRMetrics)`.
+To cite this work, please run `citation("CRMetrics")` or cite our preprint:
+
+Fabienne Lorena Kick, Henrietta Holze, Rasmus Rydbirk, Konstantin Khodosevich: CRMetrics - an R package for Cell Ranger Filtering and Metrics Visualisation, 06 July 2023, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-2853524/v1]
