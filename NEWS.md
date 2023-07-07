@@ -1,5 +1,6 @@
 # CRMetrics 0.3.0
 
+* Several minor bug fixes
 * Updated `createEmbedding` upon resolve of https://github.com/kharchenkolab/conos/issues/123
 * Updated DESCRIPTION
 * Added checks for `detectDoublets`
