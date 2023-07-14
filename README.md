@@ -49,7 +49,7 @@ For usage, please see the
 
 CRMetrics makes use of several Python packages, some of them through the
 `reticulate` package in R, please see the included [example
-workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.md#using-python-modules)
+workflow](http://kkh.bric.ku.dk/rasmus/CRMetrics/walkthrough.html#using-python-modules)
 in the vignette.
 
 # Cite
