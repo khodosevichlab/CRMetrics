@@ -4,10 +4,14 @@
 \alias{plotGeom}
 \title{Plot the data as points, as bars as a histogram, or as a violin}
 \usage{
-plotGeom(plot.geom, col)
+plotGeom(g, plot.geom, col, pal = NULL)
 }
 \arguments{
+\item{g}{ggplot2 object}
+
 \item{plot.geom}{The plot.geom to use, "point", "bar", "histogram", or "violin".}
+
+\item{pal}{character Palette (default = NULL)}
 }
 \value{
 geom

@@ -6,7 +6,7 @@
 \usage{
 read10x(
   data.path,
-  sample.names = NULL,
+  samples = NULL,
   raw = FALSE,
   symbol = TRUE,
   sep = "!!",
@@ -18,7 +18,7 @@ read10x(
 \arguments{
 \item{data.path}{Path to cellranger count data.}
 
-\item{sample.names}{Vector of sample names (default = NULL)}
+\item{samples}{Vector of sample names (default = NULL)}
 
 \item{raw}{logical Add raw count matrices (default = FALSE)}
 

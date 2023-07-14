@@ -4,12 +4,12 @@
 \alias{createUniqueCellNames}
 \title{Create unique cell names}
 \usage{
-createUniqueCellNames(cms, sample.names, sep = "!!")
+createUniqueCellNames(cms, samples, sep = "!!")
 }
 \arguments{
 \item{cms}{list List of count matrices, should be named (optional)}
 
-\item{sample.names}{character Optional, list of sample names}
+\item{samples}{character Optional, list of sample names}
 
 \item{sep}{character Separator between sample IDs and cell IDs (default = "!!")}
 }

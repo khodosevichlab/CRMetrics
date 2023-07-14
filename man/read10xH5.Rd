@@ -6,7 +6,7 @@
 \usage{
 read10xH5(
   data.path,
-  sample.names = NULL,
+  samples = NULL,
   type = c("raw", "filtered", "cellbender", "cellbender_filtered"),
   symbol = TRUE,
   sep = "!!",
@@ -18,7 +18,7 @@ read10xH5(
 \arguments{
 \item{data.path}{character}
 
-\item{sample.names}{character vector, select specific samples for processing (default = NULL)}
+\item{samples}{character vector, select specific samples for processing (default = NULL)}
 
 \item{type}{name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript}
 

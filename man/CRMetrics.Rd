@@ -4,7 +4,7 @@
 \alias{CRMetrics}
 \title{CRMetrics class object}
 \description{
-Functions to analyze Cell Ranger count data
+Functions to analyze Cell Ranger count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
 }
 \examples{
 
@@ -30,7 +30,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Run function
 crm$addDetailedMetrics()
@@ -49,10 +49,10 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add metadata
-crm$metadata$sex <- c("male","female")
+crm$metadata <- data.frame(sex = c("male","female"))
 
 # Add comparison group
 crm$addComparison(comp.group = "sex")
@@ -61,7 +61,7 @@ crm$addComparison(comp.group = "sex")
 ## Method `CRMetrics$plotSamples`
 ## ------------------------------------------------
 
-sample.names <- c("sample1", "sample2")
+samples <- c("sample1", "sample2")
 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -71,10 +71,10 @@ dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
 sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
-names(testdata.cms) <- sample.names
+names(testdata.cms) <- samples
 
 # Create metadata
-metadata <- data.frame(sample = sample.names,
+metadata <- data.frame(sample = samples,
 sex = c("male","female"),
 condition = c("a","b"))
 
@@ -99,7 +99,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary metrics
 crm$addSummaryFromCms()
@@ -122,7 +122,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add detailed metrics
 crm$addDetailedMetrics()
@@ -148,7 +148,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -180,7 +180,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -213,7 +213,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -244,7 +244,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 
 # Detect doublets
@@ -268,7 +268,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
@@ -294,7 +294,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -324,7 +324,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -355,7 +355,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Select metrics
 crm$selectMetrics()
@@ -378,7 +378,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -396,7 +396,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$getConosDepth`
+## Method `CRMetrics$getDepth`
 ## ------------------------------------------------
 
 \donttest{
@@ -412,14 +412,14 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
 
-# Get Conos depth
-crm$getConosDepth()
+# Get depth
+crm$getDepth()
 } else {
 message("Package 'conos' not available.")
 }
@@ -445,7 +445,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -494,7 +494,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Get summary
 crm$addSummaryFromCms()
@@ -516,7 +516,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -605,7 +605,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -640,25 +640,44 @@ crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
 }
+
+## ------------------------------------------------
+## Method `CRMetrics$addDoublets`
+## ------------------------------------------------
+
+\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+crm$detectDoublets(export = TRUE)
+## Run Python script
+crm$addDoublets()
+}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{metadata}}{(default = NULL)}
+\item{\code{metadata}}{data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
-\item{\code{data.path}}{(default = NULL)}
+\item{\code{data.path}}{character Path(s) to Cell Ranger count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)}
 
-\item{\code{summary.metrics}}{(default = NULL)}
+\item{\code{cms}}{list List with count matrices (default = NULL)}
 
-\item{\code{detailed.metrics}}{(default = NULL)}
+\item{\code{cms.preprocessed}}{list List with preprocessed count matrices after $doPreprocessing() (default = NULL)}
 
-\item{\code{comp.group}}{(default = NULL)}
+\item{\code{cms.raw}}{list List with raw, unfiltered count matrices, i.e., including all CBs detected also empty droplets (default = NULL)}
 
-\item{\code{verbose}}{(default = TRUE)}
+\item{\code{summary.metrics}}{data.frame Summary metrics from Cell Ranger (default = NULL)}
 
-\item{\code{theme}}{(default = NULL)}
+\item{\code{detailed.metrics}}{data.frame Detailed metrics, i.e., no. genes and UMIs per cell (default = NULL)}
 
-\item{\code{n.cores}}{(default = 1)
+\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
+
+\item{\code{verbose}}{logical Print messages or not (default = TRUE)}
+
+\item{\code{theme}}{ggplot2 theme (default: theme_bw())}
+
+\item{\code{pal}}{Plotting palette (default = NULL)}
+
+\item{\code{n.cores}}{numeric Number of cores for calculations (default = 1)
 Initialize a CRMetrics object}
 }
 \if{html}{\out{</div>}}
@@ -681,7 +700,7 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-filterCms}{\code{CRMetrics$filterCms()}}
 \item \href{#method-CRMetrics-selectMetrics}{\code{CRMetrics$selectMetrics()}}
 \item \href{#method-CRMetrics-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
-\item \href{#method-CRMetrics-getConosDepth}{\code{CRMetrics$getConosDepth()}}
+\item \href{#method-CRMetrics-getDepth}{\code{CRMetrics$getDepth()}}
 \item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
 \item \href{#method-CRMetrics-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
 \item \href{#method-CRMetrics-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
@@ -696,6 +715,7 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-runSoupX}{\code{CRMetrics$runSoupX()}}
 \item \href{#method-CRMetrics-plotSoupX}{\code{CRMetrics$plotSoupX()}}
 \item \href{#method-CRMetrics-plotCbCells}{\code{CRMetrics$plotCbCells()}}
+\item \href{#method-CRMetrics-addDoublets}{\code{CRMetrics$addDoublets()}}
 \item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
 }
 }
@@ -709,7 +729,7 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
   data.path = NULL,
   metadata = NULL,
   cms = NULL,
-  sample.names = NULL,
+  samples = NULL,
   unique.names = TRUE,
   sep.cells = "!!",
   comp.group = NULL,
@@ -717,7 +737,8 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
   theme = theme_bw(),
   n.cores = 1,
   sep.meta = ",",
-  raw.meta = FALSE
+  raw.meta = FALSE,
+  pal = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -726,27 +747,29 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
 \describe{
 \item{\code{data.path}}{character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).}
 
-\item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL).}
+\item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
 \item{\code{cms}}{list List with count matrices (default = NULL)}
 
-\item{\code{sample.names}}{character Sample names. Only relevant is cms is provided (default = NULL)}
+\item{\code{samples}}{character Sample names. Only relevant is cms is provided (default = NULL)}
 
 \item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
 
 \item{\code{sep.cells}}{character Sample-cell separator. Only relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
 
-\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL).}
+\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
 
-\item{\code{verbose}}{logical Print messages or not (default = TRUE).}
+\item{\code{verbose}}{logical Print messages or not (default = TRUE)}
 
-\item{\code{theme}}{ggplot2 theme (default: theme_bw()).}
+\item{\code{theme}}{ggplot2 theme (default: theme_bw())}
 
-\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores)}
 
 \item{\code{sep.meta}}{character Separator for metadata file (default = ",")}
 
 \item{\code{raw.meta}}{logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)}
+
+\item{\code{pal}}{character Plotting palette (default = NULL)}
 }
 \if{html}{\out{</div>}}
 }
@@ -771,14 +794,8 @@ crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 Function to read in detailed metrics. This is not done upon initialization for speed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
+  cms = self$cms,
   min.transcripts.per.cell = 100,
-  raw = FALSE,
-  symbol = TRUE,
-  sep = "!!",
-  cellbender = FALSE,
-  unique.names = TRUE,
-  data.path = self$data.path,
-  sample.names = self$metadata$sample,
   n.cores = self$n.cores,
   verbose = self$verbose
 )}\if{html}{\out{</div>}}
@@ -787,21 +804,9 @@ Function to read in detailed metrics. This is not done upon initialization for s
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+
 \item{\code{min.transcripts.per.cell}}{numeric Minimal number of transcripts per cell (default = 100)}
-
-\item{\code{raw}}{logical Add raw count matrices from Cell Ranger output. Cannot be combined with \code{cellbender=TRUE} (default = FALSE)}
-
-\item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
-
-\item{\code{sep}}{character Separator for cell names (default = "!!").}
-
-\item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
-
-\item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
-
-\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
-
-\item{\code{sample.names}}{character Vector containing sample names (default = self$metadata$sample).}
 
 \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
 
@@ -824,7 +829,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Run function
 crm$addDetailedMetrics()
@@ -867,10 +872,10 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add metadata
-crm$metadata$sex <- c("male","female")
+crm$metadata <- data.frame(sex = c("male","female"))
 
 # Add comparison group
 crm$addComparison(comp.group = "sex")
@@ -891,7 +896,8 @@ Plot the number of samples.
   h.adj = 0.05,
   exact = FALSE,
   metadata = self$metadata,
-  second.comp.group = NULL
+  second.comp.group = NULL,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -907,6 +913,8 @@ Plot the number of samples.
 \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
 
 \item{\code{second.comp.group}}{character Second comparison metric, must match a column name of metadata (default = NULL).}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -915,7 +923,7 @@ ggplot2 object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{sample.names <- c("sample1", "sample2")
+\preformatted{samples <- c("sample1", "sample2")
 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -925,10 +933,10 @@ dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
 sapply(seq_len(1e3), \(x) paste0("cell",x)))
 return(out)
 })
-names(testdata.cms) <- sample.names
+names(testdata.cms) <- samples
 
 # Create metadata
-metadata <- data.frame(sample = sample.names,
+metadata <- data.frame(sample = samples,
 sex = c("male","female"),
 condition = c("a","b"))
 
@@ -962,7 +970,8 @@ Plot all summary stats or a selected list.
   plot.geom = "bar",
   se = FALSE,
   group.reg.lines = FALSE,
-  secondary.testing = TRUE
+  secondary.testing = TRUE,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -994,6 +1003,8 @@ Plot all summary stats or a selected list.
 \item{\code{group.reg.lines}}{logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)}
 
 \item{\code{secondary.testing}}{logical Whether to show post hoc testing (default = TRUE)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1013,7 +1024,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary metrics
 crm$addSummaryFromCms()
@@ -1038,8 +1049,8 @@ Plot detailed metrics from the detailed.metrics object
   metadata = self$metadata,
   metrics = NULL,
   plot.geom = "violin",
-  data.path = self$data.path,
-  hline = TRUE
+  hline = TRUE,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -1056,9 +1067,11 @@ Plot detailed metrics from the detailed.metrics object
 
 \item{\code{plot.geom}}{character How to plot the data (default = "violin").}
 
-\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
-
 \item{\code{hline}}{logical Whether to show median as horizontal line (default = TRUE)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
+
+\item{\code{data.path}}{character Path to Cell Ranger count data (default = self$data.path).}
 }
 \if{html}{\out{</div>}}
 }
@@ -1078,7 +1091,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add detailed metrics
 crm$addDetailedMetrics()
@@ -1108,6 +1121,7 @@ Plot cells in embedding using Conos and color by depth and doublets.
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
+  pal = NULL,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -1133,6 +1147,8 @@ Plot cells in embedding using Conos and color by depth and doublets.
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 
+\item{\code{pal}}{character Plotting palette (default = NULL)}
+
 \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
 }
 \if{html}{\out{</div>}}
@@ -1155,7 +1171,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1181,7 +1197,13 @@ message("Package 'pagoda2' not available.")
 \subsection{Method \code{plotDepth()}}{
 Plot the sequencing depth in histogram.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(cutoff = 1000, samples = self$metadata$sample, sep = "!!")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(
+  cutoff = 1000,
+  samples = self$metadata$sample,
+  sep = "!!",
+  keep.col = "#E7CDC2",
+  filter.col = "#A65141"
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1192,6 +1214,10 @@ Plot the sequencing depth in histogram.
 \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
+
+\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
 }
 \if{html}{\out{</div>}}
 }
@@ -1213,7 +1239,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1244,7 +1270,9 @@ Plot the mitochondrial fraction in histogram.
   cutoff = 0.05,
   species = c("human", "mouse"),
   samples = self$metadata$sample,
-  sep = "!!"
+  sep = "!!",
+  keep.col = "#E7CDC2",
+  filter.col = "#A65141"
 )}\if{html}{\out{</div>}}
 }
 
@@ -1258,6 +1286,10 @@ Plot the mitochondrial fraction in histogram.
 \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
+
+\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
 }
 \if{html}{\out{</div>}}
 }
@@ -1279,7 +1311,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1309,11 +1341,14 @@ Detect doublet cells.
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
   method = c("scrublet", "doubletdetection"),
   cms = self$cms,
+  samples = self$metadata$sample,
   env = "r-reticulate",
   conda.path = system("whereis conda"),
   n.cores = self$n.cores,
   verbose = self$verbose,
-  args = list()
+  args = list(),
+  export = FALSE,
+  data.path = self$data.path
 )}\if{html}{\out{</div>}}
 }
 
@@ -1324,6 +1359,8 @@ Detect doublet cells.
 
 \item{\code{cms}}{list List containing the count matrices (default=self$cms).}
 
+\item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
+
 \item{\code{env}}{character Environment to run python in (default="r-reticulate").}
 
 \item{\code{conda.path}}{character Path to conda environment (default=system("whereis conda")).}
@@ -1333,6 +1370,10 @@ Detect doublet cells.
 \item{\code{verbose}}{logical Print messages or not (default = self$verbose)}
 
 \item{\code{args}}{list A list with additional arguments for either \code{DoubletDetection} or \code{scrublet}. Please check the respective manuals.}
+
+\item{\code{export}}{boolean Export CMs in order to detect doublets outside R (default = FALSE)}
+
+\item{\code{data.path}}{character Path to write data, only relevant if \code{export = TRUE}. Last character must be \code{/} (default = self$data.path)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1352,7 +1393,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 
 # Detect doublets
@@ -1427,7 +1468,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Perform preprocessing
 crm$doPreprocessing(preprocess = "pagoda2")
@@ -1452,7 +1493,7 @@ Create Conos embedding.
   verbose = self$verbose,
   n.cores = self$n.cores,
   arg.buildGraph = list(),
-  arg.findCommunities = list(n.iterations = 1),
+  arg.findCommunities = list(),
   arg.embedGraph = list(method = "UMAP")
 )}\if{html}{\out{</div>}}
 }
@@ -1468,7 +1509,7 @@ Create Conos embedding.
 
 \item{\code{arg.buildGraph}}{list A list with additional arguments for the \code{buildGraph} function in Conos (default = list())}
 
-\item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list(n.iterations = 1)) # Should be updated when Conos issue #123 is resolved}
+\item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list())}
 
 \item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP))}
 }
@@ -1492,7 +1533,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1517,23 +1558,21 @@ message("Package 'pagoda2' not available.")
 Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
-  min.transcripts.per.cell = 100,
   depth.cutoff = NULL,
   mito.cutoff = NULL,
   doublets = NULL,
   species = c("human", "mouse"),
   samples.to.exclude = NULL,
   verbose = self$verbose,
-  sep = "!!"
+  sep = "!!",
+  raw = FALSE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{min.transcripts.per.cell}}{numeric Minimal transcripts per cell (default = 100)}
-
-\item{\code{depth.cutoff}}{numeric Depth cutoff (default = NULL).}
+\item{\code{depth.cutoff}}{numeric Depth (transcripts per cell) cutoff (default = NULL).}
 
 \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
 
@@ -1546,6 +1585,8 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \item{\code{verbose}}{logical Show progress (default = self$verbose)}
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{raw}}{boolean Filter on raw, unfiltered count matrices. Usually not intended (default = FALSE)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1567,7 +1608,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1620,7 +1661,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Select metrics
 crm$selectMetrics()
@@ -1647,6 +1688,7 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
+  cols = c("grey80", "red", "blue", "green", "yellow", "black", "pink", "purple"),
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -1672,6 +1714,8 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
 
 \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
 
+\item{\code{cols}}{character Colors used for plotting (default = c("grey80","red","blue","green","yellow","black","pink","purple"))}
+
 \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
 }
 \if{html}{\out{</div>}}
@@ -1694,7 +1738,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1717,14 +1761,21 @@ message("Package 'pagoda2' not available.")
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-getConosDepth"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-getConosDepth}{}}}
-\subsection{Method \code{getConosDepth()}}{
+\if{html}{\out{<a id="method-CRMetrics-getDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getDepth}{}}}
+\subsection{Method \code{getDepth()}}{
 Extract sequencing depth from Conos object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getConosDepth()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getDepth(cms = self$cms)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
 data frame
 }
@@ -1743,14 +1794,14 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
 crm$createEmbedding()
 
-# Get Conos depth
-crm$getConosDepth()
+# Get depth
+crm$getDepth()
 } else {
 message("Package 'conos' not available.")
 }
@@ -1770,7 +1821,7 @@ message("Package 'pagoda2' not available.")
 \subsection{Method \code{getMitoFraction()}}{
 Calculate the fraction of mitochondrial genes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"), cms = self$cms)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -1778,7 +1829,7 @@ Calculate the fraction of mitochondrial genes.
 \describe{
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
 
-\item{\code{force}}{logical Force update of stored vector (default = FALSE)}
+\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
 }
 \if{html}{\out{</div>}}
 }
@@ -1800,7 +1851,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Create embedding
 crm$doPreprocessing()
@@ -1978,7 +2029,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Get summary
 crm$addSummaryFromCms()
@@ -2024,7 +2075,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -2044,31 +2095,49 @@ crm$getTotalDroplets()
 Add a list of count matrices to the CRMetrics object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
-  cms,
-  sample.names = NULL,
+  cms = NULL,
+  data.path = self$data.path,
+  samples = self$metadata$sample,
+  cellbender = FALSE,
+  raw = FALSE,
+  symbol = TRUE,
   unique.names = TRUE,
   sep = "!!",
-  n.cores = self$n.cores
+  add.metadata = TRUE,
+  n.cores = self$n.cores,
+  verbose = self$verbose
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cms}}{list List of count matrices}
+\item{\code{cms}}{list List of (sparse) count matrices (default = NULL)}
 
-\item{\code{sample.names}}{character Vector of sample names. If NULL, sample.names are extracted from cms (default = NULL)}
+\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
 
-\item{\code{unique.names}}{logical Create unique cell names (default = TRUE)}
+\item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
+
+\item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
+
+\item{\code{raw}}{logical Add raw count matrices from Cell Ranger output. Cannot be combined with \code{cellbender=TRUE} (default = FALSE)}
+
+\item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
+
+\item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
 
 \item{\code{sep}}{character Separator used to create unique cell names (default = "!!")}
 
+\item{\code{add.metadata}}{boolean Add metadata from cms or not (default = TRUE)}
+
 \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
+
+\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A ggplot2 object
+Add list of (sparse) count matrices to R6 class object
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -2100,7 +2169,8 @@ Plot the results from the CellBender estimations
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbTraining(
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -2110,6 +2180,8 @@ Plot the results from the CellBender estimations
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -2139,7 +2211,9 @@ Plot the CellBender assigned cell probabilities
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCellProbs(
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  low.col = "gray",
+  high.col = "red"
 )}\if{html}{\out{</div>}}
 }
 
@@ -2149,6 +2223,10 @@ Plot the CellBender assigned cell probabilities
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{low.col}}{character Color for low probabilities (default = "gray")}
+
+\item{\code{high.col}}{character Color for high probabilities (default = "red")}
 }
 \if{html}{\out{</div>}}
 }
@@ -2221,7 +2299,8 @@ Plot the most abundant estimated ambient genes from the CellBender calculations
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbGenes(
   cutoff = 0.005,
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -2233,6 +2312,8 @@ Plot the most abundant estimated ambient genes from the CellBender calculations
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -2293,7 +2374,7 @@ return(out)
 })
 
 # Initialize
-crm <- CRMetrics$new(cms = testdata.cms, sample.names = c("sample1", "sample2"), n.cores = 1)
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
 
 # Add summary
 crm$addSummaryFromCms()
@@ -2394,7 +2475,8 @@ Plot CellBender cell estimations against the estimated cell numbers from Cell Ra
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCells(
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  pal = self$pal
 )}\if{html}{\out{</div>}}
 }
 
@@ -2404,6 +2486,8 @@ Plot CellBender cell estimations against the estimated cell numbers from Cell Ra
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
 \if{html}{\out{</div>}}
 }
@@ -2418,6 +2502,53 @@ crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CRMetrics-addDoublets"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-addDoublets}{}}}
+\subsection{Method \code{addDoublets()}}{
+Add doublet results created from exported Python script
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDoublets(
+  method = c("scrublet", "doubletdetection"),
+  data.path = self$data.path,
+  samples = self$metadata$sample,
+  cms = self$cms,
+  verbose = self$verbose
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{method}}{character Which method to use, either \code{scrublet} or \code{doubletdetection} (default is both).}
+
+\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+
+\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{cms}}{list List containing the count matrices (default = self$cms).}
+
+\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+List of doublet results
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+crm$detectDoublets(export = TRUE)
+## Run Python script
+crm$addDoublets()
 }
 }
 \if{html}{\out{</div>}}

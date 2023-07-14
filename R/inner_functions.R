@@ -3,6 +3,7 @@
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
 #' @importFrom utils globalVariables read.table
+#' @importFrom sccore checkPackageInstalled
 NULL
 
 utils::globalVariables(c(".","value","variable","V1","V2","metric"))
@@ -38,7 +39,7 @@ checkCompMeta <- function(comp.group,
 #' @title Load 10x count matrices
 #' @description Load gene expression count data
 #' @param data.path Path to cellranger count data.
-#' @param sample.names Vector of sample names (default = NULL)
+#' @param samples Vector of sample names (default = NULL)
 #' @param raw logical Add raw count matrices (default = FALSE)
 #' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
 #' @param sep Separator for cell names (default = "!!").
@@ -56,7 +57,7 @@ checkCompMeta <- function(comp.group,
 #' }
 #' @export
 read10x <- function(data.path, 
-                    sample.names = NULL, 
+                    samples = NULL, 
                     raw = FALSE, 
                     symbol = TRUE, 
                     sep = "!!", 
@@ -64,12 +65,13 @@ read10x <- function(data.path,
                     n.cores = 1, 
                     verbose = TRUE) {
   checkPackageInstalled("data.table", cran = TRUE)
-  if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full.path <- sample.names %>% 
+  full.path <- data.path %>% 
+    pathsToList(samples) %>% 
     sapply(\(sample) {
       if (raw) pat <- glob2rx("raw_*_bc_matri*") else pat <- glob2rx("filtered_*_bc_matri*")
-      dir(paste(data.path,sample,"outs", sep = "/"), pattern = pat, full.names = TRUE) %>% 
+      dir(paste(sample[2],sample[1],"outs", sep = "/"), pattern = pat, full.names = TRUE) %>% 
         .[!grepl(".h5", .)]
     })
   
@@ -82,9 +84,9 @@ read10x <- function(data.path,
       mat.path <- tmp.dir %>%
         .[grepl("mtx", .)]
       if (grepl("gz", mat.path)) {
-        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "dgCMatrix")
+        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "CsparseMatrix")
       } else {
-        mat <- as(Matrix::readMM(mat.path), "dgCMatrix")
+        mat <- as(Matrix::readMM(mat.path), "CsparseMatrix")
       }
 
       # Add features
@@ -100,9 +102,9 @@ read10x <- function(data.path,
       colnames(mat) <- barcodes %>% pull(V1)
       return(mat)
     }, n.cores = n.cores) %>%
-    setNames(sample.names)
+    setNames(samples)
   
-  if (unique.names) tmp %<>% createUniqueCellNames(sample.names, sep)
+  if (unique.names) tmp %<>% createUniqueCellNames(samples, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -246,15 +248,21 @@ addSummaryMetrics <- function(data.path,
                               n.cores = 1, 
                               verbose = TRUE) {
   samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
-  samples <- intersect(samples.tmp, metadata$sample %>% unique())
+  samples <- intersect(samples.tmp, metadata$sample)
   
+  doubles <- table(samples.tmp) %>% 
+    .[. > 1] %>% 
+    names()
+  
+  if (length(doubles) > 0) stop(paste0("One or more samples are present twice in 'data.path'. Sample names must be unique. Affected sample(s): ",paste(doubles, collapse = " ")))
   if (length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data.path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
   if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))
   # extract and combine metrics summary for all samples 
-  metrics <- samples %>% 
+  metrics <- data.path %>% 
+    pathsToList(metadata$sample) %>% 
     plapply(\(s) {
-      tmp <- read.table(dir(paste(data.path,s,"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
+      tmp <- read.table(dir(paste(s[2],s[1],"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
         mutate(., across(.cols = grep("%", .),
                          ~ as.numeric(gsub("%", "", .x)) / 100),
                across(.cols = grep(",", .),
@@ -264,34 +272,44 @@ addSummaryMetrics <- function(data.path,
       if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
                   
       tmp %>%
-        mutate(sample = s) %>% 
+        mutate(sample = s[1]) %>% 
         pivot_longer(cols = -c(sample),
                      names_to = "metric",
                      values_to = "value") %>% 
         mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
     }, n.cores = n.cores) %>% 
-    bind_rows()
+    bind_rows() %>% 
+    arrange(sample)
   if (verbose) message(paste0(Sys.time()," Done!"))
   return(metrics)
 }
 
 #' @title Plot the data as points, as bars as a histogram, or as a violin
 #' @description Plot the data as points, barplot, histogram or violin
+#' @param g ggplot2 object
 #' @param plot.geom The plot.geom to use, "point", "bar", "histogram", or "violin".
+#' @param pal character Palette (default = NULL)
 #' @keywords internal
 #' @return geom
-plotGeom <- function(plot.geom, 
-                    col){
+plotGeom <- function(g, plot.geom, col, pal = NULL) {
   if (plot.geom == "point"){
-    geom <- geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col)))
+    g <- g + 
+      geom_quasirandom(size = 1, groupOnX = TRUE, aes(col = !!sym(col))) +
+      if (is.null(pal)) scale_color_hue() else scale_color_manual(values = pal)
   } else if (plot.geom == "bar"){
-    geom <- geom_bar(stat = "identity", position = "dodge", aes(fill = !!sym(col)))
+    g <- g +
+      geom_bar(stat = "identity", position = "dodge", aes(fill = !!sym(col))) +
+      if (is.null(pal)) scale_fill_hue() else scale_fill_manual(values = pal)
   } else if (plot.geom == "histogram"){
-    geom <- geom_histogram(binwidth = 25, aes(fill = !!sym(col)))
+    g <- g +
+      geom_histogram(binwidth = 25, aes(fill = !!sym(col))) +
+      if (is.null(pal)) scale_fill_hue() else scale_fill_manual(values = pal)
   } else if (plot.geom == "violin"){
-    geom <- geom_violin(show.legend = TRUE, aes(fill = !!sym(col)))
+    g <- g +
+      geom_violin(show.legend = TRUE, aes(fill = !!sym(col))) +
+      if (is.null(pal)) scale_fill_hue() else scale_fill_manual(values = pal)
   }
-  return(geom)
+  return(g)
 }
 
 #' @title Calculate percentage of filtered cells
@@ -357,7 +375,7 @@ labelsFilter <- function(filter.data) {
 
 #' @title Read 10x HDF5 files
 #' @param data.path character
-#' @param sample.names character vector, select specific samples for processing (default = NULL)
+#' @param samples character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
 #' @param symbol logical Use gene SYMBOLs (TRUE) or ENSEMBL IDs (FALSE) (default = TRUE)
 #' @param sep character Separator for creating unique cell names from sample IDs and cell IDs (default = "!!")
@@ -371,7 +389,7 @@ labelsFilter <- function(filter.data) {
 #' }
 #' @export
 read10xH5 <- function(data.path, 
-                      sample.names = NULL, 
+                      samples = NULL, 
                       type = c("raw","filtered","cellbender","cellbender_filtered"), 
                       symbol = TRUE, 
                       sep = "!!", 
@@ -380,9 +398,9 @@ read10xH5 <- function(data.path,
                       unique.names = FALSE) {
   checkPackageInstalled("rhdf5", bioc = TRUE)
   
-  if (is.null(sample.names)) sample.names <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full.path <- getH5Paths(data.path, sample.names, type)
+  full.path <- getH5Paths(data.path, samples, type)
   
   if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores < length(full.path)) n.cores else length(full.path)," cores"))
   out <- full.path %>%
@@ -417,9 +435,9 @@ read10xH5 <- function(data.path,
       
       return(tmp)
     }, n.cores = n.cores) %>% 
-    setNames(sample.names)
+    setNames(samples)
   
-  if (unique.names) out %<>% createUniqueCellNames(sample.names, sep)
+  if (unique.names) out %<>% createUniqueCellNames(samples, sep)
   
   if (verbose) message(paste0(Sys.time()," Done!"))
   
@@ -429,20 +447,20 @@ read10xH5 <- function(data.path,
 #' @title Create unique cell names
 #' @description Create unique cell names from sample IDs and cell IDs
 #' @param cms list List of count matrices, should be named (optional)
-#' @param sample.names character Optional, list of sample names
+#' @param samples character Optional, list of sample names
 #' @param sep character Separator between sample IDs and cell IDs (default = "!!")
 #' @keywords internal
 createUniqueCellNames <- function(cms, 
-                                  sample.names, 
+                                  samples, 
                                   sep = "!!") {
-  names(cms) <- sample.names
+  names(cms) <- samples
   
-  sample.names %>%
+  samples %>%
     lapply(\(sample) {
       cms[[sample]] %>% 
         `colnames<-`(., paste0(sample,sep,colnames(.)))
     }) %>%
-    setNames(sample.names)
+    setNames(samples)
 }
 
 #' @title Get H5 file paths
@@ -460,12 +478,13 @@ getH5Paths <- function(data.path,
     match.arg(c("raw","filtered","cellbender","cellbender_filtered"))
   
   # Get H5 paths
-  paths <- samples %>% 
+  paths <- data.path %>% 
+    pathsToList(samples) %>% 
     sapply(\(sample) {
       if (grepl("cellbender", type)) {
-        paste0(data.path,"/",sample,"/outs/",type,".h5")
+        paste0(sample[2],"/",sample[1],"/outs/",type,".h5")
       } else {
-        dir(paste0(data.path,sample,"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
+        dir(paste0(sample[2],sample[1],"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
       }
     }) %>% 
     setNames(samples)
@@ -548,30 +567,13 @@ checkDataPath <- function(data.path) {
   if (is.null(data.path)) stop("'data.path' cannot be NULL.")
 }
 
-#' @title Check whether a package is installed
-#' @description This function is shamelessly stolen from github.com/kharchenkolab/Cacoa
-#' @keywords internal
-checkPackageInstalled <- function(pkgs, details='to run this function', install.help=NULL, bioc=FALSE, cran=FALSE) {
-  pkgs <- pkgs[!sapply(pkgs, requireNamespace, quietly=TRUE)]
-  if (length(pkgs) == 0) {
-    return(NULL)
-  }
-  
-  if (length(pkgs) > 1) {
-    pkgs <- paste0("c('", paste0(pkgs, collapse="', '"), "')")
-    error.text <- paste("Packages", pkgs, "must be installed", details)
-  } else {
-    pkgs <- paste0("'", pkgs, "'")
-    error.text <- paste(pkgs, "package must be installed", details)
-  }
-  
-  if (!is.null(install.help)) {
-    error.text <- paste0(error.text, ". Please, run `", install.help, "` to do it.")
-  } else if (bioc) {
-    error.text <- paste0(error.text, ". Please, run `BiocManager::install(", pkgs, ")", "` to do it.")
-  } else if (cran) {
-    error.text <- paste0(error.text, ". Please, run `install.packages(", pkgs, ")", "` to do it.")
-  }
-  
-  stop(error.text)
+pathsToList <- function(data.path, samples) {
+  data.path %>% 
+    lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
+             {if (!is.null(samples)) .[. %in% samples] else . } %>% 
+             data.frame(sample = ., path = path)) %>% 
+    bind_rows() %>% 
+    t() %>% 
+    data.frame() %>% 
+    as.list()
 }

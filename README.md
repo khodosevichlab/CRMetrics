@@ -9,26 +9,26 @@
 
 CRMetrics
 ================
-14/10/2022
+05-07-2023
 
 Cell Ranger output filtering and metrics visualisation
 
 # Installation
 
-To install the latest version, use
-
 ``` r
-install.packages("devtools")
-devtools::install_github("khodosevichlab/CRMetrics")
+install.packages("remotes")
+remotes::install_github("khodosevichlab/CRMetrics") # CRAN version
+remotes::install_github("khodosevichlab/CRMetrics", ref = "dev") # developer version
 ```
 
 # Initialization
 
 A CRMetrics object can be initialized in different ways using
-`CRMetrics$new()`. The most important arguments are:
+`CRMetrics$new()`. Either `data.path` or `cms` must be provided. The most important arguments are:
 
 -   `data.path`: A path to a directory containing sample-wise
-    directories with outputs from `cellranger count`. Can also be `NULL`
+    directories with outputs from `cellranger count`. Can also be `NULL`.
+    Can also be a vector of multiple paths.
 -   `cms`: A list with count matrices. Must be named with sample IDs.
     Can also be `NULL`
 -   `metadata`: Can either be 1) a `data.frame`, or 2) a path to a table
@@ -43,15 +43,17 @@ A CRMetrics object can be initialized in different ways using
 
 For usage, please see the
 [vignette](http://kkh.bric.ku.dk/rasmus/CRMetrics/walkthrough.html)
-([code](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.Rmd).
+/ [code](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.Rmd).
 
 # Python integrations
 
-CRMetrics makes use of several Python packages, most of them through the
-`reticulate` package in R. For these to work, we included an [example
+CRMetrics makes use of several Python packages, some of them through the
+`reticulate` package in R, please see the included [example
 workflow](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.md#using-python-modules)
 in the vignette.
 
 # Cite
 
-To cite this work, please run `citation(CRMetrics)`.
+To cite this work, please run `citation("CRMetrics")` or cite our preprint:
+
+Fabienne Lorena Kick, Henrietta Holze, Rasmus Rydbirk, Konstantin Khodosevich: CRMetrics - an R package for Cell Ranger Filtering and Metrics Visualisation, 06 July 2023, PREPRINT (Version 1) available at Research Square [https://doi.org/10.21203/rs.3.rs-2853524/v1]
