@@ -1458,7 +1458,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Prepare data
     if (depth) {
-      checkPackageInstalled("conos", cran = TRUE)
       depths <- self$getDepth() %>% 
         filterVector("depth.cutoff", depth.cutoff, depth.cutoff %>% names(), sep) %>% 
         {ifelse(!., "depth", "")}
@@ -1467,7 +1466,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     if (mito.frac) {
-      checkPackageInstalled("conos", cran = TRUE)
       mf <- self$getMitoFraction(species = species) %>% 
         filterVector("mito.cutoff", mito.cutoff, mito.cutoff %>% names(), sep) %>% 
         {ifelse(., "mito", "")}
@@ -1485,8 +1483,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Get cell index
-    cell.idx <- self$con$getDatasetPerCell() %>% 
-      names()
+    cell.idx <- crm$cms %>% 
+      lapply(colnames) %>%
+      Reduce(c, .)
     
     # Create data.frame
     tmp <- list(depth = depths,

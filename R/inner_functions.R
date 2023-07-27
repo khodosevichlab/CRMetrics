@@ -315,12 +315,14 @@ plotGeom <- function(g, plot.geom, col, pal = NULL) {
 #' @title Calculate percentage of filtered cells
 #' @description Calculate percentage of filtered cells based on the filter
 #' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample.
-#' @param filter The variable to filter (default = "mito").
+#' @param filter The variable to filter (default = "mito")
+#' @param no.vars numeric Number of variables (default = 1)
 #' @keywords internal
 #' @return vector
 percFilter <- function(filter.data, 
-                       filter = "mito") {
-  cells.per.sample <- filter.data$sample %>% table() %>% c()
+                       filter = "mito",
+                       no.vars = 1) {
+  cells.per.sample <- filter.data$sample %>% table() / no.vars %>% c()
   variable.count <- filter.data %>% 
     filter(variable == filter) %$% 
     split(value, sample) %>% 
@@ -347,19 +349,19 @@ labelsFilter <- function(filter.data) {
   tmp <- list()
   
   if ("mito" %in% var.names) {
-    tmp$mito <- percFilter(filter.data, "mito") %>% 
+    tmp$mito <- percFilter(filter.data, "mito", length(var.names)) %>% 
       sapply(\(x) {if (x < 0.01) "Low" else if (x > 0.05) "High" else "Medium"}) %>% 
       {data.frame(sample = names(.), value = .)}
   }
   
   if ("depth" %in% var.names) {
-    tmp$depth <- percFilter(filter.data, "depth") %>% 
+    tmp$depth <- percFilter(filter.data, "depth", length(var.names)) %>% 
       sapply(\(x) {if (x < 0.05) "Low" else if (x > 0.1) "High" else "Medium"}) %>% 
       {data.frame(sample = names(.), value = .)}
   }
   
   if ("doublets" %in% var.names) {
-    tmp$doublets <- percFilter(filter.data, "doublets") %>% 
+    tmp$doublets <- percFilter(filter.data, "doublets", length(var.names)) %>% 
       sapply(\(x) {if (x < 0.05) "Low" else if (x > 0.1) "High" else "Medium"}) %>%
       {data.frame(sample = names(.), value = .)}
   }
