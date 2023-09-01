@@ -4,12 +4,14 @@
 \alias{percFilter}
 \title{Calculate percentage of filtered cells}
 \usage{
-percFilter(filter.data, filter = "mito")
+percFilter(filter.data, filter = "mito", no.vars = 1)
 }
 \arguments{
 \item{filter.data}{Data frame containing the mitochondrial fraction, depth and doublets per sample.}
 
-\item{filter}{The variable to filter (default = "mito").}
+\item{filter}{The variable to filter (default = "mito")}
+
+\item{no.vars}{numeric Number of variables (default = 1)}
 }
 \value{
 vector

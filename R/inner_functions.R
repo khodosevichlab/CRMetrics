@@ -170,7 +170,8 @@ addDetailedMetricsInner <- function(cms,
 #' @param comp.group Comparison metric.
 #' @param metadata Metadata for samples.
 #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
-#' @param stat.test Statistical test to perform to compare means.
+#' @param primary.test Primary statistical test, e.g. "anova", "kruskal.test".
+#' @param secondary.test Secondary statistical test, e.g. "t-test", "wilcox.test"
 #' @param exact Whether to calculate exact p values (default = FALSE).
 #' @keywords internal
 #' @return ggplot2 object
