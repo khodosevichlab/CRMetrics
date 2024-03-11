@@ -279,8 +279,7 @@ addSummaryMetrics <- function(data.path,
                      values_to = "value") %>% 
         mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
     }, n.cores = n.cores) %>% 
-    bind_rows() %>% 
-    arrange(sample)
+    bind_rows()
   if (verbose) message(paste0(Sys.time()," Done!"))
   return(metrics)
 }

@@ -124,9 +124,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Metadata
     if (is.null(metadata)) {
       if (!is.null(data.path)) {
-        self$metadata <- list.dirs(data.path, 
-                                   recursive = FALSE, 
-                                   full.names = FALSE) %>% 
+        self$metadata <- lapply(data.path, 
+                                list.dirs, 
+                                recursive = FALSE, 
+                                full.names = FALSE) %>% 
+          Reduce(c, .) %>% 
    .[pathsToList(data.path, .) %>% sapply(\(path) file.exists(paste0(path[2],"/",path[1],"/outs")))] %>% 
           {data.frame(sample = .)}
       } else {
@@ -139,20 +141,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         } else {
           sample.out <- names(cms)
         }
-        self$metadata <- data.frame(sample = sample.out) %>% 
-          arrange(sample)
+        self$metadata <- data.frame(sample = sample.out)
       }
     } else {
       if (inherits(metadata, "data.frame")) {
-        self$metadata <- metadata %>% 
-          arrange(sample)
+        self$metadata <- metadata
       } else {
         stopifnot(file.exists(metadata))
         self$metadata <- read.table(metadata, 
                                     header = TRUE, 
                                     colClasses = "character", 
-                                    sep = sep.meta) %>% 
-          arrange(sample)
+                                    sep = sep.meta)
       }
     }
     
@@ -2208,8 +2207,7 @@ addSummaryFromCms = function(cms = self$cms,
     mutate(metric = factor(metric, labels = c("estimated number of cells",
                                               "median genes per cell",
                                               "median umi counts per cell",
-                                              "total genes detected"))) %>% 
-    arrange(sample)
+                                              "total genes detected")))
     
   if (verbose) message(paste0(Sys.time()," Done!"))
 },
