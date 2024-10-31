@@ -1,3 +1,7 @@
+# CRMetrics 0.3.1
+
+* Minor bug fix for issue #52
+
 # CRMetrics 0.3.0
 
 * Several minor bug fixes
