@@ -32,3 +32,4 @@ cran-comments.md
 .Rbuildignore
 CRMetrics.Rproj
 CRAN-SUBMISSION
+.github/

@@ -23,9 +23,11 @@ addPlotStats(
 
 \item{h.adj}{Position of statistics test p value as \% of max(y) (default = 0.05).}
 
-\item{exact}{Whether to calculate exact p values (default = FALSE).}
+\item{primary.test}{Primary statistical test, e.g. "anova", "kruskal.test".}
 
-\item{stat.test}{Statistical test to perform to compare means.}
+\item{secondary.test}{Secondary statistical test, e.g. "t-test", "wilcox.test"}
+
+\item{exact}{Whether to calculate exact p values (default = FALSE).}
 }
 \value{
 ggplot2 object

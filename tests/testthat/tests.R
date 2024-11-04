@@ -43,8 +43,6 @@ test_that("Check embedding object", {
 })
 
 test_that("Check depth vector", {
-  skip_if_not_installed("pagoda2")
-  skip_if_not_installed("conos")
   crm$getDepth()
   expect_equal(length(crm$getDepth()), 1.2e4)
 })

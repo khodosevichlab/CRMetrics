@@ -1,7 +1,7 @@
 Package: CRMetrics
 Title: Cell Ranger Output Filtering and Metrics Visualization
-Version: 0.3.0
-Authors@R: c(person("Rasmus", "Rydbirk", email = "rrydbirk@bmb.sdu.dk", role = c("aut", "cre")), person("Fabienne", "Kick", email="fabienne.kick@bric.ku.dk", role="aut"), person("Henrietta","Holze", email="@bric.ku.dk", role="aut"), person("Xian", "Xin", email="xian.xin@bric.ku.dk", role="ctb"))
+Version: 0.3.2
+Authors@R: c(person("Rasmus", "Rydbirk", email = "rrydbirk@bmb.sdu.dk", role = c("aut", "cre")), person("Fabienne", "Kick", email="fabienne.kick@bric.ku.dk", role="aut"), person("Henrietta","Holze", email="henrietta.holze@petermac.org", role="aut"), person("Xian", "Xin", email="xian.xin@bric.ku.dk", role="ctb"))
 Description: Sample and cell filtering as well as visualisation of output metrics from 'Cell Ranger' by Grace X.Y. Zheng et al. (2017) <doi:10.1038/ncomms14049>. 'CRMetrics' allows for easy plotting of output metrics across multiple samples as well as comparative plots including statistical assessments of these. 'CRMetrics' allows for easy removal of ambient RNA using 'SoupX' by Matthew D Young and Sam Behjati (2020) <doi:10.1093/gigascience/giaa151> or 'CellBender' by Stephen J Fleming et al. (2022) <doi:10.1101/791699>. Furthermore, it is possible to preprocess data using 'Pagoda2' by Nikolas Barkas et al. (2021) <https://github.com/kharchenkolab/pagoda2> or 'Seurat' by Yuhan Hao et al. (2021) <doi:10.1016/j.cell.2021.04.048> followed by embedding of cells using 'Conos' by Nikolas Barkas et al. (2019) <doi:10.1038/s41592-019-0466-z>. Finally, doublets can be detected using 'scrublet' by Samuel L. Wolock et al. (2019) <doi:10.1016/j.cels.2018.11.005> or 'DoubletDetection' by Gayoso et al. (2020) <doi:10.5281/zenodo.2678041>. In the end, cells are filtered based on user input for use in downstream applications.
 License: GPL-3
 Encoding: UTF-8
@@ -38,7 +38,7 @@ Suggests:
     SoupX,
     testthat (>= 3.0.0)
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 URL: https://github.com/khodosevichlab/CRMetrics
 BugReports: https://github.com/khodosevichlab/CRMetrics/issues
 Maintainer: Rasmus Rydbirk <rrydbirk@bmb.sdu.dk>
