@@ -1165,7 +1165,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
   #' @param arg.buildGraph list A list with additional arguments for the `buildGraph` function in Conos (default = list())
   #' @param arg.findCommunities list A list with additional arguments for the `findCommunities` function in Conos (default = list())
-  #' @param arg.embedGraph list A list with additional arguments for the `embedGraph` function in Conos (default = list(method = "UMAP))
+  #' @param arg.embedGraph list A list with additional arguments for the `embedGraph` function in Conos (default = list(method = "UMAP"))
   #' @return Conos object
   #' @examples 
   #' \donttest{
@@ -1706,14 +1706,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (is.null(total.droplets)) total.droplets <- self$getTotalDroplets(samples)
     
     # Read CMs from HDF5 files
+    
+    #add parse case, use readParse function
     if (!is.null(cms.raw)) {
-      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger outputs. To overwrite, set $cms.raw <- NULL"))
+      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger/Parse outputs. To overwrite, set $cms.raw <- NULL"))
+    } else {
+      
+      checkDataPath(data.path)
+      
+      if (grepl("combined", data.path)) {
+        if (verbose) message("Loading Parse outputs")
+        cms.raw <- readParse(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
-      checkDataPath(data.path)
       cms.raw <- read10xH5(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
-      self$cms.raw <- cms.raw
-    }
+     }
+    self$cms.raw <- cms.raw
+  }
     
     # Get UMI counts
     if (!is.null(umi.counts)) {
@@ -1760,15 +1769,54 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     g <- g + facet_wrap(~ sample, scales = "free")
     
     if (verbose) message(paste0(Sys.time()," Done!"))
+   
+  
+  # transform parse output to work as input for cellbender
+    if (grepl("combined", data.path)) {
+      if (verbose) message("Transforming Parse outputs as preparation for cellbender")
+      # check if transformed data already exists
+      full.path <- data.path %>% 
+        pathsToList(samples) %>% 
+        sapply(\(sample) {
+           paste0(sample[2],"/",sample[1],"/DGE_unfiltered")
+        })
+      lapply(full.path, function(x) {
+        
+        # 1. Check and create genes.tsv
+        if (!file.exists(paste0(x,"/","genes.tsv"))) {
+          if(verbose) message("Creating genes.tsv in ", x)
+          fread(paste0(x,"/","all_genes.csv"), sep = ",", header = TRUE) %>%
+            mutate(genome = "Gene Expression") %>%
+            fwrite(paste0(x,"/","genes.tsv"), sep = "\t", col.names = FALSE)
+        }
+        #2. Check and create barcodes.tsv
+        if (!file.exists(paste0(x,"/","barcodes.tsv"))) {
+          if(verbose) message("Creating barcodes.tsv in ", x)
+          fread(paste0(x,"/","cell_metadata.csv"), sep = ",", header = TRUE) %>%
+            .[, "bc_wells"] %>%
+            write.table(paste0(x,"/","barcodes.tsv"), row.names=F, col.names=F)
+        }
+        #2. Check and create matrix.mtx
+        if (!file.exists(paste0(x,"/","matrix.mtx"))) {
+          if(verbose) message("Creating matrix.mtx in ", x)
+        fread(paste0(full.path[1],"/","count_matrix.mtx"), header = F) %>%
+          select(V2, V1, V3)  %>%
+          fwrite(paste0(full.path[1],"/","matrix.mtx"), col.names=F)
+        }
+      })
+    }
+    # return the plot object
     return(g)
   },
+  
+  
   
   #' @param file character File name for CellBender script. Will be stored in `data.path` (default: "cellbender_script.sh")
   #' @param fpr numeric False positive rate for CellBender (default = 0.01)
   #' @param epochs integer Number of epochs for CellBender (default = 150)
   #' @param use.gpu logical Use CUDA capable GPU (default = TRUE)
-  #' @param expected.cells named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
-  #' @param total.droplets named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
+  #' @param expected.cells logical or named numeric vector If FALSE, the --expected-cells argument is omitted in the generated script.If TRUE, expected cells will be deduced from the number of cells per sample identified by Cell Ranger/Parse. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE) 
+  #' @param total.droplets logical or named numeric vector If FALSE, the --total.droplets argument is omitted in the generated script.If TRUE, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @param args character (optional) Additional parameters for CellBender
@@ -1783,26 +1831,84 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                   fpr = 0.01, 
                                   epochs = 150, 
                                   use.gpu = TRUE, 
-                                  expected.cells = NULL, 
-                                  total.droplets = NULL, 
+                                  expected.cells = FALSE, 
+                                  total.droplets = FALSE, 
                                   data.path = self$data.path, 
                                   samples = self$metadata$sample, 
                                   args = NULL) {
     # Preparations
     checkDataPath(data.path)
-    inputs <- getH5Paths(data.path, samples, "raw")
+    
+    if (grepl("combined", data.path)) {
+      # in case of parse we use the genes, matrix, barcodes files stored in DGE_unfiltered and therefor we just need to give the path to DGE_unfiltered
+      inputs <- data.path %>%
+        pathsToList(samples) %>% 
+        sapply(\(sample) {
+            paste0(sample[2], "/", sample[1], "/DGE_unfiltered")})
+      
+      #check that transformed files exists for parse
+      lapply(inputs, function(x) {
+        
+        # 1. Check genes.tsv
+        if (!file.exists(paste0(x,"/","genes.tsv"))) {
+          message("genes.tsv missing in ", x, " run prepareCellbender first.")
+          
+        }
+        #2. Check barcodes.tsv
+        if (!file.exists(paste0(x,"/","barcodes.tsv"))) {
+          message("barcodes.tsv missing in ", x, " run prepareCellbender first.")
+        }
+        
+        #2. Check matrix.mtx
+        if (!file.exists(paste0(x,"/","matrix.mtx"))) {
+          message("matrix.mtx missing in ", x, " run prepareCellbender first.")
+        }
+      })
+      
+    } else {
+      inputs <- getH5Paths(data.path, samples, "raw")
+    }
+    
     outputs <- data.path %>% 
       pathsToList(samples) %>% 
-      sapply(\(sample) paste0(sample[2],sample[1],"/outs/cellbender.h5")) %>% 
+    sapply(\(sample) {
+        if (grepl("combined", data.path)) {
+          paste0(sample[2], "/", sample[1], "/DGE_unfiltered/cellbender.h5")
+        } else if (grepl("per_sample_outs", data.path)) {
+          paste0(sample[2], "/", sample[1], "/count/cellbender.h5")
+        } else {
+          paste0(sample[2], "/", sample[1], "/outs/cellbender.h5")
+        }
+      }) %>%
       setNames(samples)
     
-    if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
-    if (is.null(total.droplets)) total.droplets <- self$getTotalDroplets(samples)
+    if (isTRUE(expected.cells)) {
+      expected.cells <- self$getExpectedCells(samples)
+    } else if (isFALSE(expected.cells)) { 
+      expected.cells <- NULL
+    } else if (is.vector(expected.cells) && is.null(names(expected.cells))) {
+        stop("If expected.cells is a vector, it must be named with sample names.")
+      }
+    
+    if (isTRUE(total.droplets)) {
+      total.droplets <- self$getTotalDroplets(samples)
+    } else if (isFALSE(total.droplets)) {
+      total.droplets <- NULL
+    } else if (is.vector(total.droplets) && is.null(names(total.droplets))) {
+       stop("If total.droplets is a vector, it must be named with sample names.")
+    }
     
     # Create CellBender shell scripts
     script.list <- samples %>% 
       lapply(\(sample) {
-        paste0("cellbender remove-background --input ",inputs[sample]," --output ",outputs[sample],if (use.gpu) c(" --cuda ") else c(" "),"--expected-cells ",expected.cells[sample]," --total-droplets-included ",total.droplets[sample]," --fpr ",fpr," --epochs ",epochs," ",if (!is.null(args)) paste(args, collapse = " "))
+        paste0("cellbender remove-background --input ",inputs[sample],
+               " --output ",outputs[sample],
+               if (use.gpu) c(" --cuda ") else c(" "),
+               if (!is.null(expected.cells)) paste0("--expected-cells ", expected.cells[sample], " ") else c(" "),
+               if (!is.null(total.droplets)) paste0("--total-droplets-included ", total.droplets[sample], " ") else c(" "),
+               " --fpr ",fpr,
+               " --epochs ",epochs,
+               " ",if (!is.null(args)) paste(args, collapse = " "))
       })
     
     out <- list("#! /bin/sh", script.list) %>% 
@@ -1832,9 +1938,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' 
   #' # Get no. cells
   #' crm$getExpectedCells()
+  #' 
+
+  #included parse and 10x flex nomenclature
   getExpectedCells = function(samples = self$metadata$sample) {
     expected.cells <- self$summary.metrics %>% 
-      filter(metric == "estimated number of cells") %$% 
+      filter(metric %in% c("estimated number of cells", "number_of_cells", "cells")) %$% 
       setNames(value, sample) %>%
       .[samples]
     
@@ -1877,7 +1986,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param data.path character Path to cellranger count data (default = self$data.path).
   #' @param samples character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)
   #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
-  #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE` (default = FALSE)
+  #' @param parse logical Add Parse filtered count matrices. Cannot be combined with `cellbender=TRUE`. Cannot be combined with `raw=TRUE`. (default = FALSE)
+  #' @param flex logical Add 10x Flex filtered count matrices from cell ranger. Can be combined with `raw=TRUE`. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
+  #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
   #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
   #' @param sep character Separator used to create unique cell names (default = "!!")
@@ -1904,6 +2015,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                     data.path = self$data.path,
                     samples = self$metadata$sample,
                     cellbender = FALSE,
+                    flex = FALSE,
+                    parse = FALSE,
                     raw = FALSE,
                     symbol = TRUE,
                     unique.names = TRUE, 
@@ -1945,9 +2058,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (unique.names) cms %<>% createUniqueCellNames(samples, sep)
     } else {
       # Add from data.path argument
+      if (parse && cellbender) {
+        stop("Error: If you run CellBender on Parse files, 'parse' must be set to FALSE and only 'cellbender' set to TRUE.")
+      }
       if (cellbender) {
         cms <- read10xH5(data.path = data.path, samples = samples, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
-      } else {
+        }  else if (parse) {       
+          cms <- readParse(data.path = data.path, samples = samples, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        }  else if (flex) {
+          cms <- readFlex(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)   
+           }
+       else {
         cms <- read10x(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
       }
     }
@@ -1989,7 +2110,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     train.df <- samples %>% 
       lapply(\(id) {
-        rhdf5::h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
+       # rhdf5::h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
+      #for cellbender v0.3.0
+        rhdf5::h5read(paths[id], "metadata/learning_curve_train_elbo") %>%
           {data.frame(ELBO = ., 
                       Epoch = seq_len(length(.)), 
                       sample = id)}
@@ -2000,8 +2123,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     test.df <- samples %>%
       lapply(\(id) {
         path <- paths[id]
-        data.frame(ELBO = rhdf5::h5read(path, "matrix/test_elbo"), 
-                   Epoch = rhdf5::h5read(path, "matrix/test_epoch"), 
+       # data.frame(ELBO = rhdf5::h5read(path, "matrix/test_elbo"), 
+      #             Epoch = rhdf5::h5read(path, "matrix/test_epoch"), 
+        #           sample = id)
+        #for cellbender v0.3.0
+        data.frame(ELBO = rhdf5::h5read(path, "metadata/learning_curve_test_elbo"), 
+                   Epoch = rhdf5::h5read(path, "metadata/learning_curve_test_epoch"), 
                    sample = id)
       }) %>% 
       setNames(samples) %>% 
@@ -2045,7 +2172,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     cell.prob <- samples %>%
       lapply(\(id) {
-        rhdf5::h5read(paths[id], "matrix/latent_cell_probability") %>%
+        #rhdf5::h5read(paths[id], "matrix/latent_cell_probability") %>%
+        # for cellbender v0.3.0
+        rhdf5::h5read(paths[id], "droplet_latents/cell_probability") %>%
           {data.frame(prob = ., 
                       cell = seq_len(length(.)), 
                       sample = id)}
@@ -2083,7 +2212,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     amb <- samples %>% 
       lapply(\(id) {
-        rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
+      #  rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
+        #for cellbender version 3
+        rhdf5::h5read(paths[id], "global_latents/ambient_expression") %>% 
           {data.frame(exp = ., 
                       cell = seq_len(length(.)), 
                       gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
@@ -2127,7 +2258,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     amb <- samples %>% 
       lapply(\(id) {
-        rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
+        #rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
+          #for cellbender version 3
+          rhdf5::h5read(paths[id], "global_latents/ambient_expression") %>% 
           {data.frame(exp = ., 
                       cell = seq_len(length(.)), 
                       gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 

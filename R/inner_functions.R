@@ -111,6 +111,152 @@ read10x <- function(data.path,
   return(tmp)
 }
 
+#' @title Load 10x flex count matrices
+#' @description Load gene expression count data
+#' @param data.path Path to cellranger count data.
+#' @param samples Vector of sample names (default = NULL)
+#' @param raw logical Add raw count matrices (default = FALSE)
+#' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
+#' @param sep Separator for cell names (default = "!!").
+#' @param n.cores Number of cores for the calculations (default = 1).
+#' @param verbose Print messages (default = TRUE).
+#' @keywords internal
+#' @return data frame
+#' @examples 
+#' \dontrun{
+#' cms <- readFlex(data.path = "/path/to/count/data", 
+#' samples = crm$metadata$samples, 
+#' raw = FALSE, 
+#' symbol = TRUE, 
+#' n.cores = crm$n.cores)
+#' }
+#' @export
+readFlex <- function(data.path, 
+                    samples = NULL, 
+                    raw = FALSE, 
+                    symbol = TRUE, 
+                    sep = "!!", 
+                    unique.names = TRUE, 
+                    n.cores = 1, 
+                    verbose = TRUE) {
+  checkPackageInstalled("data.table", cran = TRUE)
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  
+  full.path <- data.path %>% 
+    pathsToList(samples) %>% 
+    sapply(\(sample) {
+      if (raw) pat <- glob2rx("sample_raw_*_bc_matri*") else pat <- glob2rx("sample_filtered_*_bc_matri*")
+      dir(paste(sample[2],sample[1],"count", sep = "/"), pattern = pat, full.names = TRUE) %>% 
+        .[!grepl(".h5", .)]
+    })
+  
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores > length(full.path)) length(full.path) else n.cores," cores"))
+  tmp <- full.path %>%
+    plapply(\(sample) {
+      tmp.dir <- dir(sample, full.names = TRUE)
+      
+      # Read matrix
+      mat.path <- tmp.dir %>%
+        .[grepl("mtx", .)]
+      if (grepl("gz", mat.path)) {
+        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "CsparseMatrix")
+      } else {
+        mat <- as(Matrix::readMM(mat.path), "CsparseMatrix")
+      }
+      
+      # Add features
+      feat <- tmp.dir %>%
+        .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>%
+        data.table::fread(header = FALSE)
+      if (symbol) rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
+      
+      # Add barcodes
+      barcodes <- tmp.dir %>%
+        .[grepl("barcodes.tsv", .)] %>%
+        data.table::fread(header = FALSE)
+      colnames(mat) <- barcodes %>% pull(V1)
+      return(mat)
+    }, n.cores = n.cores) %>%
+    setNames(samples)
+  
+  if (unique.names) tmp %<>% createUniqueCellNames(samples, sep)
+  
+  if (verbose) message(paste0(Sys.time()," Done!"))
+  
+  return(tmp)
+}
+
+#' @title Load filtered Parse count matrices
+#' @description Load gene expression count data
+#' @param data.path Path to Parse count data.
+#' @param samples Vector of sample names (default = NULL)
+#' @param raw logical Add raw count matrices (default = FALSE)
+#' @param sep Separator for cell names (default = "!!").
+#' @param n.cores Number of cores for the calculations (default = 1).
+#' @param verbose Print messages (default = TRUE).
+#' @keywords internal
+#' @return data frame
+#' 
+#' @export
+readParse <- function(data.path, 
+                    samples = NULL, 
+                    raw = FALSE,
+                    sep = "!!", 
+                    unique.names = TRUE, 
+                    n.cores = 1, 
+                    verbose = TRUE) {
+  
+  checkPackageInstalled("data.table", cran = TRUE)
+  checkPackageInstalled("Matrix", cran = TRUE)
+  
+  # If no samples provided, infer from directories
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  
+  full.path <- data.path %>% 
+    pathsToList(samples) %>% 
+    sapply(\(sample) {
+      if (isFALSE(raw)) {
+      paste0(sample[2],"/",sample[1],"/", "DGE_filtered", sep = "/")
+    } else paste0(sample[2],"/",sample[1],"/", "DGE_unfiltered", sep = "/")
+      })
+  
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores > length(full.path)) length(full.path) else n.cores," cores"))
+  tmp <- full.path %>%
+    plapply(\(sample) {
+      tmp.dir <- dir(sample, full.names = TRUE)
+      
+      # Read matrix, attention, in case of raw there can be the case that we have 2 .mtx because for cellbender we need to create a new one
+      mat.path <- tmp.dir %>%
+        .[grepl("count_matrix.mtx", .)]
+        mat <- as(Matrix::readMM(mat.path), "CsparseMatrix")
+        # Transpose the matrix to have genes in rows and cells in columns
+        mat <- t(mat)
+        
+      # Add genes
+      genes <- tmp.dir %>%
+        .[grepl("all_genes.csv", .)] %>%
+        data.table::fread(header = T)
+        rownames(mat) <- genes$gene_name 
+      
+      # Add barcodes
+      barcodes <- tmp.dir %>%
+        .[grepl("cell_metadata.csv", .)] %>%
+        data.table::fread(header = T)
+      colnames(mat) <- barcodes$bc_wells
+      
+      return(mat)
+    }, n.cores = n.cores) %>%
+    setNames(samples)
+  
+  
+  # Make cell names unique across samples if needed
+  if (unique.names) tmp %<>% createUniqueCellNames(samples, sep)
+  
+  if (verbose) message(paste0(Sys.time(), " Done!"))
+  
+  return(tmp)
+}
+  
 #' @title Add detailed metrics
 #' @description Add detailed metrics, requires to load raw count matrices using pagoda2.
 #' @param cms List containing the count matrices. 
@@ -263,26 +409,71 @@ addSummaryMetrics <- function(data.path,
   metrics <- data.path %>% 
     pathsToList(metadata$sample) %>% 
     plapply(\(s) {
-      tmp <- read.table(dir(paste(s[2],s[1],"outs", sep = "/"), glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>%
-        mutate(., across(.cols = grep("%", .),
-                         ~ as.numeric(gsub("%", "", .x)) / 100),
-               across(.cols = grep(",", .),
-                         ~ as.numeric(gsub(",", "", .x))))
       
-      # Take into account multiomics
-      if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
-                  
-      tmp %>%
-        mutate(sample = s[1]) %>% 
-        pivot_longer(cols = -c(sample),
-                     names_to = "metric",
-                     values_to = "value") %>% 
+      # define possible directories to search for summary files (outs in case of Cell Ranger, report in case of Parse, sample base dir in case of 10X flex)
+      outs_dir <- paste(s[2], s[1], "outs", sep = "/")
+      report_dir <- paste(s[2], s[1], "report", sep = "/")
+      sample_base_dir <- paste(s[2], s[1], sep = "/")
+      
+      # Check which folder exists and use it to read the summary file
+      dir_to_use <- if (dir.exists(outs_dir)) outs_dir else if (dir.exists(report_dir)) report_dir else sample_base_dir
+      
+      if (!dir.exists(dir_to_use)) {
+        warning(paste("No 'outs', 'report', or summary file found for sample:", s[1]))
+        return(NULL)
+      }
+      
+      # Read the summary file differently based on the folder type
+      tmp <- NULL
+      if (dir_to_use == outs_dir) {
+        # Logic for 'outs' folder
+        tmp <- read.table(dir(dir_to_use, glob2rx("*ummary.csv"), full.names = TRUE), header = TRUE, sep = ",", colClasses = numeric()) %>% 
+          mutate(., across(.cols = grep("%", .), ~ as.numeric(gsub("%", "", .x)) / 100),
+               across(.cols = grep(",", .), ~ as.numeric(gsub(",", "", .x))))
+      
+       # Take into account multiomics
+       if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
+  
+        
+     # Add the sample column, pivot to long format, and clean metric names            
+     tmp %<>%
+       mutate(sample = s[1]) %>% 
+       pivot_longer(cols = -c(sample),
+                 names_to = "metric",
+                 values_to = "value") %>% 
         mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
-    }, n.cores = n.cores) %>% 
-    bind_rows()
-  if (verbose) message(paste0(Sys.time()," Done!"))
-  return(metrics)
-}
+      } 
+      
+      else if (dir_to_use == report_dir) {
+      
+      # Logic for 'report' folder (adjust this based on the structure of files in 'report')
+      tmp <- read.table(dir(dir_to_use, glob2rx("*ummary.csv"), full.names = TRUE), 
+                        header = TRUE, sep = ",", stringsAsFactors = FALSE) %>%
+        select(statistic, combined) %>% # Only select 'statistic' and 'combined' columns
+        rename(metric = statistic, value = combined) %>%  # Rename columns
+        mutate(sample = s[1])   # Add sample column
+      }
+      
+      if (is.null(tmp)) {
+        # in case of 10X Flex summary metrics is not in outs nor report directory
+          tmp <- read.table(dir(sample_base_dir, glob2rx("*ummary.csv"), full.names = TRUE), 
+                            header = TRUE, sep = ",", stringsAsFactors = FALSE) %>%
+            select(Metric.Name, Metric.Value) %>% # Only select 'Metric Name' and 'Metric Value' columns
+            rename(metric = Metric.Name, value = Metric.Value) %>%
+            slice(1:12) %>%
+            mutate(value = gsub(",", "", value),  # Remove commas
+                   value = ifelse(grepl("%", value), as.numeric(gsub("%", "", value)) / 100, as.numeric(value)))  %>%  # Handle percentages
+            mutate(sample = s[1]) %>% # Add sample column
+            mutate(metric = metric %>% gsub(".", " ", ., fixed = TRUE) %>% tolower())
+        }
+     
+  return(tmp)   
+}, n.cores = n.cores) %>% 
+  bind_rows() #combine all data frames
+if (verbose) message(paste0(Sys.time()," Done!"))
+return(metrics)  
+}      
+
 
 #' @title Plot the data as points, as bars as a histogram, or as a violin
 #' @description Plot the data as points, barplot, histogram or violin
@@ -375,7 +566,7 @@ labelsFilter <- function(filter.data) {
   return(tmp)
 }
 
-#' @title Read 10x HDF5 files
+#' @title Read 10x or cellbenders HDF5 files
 #' @param data.path character
 #' @param samples character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
@@ -467,9 +658,9 @@ createUniqueCellNames <- function(cms,
 
 #' @title Get H5 file paths
 #' @description Get file paths for H5 files
-#' @param data.path character Path for directory containing sample-wise directories with Cell Ranger count outputs
+#' @param data.path character Path for directory containing sample-wise directories with Cell Ranger count/Parse outputs
 #' @param samples character Sample names to include (default = NULL)
-#' @param type character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")
+#' @param type character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs, does not work for Parse), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")
 #' @keywords internal
 getH5Paths <- function(data.path, 
                        samples = NULL, 
@@ -479,14 +670,32 @@ getH5Paths <- function(data.path,
     tolower() %>% 
     match.arg(c("raw","filtered","cellbender","cellbender_filtered"))
   
+  
+  # Determine which folder to use based on whether 'combined' (parse) is in the data path or 'per_sample_outs' (10x flex) is in the data path
+  use_dge_unfiltered <- grepl("combined", data.path)
+  use_count <- grepl("per_sample_outs", data.path)
+  
+  # Get the appropriate folder path for all samples (helper function)
+  get_folder_path <- function(sample) {
+    if (use_dge_unfiltered) {
+      return(paste0(sample[2], "/", sample[1], "/DGE_unfiltered"))
+    } else if (use_count) {
+      return(paste0(sample[2], "/", sample[1], "/count"))
+    } else {
+      return(paste0(sample[2], "/", sample[1], "/outs"))
+    }
+  }
+  
+
   # Get H5 paths
   paths <- data.path %>% 
     pathsToList(samples) %>% 
     sapply(\(sample) {
+      folder <- get_folder_path(sample)
       if (grepl("cellbender", type)) {
-        paste0(sample[2],"/",sample[1],"/outs/",type,".h5")
+        paste0(folder,"/",type,".h5")
       } else {
-        dir(paste0(sample[2],sample[1],"/outs"), glob2rx(paste0(type,"*.h5")), full.names = TRUE)
+        dir(paste0(folder), glob2rx(paste0("*", type,"*.h5")), full.names = TRUE)
       }
     }) %>% 
     setNames(samples)
@@ -500,12 +709,13 @@ getH5Paths <- function(data.path,
     
     miss <- miss.names %>% 
       sapply(\(sample) {
+        folder <- get_folder_path(sample)
         if (type == "raw") {
-          paste0(data.path,sample,"/outs/raw_[feature/gene]_bc_matrix.h5")
+          paste0(folder, "/raw_[feature/gene]_bc_matrix.h5")
         } else if (type == "filtered") {
-          paste0(data.path,sample,"/outs/filtered_[feature/gene]_bc_matrix.h5")
+          paste0(folder,"/filtered_[feature/gene]_bc_matrix.h5")
         } else {
-          paste0(data.path,sample,"/outs/",type,".h5")
+          paste0(folder,"/",type,".h5")
         }
       }) %>% 
       setNames(miss.names)
@@ -569,6 +779,8 @@ checkDataPath <- function(data.path) {
   if (is.null(data.path)) stop("'data.path' cannot be NULL.")
 }
 
+
+# this fucntion is wired misses a title and so on...
 pathsToList <- function(data.path, samples) {
   data.path %>% 
     lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
@@ -577,5 +789,5 @@ pathsToList <- function(data.path, samples) {
     bind_rows() %>% 
     t() %>% 
     data.frame() %>% 
-    as.list()
+    as.list() 
 }

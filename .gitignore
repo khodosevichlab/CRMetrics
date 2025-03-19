@@ -27,9 +27,11 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 # Project files
-.Rproj
+*.Rproj
 cran-comments.md
 .Rbuildignore
 CRMetrics.Rproj
 CRAN-SUBMISSION
 .github/
+# test data
+control_6
