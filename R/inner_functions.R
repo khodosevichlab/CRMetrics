@@ -207,7 +207,6 @@ readParse <- function(data.path,
                     verbose = TRUE) {
   
   checkPackageInstalled("data.table", cran = TRUE)
-  checkPackageInstalled("Matrix", cran = TRUE)
   
   # If no samples provided, infer from directories
   if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
@@ -230,7 +229,7 @@ readParse <- function(data.path,
         .[grepl("count_matrix.mtx", .)]
         mat <- as(Matrix::readMM(mat.path), "CsparseMatrix")
         # Transpose the matrix to have genes in rows and cells in columns
-        mat <- t(mat)
+        mat <- Matrix::t(mat)
         
       # Add genes
       genes <- tmp.dir %>%
@@ -670,28 +669,11 @@ getH5Paths <- function(data.path,
     tolower() %>% 
     match.arg(c("raw","filtered","cellbender","cellbender_filtered"))
   
-  
-  # Determine which folder to use based on whether 'combined' (parse) is in the data path or 'per_sample_outs' (10x flex) is in the data path
-  use_dge_unfiltered <- grepl("combined", data.path)
-  use_count <- grepl("per_sample_outs", data.path)
-  
-  # Get the appropriate folder path for all samples (helper function)
-  get_folder_path <- function(sample) {
-    if (use_dge_unfiltered) {
-      return(paste0(sample[2], "/", sample[1], "/DGE_unfiltered"))
-    } else if (use_count) {
-      return(paste0(sample[2], "/", sample[1], "/count"))
-    } else {
-      return(paste0(sample[2], "/", sample[1], "/outs"))
-    }
-  }
-  
-
   # Get H5 paths
   paths <- data.path %>% 
     pathsToList(samples) %>% 
-    sapply(\(sample) {
-      folder <- get_folder_path(sample)
+    sapply(\(i) {
+      folder <- getFolderPaths(i, data.path = data.path)
       if (grepl("cellbender", type)) {
         paste0(folder,"/",type,".h5")
       } else {
@@ -708,8 +690,8 @@ getH5Paths <- function(data.path,
       names()
     
     miss <- miss.names %>% 
-      sapply(\(sample) {
-        folder <- get_folder_path(sample)
+      sapply(\(i) {
+        folder <- getFolderPaths(i, data.path= data.path)
         if (type == "raw") {
           paste0(folder, "/raw_[feature/gene]_bc_matrix.h5")
         } else if (type == "filtered") {
@@ -733,6 +715,8 @@ getH5Paths <- function(data.path,
   
   return(paths)
 }
+
+
 
 #' @title Create filtering vector
 #' @description Create logical filtering vector based on a numeric vector and a (sample-wise) cutoff
@@ -780,7 +764,7 @@ checkDataPath <- function(data.path) {
 }
 
 
-# this fucntion is wired misses a title and so on...
+# no title?
 pathsToList <- function(data.path, samples) {
   data.path %>% 
     lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
@@ -790,4 +774,19 @@ pathsToList <- function(data.path, samples) {
     t() %>% 
     data.frame() %>% 
     as.list() 
+}
+
+
+# this function uses the output of pathsToList() as input "i"
+getFolderPaths <- function(i, data.path) {
+  # Determine which folder to use based on whether 'combined' (parse) is in the data path or 'per_sample_outs' (10x flex) is in the data path
+  use_dge_unfiltered <- grepl("combined", data.path)
+  use_count <- grepl("per_sample_outs", data.path)
+  if (use_dge_unfiltered) {
+    return(file.path(i[2], i[1], "DGE_unfiltered"))
+  } else if (use_count) {
+    return(file.path(i[2], i[1], "count"))
+  } else {
+    return(file.path(i[2], i[1], "outs"))
+  }
 }

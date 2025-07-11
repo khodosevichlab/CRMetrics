@@ -319,7 +319,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param exact logical Whether to calculate exact p values (default = FALSE).
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
   #' @param summary.metrics data.frame Summary metrics (default = self$summary.metrics).
-  #' @param plot.geom character Which geometric is used to plot the data (default = "point").
+  #' @param plot.geom character Which geometric is used to plot the data (default = "bar").
   #' @param se logical For regression lines, show SE (default = FALSE)
   #' @param group.reg.lines logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)
   #' @param secondary.testing logical Whether to show post hoc testing (default = TRUE)
@@ -1715,7 +1715,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       checkDataPath(data.path)
       
       if (grepl("combined", data.path)) {
-        if (verbose) message("Loading Parse outputs")
+        if (verbose) message(paste0(Sys.time()," Loading Parse outputs"))
         cms.raw <- readParse(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
@@ -1773,7 +1773,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   # transform parse output to work as input for cellbender
     if (grepl("combined", data.path)) {
-      if (verbose) message("Transforming Parse outputs as preparation for cellbender")
+      if (verbose) message(paste0(Sys.time()," Transforming Parse outputs as preparation for cellbender"))
       # check if transformed data already exists
       full.path <- data.path %>% 
         pathsToList(samples) %>% 
@@ -1783,22 +1783,28 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       lapply(full.path, function(x) {
         
         # 1. Check and create genes.tsv
-        if (!file.exists(paste0(x,"/","genes.tsv"))) {
-          if(verbose) message("Creating genes.tsv in ", x)
+        if (file.exists(paste0(x,"/","genes.tsv"))) {
+          warning(paste0("genes.tsv already exists in ", x))
+        } else {
+          if(verbose) message(paste0(Sys.time()," Creating genes.tsv in ", x))
           fread(paste0(x,"/","all_genes.csv"), sep = ",", header = TRUE) %>%
             mutate(genome = "Gene Expression") %>%
             fwrite(paste0(x,"/","genes.tsv"), sep = "\t", col.names = FALSE)
         }
-        #2. Check and create barcodes.tsv
-        if (!file.exists(paste0(x,"/","barcodes.tsv"))) {
-          if(verbose) message("Creating barcodes.tsv in ", x)
+        # 2. Check and create barcodes.tsv
+        if (file.exists(paste0(x,"/","barcodes.tsv"))) {
+          warning(paste0("barcodes.tsv already exists in ", x))
+        } else {
+          if(verbose) message(paste0(Sys.time()," Creating barcodes.tsv in ", x))
           fread(paste0(x,"/","cell_metadata.csv"), sep = ",", header = TRUE) %>%
             .[, "bc_wells"] %>%
             write.table(paste0(x,"/","barcodes.tsv"), row.names=F, col.names=F)
         }
-        #2. Check and create matrix.mtx
-        if (!file.exists(paste0(x,"/","matrix.mtx"))) {
-          if(verbose) message("Creating matrix.mtx in ", x)
+        # 3. Check and create matrix.mtx
+        if (file.exists(paste0(x,"/","matrix.mtx"))) {
+          warning(paste0("matrix.mtx already exists in ", x))
+        } else {
+          if(verbose) message(paste0(Sys.time()," Creating matrix.mtx in ", x))
         fread(paste0(full.path[1],"/","count_matrix.mtx"), header = F) %>%
           select(V2, V1, V3)  %>%
           fwrite(paste0(full.path[1],"/","matrix.mtx"), col.names=F)
@@ -1851,17 +1857,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         
         # 1. Check genes.tsv
         if (!file.exists(paste0(x,"/","genes.tsv"))) {
-          message("genes.tsv missing in ", x, " run prepareCellbender first.")
+          error("genes.tsv missing in ", x, " run prepareCellbender first.")
           
         }
         #2. Check barcodes.tsv
         if (!file.exists(paste0(x,"/","barcodes.tsv"))) {
-          message("barcodes.tsv missing in ", x, " run prepareCellbender first.")
+          error("barcodes.tsv missing in ", x, " run prepareCellbender first.")
         }
         
         #2. Check matrix.mtx
         if (!file.exists(paste0(x,"/","matrix.mtx"))) {
-          message("matrix.mtx missing in ", x, " run prepareCellbender first.")
+          error("matrix.mtx missing in ", x, " run prepareCellbender first.")
         }
       })
       
@@ -1983,11 +1989,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' @description Add a list of count matrices to the CRMetrics object.
   #' @param cms list List of (sparse) count matrices (default = NULL)
-  #' @param data.path character Path to cellranger count data (default = self$data.path).
+  #' @param data.path character Path to Cell Ranger or Parse count data (default = self$data.path).
   #' @param samples character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)
   #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
   #' @param parse logical Add Parse filtered count matrices. Cannot be combined with `cellbender=TRUE`. Cannot be combined with `raw=TRUE`. (default = FALSE)
-  #' @param flex logical Add 10x Flex filtered count matrices from cell ranger. Can be combined with `raw=TRUE`. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
+  #' @param flex logical Add 10x Flex filtered count matrices from Cell Ranger. Can be combined with `raw=TRUE`. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
   #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
   #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
@@ -2110,12 +2116,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     train.df <- samples %>% 
       lapply(\(id) {
-       # rhdf5::h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
-      #for cellbender v0.3.0
-        rhdf5::h5read(paths[id], "metadata/learning_curve_train_elbo") %>%
-          {data.frame(ELBO = ., 
-                      Epoch = seq_len(length(.)), 
-                      sample = id)}
+        # for cellbender v0.3
+        if ("learning_curve_train_elbo" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+          message(paste0(Sys.time(), " Detected CellBender v0.3, loading training data."))
+          rhdf5::h5read(paths[id], "metadata/learning_curve_train_elbo") %>%
+            {data.frame(ELBO = ., 
+                        Epoch = seq_len(length(.)), 
+                        sample = id)}  
+        # for cellbender v0.2
+        } else if ("training_elbo_per_epoch" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+          message(paste0(Sys.time(), " Detected CellBender v0.2, loading training data."))
+          rhdf5::h5read(paths[id], "matrix/training_elbo_per_epoch") %>%
+            {data.frame(ELBO = ., 
+                        Epoch = seq_len(length(.)), 
+                        sample = id)} 
+        } else {
+          stop(paste0("Neither CellBender v0.2 nor v0.3 output found in file(s): ", paths[id]))
+        }
       }) %>% 
       setNames(samples) %>% 
       bind_rows()
@@ -2123,13 +2140,21 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     test.df <- samples %>%
       lapply(\(id) {
         path <- paths[id]
-       # data.frame(ELBO = rhdf5::h5read(path, "matrix/test_elbo"), 
-      #             Epoch = rhdf5::h5read(path, "matrix/test_epoch"), 
-        #           sample = id)
-        #for cellbender v0.3.0
-        data.frame(ELBO = rhdf5::h5read(path, "metadata/learning_curve_test_elbo"), 
+        # for cellbender v0.3
+        if ("learning_curve_test_elbo" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+          message(paste0(Sys.time(), " Detected CellBender v0.3, loading test data."))
+          data.frame(ELBO = rhdf5::h5read(path, "metadata/learning_curve_test_elbo"), 
                    Epoch = rhdf5::h5read(path, "metadata/learning_curve_test_epoch"), 
                    sample = id)
+          # for cellbender v0.2
+        } else if ("test_elbo" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+          message(paste0(Sys.time(), " Detected CellBender v0.2, loading test data."))
+          data.frame(ELBO = rhdf5::h5read(path, "matrix/test_elbo"), 
+                  Epoch = rhdf5::h5read(path, "matrix/test_epoch"), 
+                  sample = id)
+        } else {
+          stop(paste0("Neither CellBender v0.2 nor v0.3 output found in file(s): ", paths[id]))
+        }
       }) %>% 
       setNames(samples) %>% 
       bind_rows()
@@ -2172,18 +2197,29 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     cell.prob <- samples %>%
       lapply(\(id) {
-        #rhdf5::h5read(paths[id], "matrix/latent_cell_probability") %>%
         # for cellbender v0.3.0
+        if ("cell_probability" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+        message(paste0(Sys.time(), " Detected CellBender v0.3, loading cell probabilities."))
         rhdf5::h5read(paths[id], "droplet_latents/cell_probability") %>%
           {data.frame(prob = ., 
                       cell = seq_len(length(.)), 
                       sample = id)}
+        # for cellbender v0.2
+        } else if ("latent_cell_probability" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+        message(paste0(Sys.time(), " Detected CellBender v0.2, loading cell probabilities."))
+        rhdf5::h5read(paths[id], "matrix/latent_cell_probability") %>%
+          {data.frame(prob = ., 
+                      cell = seq_len(length(.)), 
+                      sample = id)}
+        } else {
+          stop(paste0("Neither CellBender v0.2 nor v0.3 output found in file(s): ", paths[id]))
+        }
       }) %>% 
       setNames(samples) %>% 
       bind_rows()
     
     ggplot(cell.prob, aes(cell, prob, col = prob)) + 
-      geom_point() +
+      rasterise(geom_point(), dpi = 300) +
       scale_color_gradient(low=low.col, high=high.col) +
       self$theme +
       labs(x = "Cells", y = "Cell probability", col = "") +
@@ -2212,13 +2248,26 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     amb <- samples %>% 
       lapply(\(id) {
-      #  rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
-        #for cellbender version 3
+        # for cellbender v0.3
+        if ("/global_latents" %in% unique(rhdf5::h5ls(paths[id])$group)) {
+        message(paste0(Sys.time(), " Detected CellBender v0.3, loading ambient expression data."))
         rhdf5::h5read(paths[id], "global_latents/ambient_expression") %>% 
           {data.frame(exp = ., 
                       cell = seq_len(length(.)), 
                       gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
                       sample = id)}
+        # for cellbender v0.2, using a "name" from above to differentiate versions
+        } else if ("latent_cell_probability" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+          message(paste0(Sys.time(), " Detected CellBender v0.2, loading ambient expression data."))
+        rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
+          {data.frame(exp = ., 
+                      cell = seq_len(length(.)), 
+                      gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
+                      sample = id)}
+        }
+        else {
+          stop(paste0("Neither CellBender v0.2 nor v0.3 output found in file(s): ", paths[id]))
+          }    
       }) %>% 
       setNames(samples) %>% 
       bind_rows()
@@ -2258,14 +2307,28 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     amb <- samples %>% 
       lapply(\(id) {
-        #rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
-          #for cellbender version 3
-          rhdf5::h5read(paths[id], "global_latents/ambient_expression") %>% 
+        # for cellbender version 3
+        if ("/global_latents" %in% unique(rhdf5::h5ls(paths[id])$group)) {
+        message(paste0(Sys.time(), " Detected CellBender v0.3, loading ambient expression data."))
+        rhdf5::h5read(paths[id], "global_latents/ambient_expression") %>% 
           {data.frame(exp = ., 
                       cell = seq_len(length(.)), 
                       gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
                       sample = id)} %>% 
           filter(exp >= cutoff)
+        # for cellbender v0.2
+        } else if ("latent_cell_probability" %in% unique(rhdf5::h5ls(paths[id])$name)) {
+        message(paste0(Sys.time(), " Detected CellBender v0.2, loading ambient expression data."))
+        rhdf5::h5read(paths[id], "matrix/ambient_expression") %>% 
+          {data.frame(exp = ., 
+                      cell = seq_len(length(.)), 
+                      gene.names = rhdf5::h5read(paths[id], "matrix/features/name") %>% as.character(), 
+                      sample = id)} %>% 
+          filter(exp >= cutoff)
+        }
+        else {
+          stop(paste0("Neither CellBender v0.2 nor v0.3 output found in file(s): ", paths[id]))
+        }   
       }) %>% 
       setNames(samples) %>% 
       bind_rows() %$%
@@ -2279,7 +2342,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       geom_bar(stat = "identity") +
       self$theme +
       labs(x = "", y = "Proportion") +
-      theme(axis.text.x = element_text(angle = 90)) + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       guides(fill = "none")
     
     if (!is.null(pal)) {
@@ -2508,7 +2571,7 @@ plotCbCells = function(data.path = self$data.path,
   g <- ggplot(df, aes(sample, value, fill = sample)) +
     geom_bar(stat = "identity") +
     self$theme + 
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     guides(fill = "none") +
     labs(x = "", y = "") +
     facet_wrap(~variable, scales = "free_y", nrow = 2, ncol = 2)

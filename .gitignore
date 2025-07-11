@@ -35,3 +35,7 @@ CRAN-SUBMISSION
 .github/
 # test data
 control_6
+control_7
+metadata.csv
+# summary of updates for users
+CRMetrics_updates_for_users.Rmd
