@@ -58,8 +58,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    n.cores = 1,
   
   #' Initialize a CRMetrics object
-  #' @description To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
-  #' @param data.path character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).
+  #' @description To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'metadata' is also recommended, but not required.
+  #' @param data.path character Path to directory with count data, one directory per sample (default = NULL).
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
   #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
   #' @param cms list List with count matrices (default = NULL)
   #' @param samples character Sample names. Only relevant is cms is provided (default = NULL)
@@ -77,7 +78,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' \dontrun{
   #' crm <- CRMetrics$new(data.path = "/path/to/count/data/")
   #' }
-  initialize = function(data.path = NULL, 
+  initialize = function(data.path = NULL,
+                        technology = c("10x", "10xflex", "10xmultiome", "parse"),
                         metadata = NULL, 
                         cms = NULL,
                         samples = NULL,
@@ -114,9 +116,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       })
     }
     
+    # check that technology is provided and converted to lower case
+    technology %<>% tolower() %>% match.arg(c("10x", "10xflex", "10xmultiome", "parse"))
+    
     # Write stuff to object
     self$n.cores <- as.integer(n.cores)
     self$data.path <- data.path
+    self$technology <- technology
     self$verbose <- verbose
     self$theme <- theme
     self$pal <- pal
@@ -1673,6 +1679,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param expected.cells named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
   #' @param total.droplets named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
   #' @param cms.raw list Raw count matrices from HDF5 Cell Ranger outputs (default = self$cms.raw)
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
   #' @param umi.counts list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
@@ -1692,6 +1699,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                expected.cells = NULL, 
                                total.droplets = NULL, 
                                cms.raw = self$cms.raw, 
+                               technology = self$technology,
                                umi.counts = self$cellbender$umi.counts, 
                                data.path = self$data.path, 
                                samples = self$metadata$sample, 
@@ -1714,12 +1722,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       
       checkDataPath(data.path)
       
-      if (grepl("combined", data.path)) {
+      if (technology == "parse") {
         if (verbose) message(paste0(Sys.time()," Loading Parse outputs"))
         cms.raw <- readParse(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
     } else {
       if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
-      cms.raw <- read10xH5(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
+      cms.raw <- read10xH5(data.path, samples, "raw", technology = self$technology, n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
      }
     self$cms.raw <- cms.raw
   }
@@ -1772,7 +1780,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    
   
   # transform parse output to work as input for cellbender
-    if (grepl("combined", data.path)) {
+    if (technology == "parse") {
       if (verbose) message(paste0(Sys.time()," Transforming Parse outputs as preparation for cellbender"))
       # check if transformed data already exists
       full.path <- data.path %>% 
@@ -1818,6 +1826,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   
   #' @param file character File name for CellBender script. Will be stored in `data.path` (default: "cellbender_script.sh")
+  #' @param technology character Applied single cell technology (default = self$technology).
   #' @param fpr numeric False positive rate for CellBender (default = 0.01)
   #' @param epochs integer Number of epochs for CellBender (default = 150)
   #' @param use.gpu logical Use CUDA capable GPU (default = TRUE)
@@ -1834,6 +1843,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$saveCellbenderScript()
   #' }
   saveCellbenderScript = function(file = "cellbender_script.sh", 
+                                  technology = self$technology,
                                   fpr = 0.01, 
                                   epochs = 150, 
                                   use.gpu = TRUE, 
@@ -1845,7 +1855,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Preparations
     checkDataPath(data.path)
     
-    if (grepl("combined", data.path)) {
+    if (technology == "parse") {
       # in case of parse we use the genes, matrix, barcodes files stored in DGE_unfiltered and therefor we just need to give the path to DGE_unfiltered
       inputs <- data.path %>%
         pathsToList(samples) %>% 
@@ -1872,15 +1882,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       })
       
     } else {
-      inputs <- getH5Paths(data.path, samples, "raw")
+      inputs <- getH5Paths(data.path, samples, "raw", technology)
     }
     
     outputs <- data.path %>% 
       pathsToList(samples) %>% 
     sapply(\(sample) {
-        if (grepl("combined", data.path)) {
+        if (technology == "parse") {
           paste0(sample[2], "/", sample[1], "/DGE_unfiltered/cellbender.h5")
-        } else if (grepl("per_sample_outs", data.path)) {
+        } else if (technology == "10xflex") {
           paste0(sample[2], "/", sample[1], "/count/cellbender.h5")
         } else {
           paste0(sample[2], "/", sample[1], "/outs/cellbender.h5")
@@ -1990,11 +2000,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Add a list of count matrices to the CRMetrics object.
   #' @param cms list List of (sparse) count matrices (default = NULL)
   #' @param data.path character Path to Cell Ranger or Parse count data (default = self$data.path).
+  #' @param technology character Applied single cell technology (default = self$technology).
   #' @param samples character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)
   #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
-  #' @param parse logical Add Parse filtered count matrices. Cannot be combined with `cellbender=TRUE`. Cannot be combined with `raw=TRUE`. (default = FALSE)
-  #' @param flex logical Add 10x Flex filtered count matrices from Cell Ranger. Can be combined with `raw=TRUE`. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
-  #' @param raw logical Add raw count matrices from Cell Ranger output. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
+  #' @param raw logical Add raw count matrices from Cell Ranger or Parse output. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
   #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
   #' @param sep character Separator used to create unique cell names (default = "!!")
@@ -2019,10 +2028,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   addCms = function(cms = NULL, 
                     data.path = self$data.path,
+                    technology = self$technology,
                     samples = self$metadata$sample,
                     cellbender = FALSE,
-                    flex = FALSE,
-                    parse = FALSE,
                     raw = FALSE,
                     symbol = TRUE,
                     unique.names = TRUE, 
@@ -2064,14 +2072,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (unique.names) cms %<>% createUniqueCellNames(samples, sep)
     } else {
       # Add from data.path argument
-      if (parse && cellbender) {
-        stop("Error: If you run CellBender on Parse files, 'parse' must be set to FALSE and only 'cellbender' set to TRUE.")
-      }
       if (cellbender) {
-        cms <- read10xH5(data.path = data.path, samples = samples, symbol = symbol, type = "cellbender_filtered", sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
-        }  else if (parse) {       
-          cms <- readParse(data.path = data.path, samples = samples, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
-        }  else if (flex) {
+        cms <- read10xH5(data.path = data.path, samples = samples, symbol = symbol, type = "cellbender_filtered", technology = self$technology, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        }  else if (technology == "parse") {       
+          cms <- readParse(data.path = data.path, samples = samples, raw = raw, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        }  else if (technology == "10xflex") {
           cms <- readFlex(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)   
            }
        else {
@@ -2097,6 +2102,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the results from the CellBender estimations
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
   #' @param pal character Plotting palette (default = self$pal)
   #' @return A ggplot2 object
   #' @examples 
@@ -2109,10 +2115,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   plotCbTraining = function(data.path = self$data.path, 
                             samples = self$metadata$sample,
+                            technology = self$technology,
                             pal = self$pal) {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
-    paths <- getH5Paths(data.path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender", technology)
     
     train.df <- samples %>% 
       lapply(\(id) {
@@ -2176,6 +2183,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the CellBender assigned cell probabilities
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
   #' @param low.col character Color for low probabilities (default = "gray")
   #' @param high.col character Color for high probabilities (default = "red")
   #' @return A ggplot2 object
@@ -2189,11 +2197,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   plotCbCellProbs = function(data.path = self$data.path, 
                              samples = self$metadata$sample,
+                             technology = self$technology,
                              low.col = "gray",
                              high.col = "red") {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
-    paths <- getH5Paths(data.path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender", technology)
     
     cell.prob <- samples %>%
       lapply(\(id) {
@@ -2219,7 +2228,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       bind_rows()
     
     ggplot(cell.prob, aes(cell, prob, col = prob)) + 
-      rasterise(geom_point(), dpi = 300) +
       scale_color_gradient(low=low.col, high=high.col) +
       self$theme +
       labs(x = "Cells", y = "Cell probability", col = "") +
@@ -2230,6 +2238,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric Horizontal line included in the plot to indicate highly expressed ambient genes (default = 0.005)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
   #' @return A ggplot2 object
   #' @examples 
   #' \dontrun{
@@ -2241,10 +2250,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   plotCbAmbExp = function(cutoff = 0.005, 
                           data.path = self$data.path, 
-                          samples = self$metadata$sample) {
+                          samples = self$metadata$sample,
+                          technology = self$technology) {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
-    paths <- getH5Paths(data.path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender", technology)
     
     amb <- samples %>% 
       lapply(\(id) {
@@ -2287,6 +2297,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric Cutoff of ambient gene expression to use to extract ambient genes per sample
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
   #' @param pal character Plotting palette (default = self$pal)
   #' @return A ggplot2 object
   #' @examples 
@@ -2300,10 +2311,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotCbAmbGenes = function(cutoff = 0.005, 
                             data.path = self$data.path, 
                             samples = self$metadata$sample,
+                            technology = self$technology,
                             pal = self$pal) {
     checkDataPath(data.path)
     checkPackageInstalled("rhdf5", bioc = TRUE)
-    paths <- getH5Paths(data.path, samples, "cellbender")
+    paths <- getH5Paths(data.path, samples, "cellbender", technology)
     
     amb <- samples %>% 
       lapply(\(id) {
@@ -2535,6 +2547,7 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
 #' @description Plot CellBender cell estimations against the estimated cell numbers from Cell Ranger
 #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
 #' @param samples character Sample names to include (default = self$metadata$sample)
+#' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) description
 #' @param pal character Plotting palette (default = self$pal)
 #' @return A ggplot2 object
 #' @examples 
@@ -2547,10 +2560,11 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
 #' }
 plotCbCells = function(data.path = self$data.path, 
                        samples = self$metadata$sample,
+                       technology = self$technology,
                        pal = self$pal) {
   checkDataPath(data.path)
   checkPackageInstalled("rhdf5", bioc = TRUE)
-  paths <- getH5Paths(data.path, samples, "cellbender_filtered")
+  paths <- getH5Paths(data.path, samples, "cellbender_filtered", technology)
   
   df <- samples %>% 
     sapply(\(id) rhdf5::h5read(paths[id], "matrix/shape")[2]) %>% 

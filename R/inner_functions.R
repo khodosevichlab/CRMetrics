@@ -389,14 +389,15 @@ addPlotStatsSamples <- function(p,
 #' @param verbose Print messages (default = TRUE).
 #' @keywords internal
 #' @return data frame
-addSummaryMetrics <- function(data.path, 
+addSummaryMetrics <- function(data.path,
                               metadata, 
                               n.cores = 1, 
                               verbose = TRUE) {
   samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample)
   
-  doubles <- table(samples.tmp) %>% 
+  # checking if there are duplicated sample names only among the samples that will be used/are in metadata
+  doubles <- table(samples) %>% 
     .[. > 1] %>% 
     names()
   
@@ -409,16 +410,16 @@ addSummaryMetrics <- function(data.path,
     pathsToList(metadata$sample) %>% 
     plapply(\(s) {
       
-      # define possible directories to search for summary files (outs in case of Cell Ranger, report in case of Parse, sample base dir in case of 10X flex)
+      # define possible directories to search for summary files (outs in case of 10x and 10xmultiome, report in case of Parse, sample base dir in case of 10X flex)
       outs_dir <- paste(s[2], s[1], "outs", sep = "/")
       report_dir <- paste(s[2], s[1], "report", sep = "/")
       sample_base_dir <- paste(s[2], s[1], sep = "/")
       
-      # Check which folder exists and use it to read the summary file
+      # check which path exists to read the summary file
       dir_to_use <- if (dir.exists(outs_dir)) outs_dir else if (dir.exists(report_dir)) report_dir else sample_base_dir
       
       if (!dir.exists(dir_to_use)) {
-        warning(paste("No 'outs', 'report', or summary file found for sample:", s[1]))
+        warning(paste("No 'outs' folder, 'report' folder, or summary file found for sample:", s[1]))
         return(NULL)
       }
       
@@ -431,7 +432,7 @@ addSummaryMetrics <- function(data.path,
                across(.cols = grep(",", .), ~ as.numeric(gsub(",", "", .x))))
       
        # Take into account multiomics
-       if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
+      if ("Sample.ID" %in% colnames(tmp)) tmp %<>% select(-c("Sample.ID","Genome","Pipeline.version"))
   
         
      # Add the sample column, pivot to long format, and clean metric names            
@@ -445,11 +446,11 @@ addSummaryMetrics <- function(data.path,
       
       else if (dir_to_use == report_dir) {
       
-      # Logic for 'report' folder (adjust this based on the structure of files in 'report')
+      # Logic for 'report' folder 
       tmp <- read.table(dir(dir_to_use, glob2rx("*ummary.csv"), full.names = TRUE), 
                         header = TRUE, sep = ",", stringsAsFactors = FALSE) %>%
-        select(statistic, combined) %>% # Only select 'statistic' and 'combined' columns
-        rename(metric = statistic, value = combined) %>%  # Rename columns
+        select(1:2) %>%    # Select the first two columns
+        rename(metric = 1, value = 2) %>%  # Rename them
         mutate(sample = s[1])   # Add sample column
       }
       
@@ -569,6 +570,7 @@ labelsFilter <- function(filter.data) {
 #' @param data.path character
 #' @param samples character vector, select specific samples for processing (default = NULL)
 #' @param type name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript
+#' @param technology character Used single-cell technology (c("10x", "10xmultiome", "flex"))
 #' @param symbol logical Use gene SYMBOLs (TRUE) or ENSEMBL IDs (FALSE) (default = TRUE)
 #' @param sep character Separator for creating unique cell names from sample IDs and cell IDs (default = "!!")
 #' @param n.cores integer Number of cores (default = 1)
@@ -583,6 +585,7 @@ labelsFilter <- function(filter.data) {
 read10xH5 <- function(data.path, 
                       samples = NULL, 
                       type = c("raw","filtered","cellbender","cellbender_filtered"), 
+                      technology = c("10x", "10xmultiome", "flex"),
                       symbol = TRUE, 
                       sep = "!!", 
                       n.cores = 1, 
@@ -592,7 +595,7 @@ read10xH5 <- function(data.path,
   
   if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
   
-  full.path <- getH5Paths(data.path, samples, type)
+  full.path <- getH5Paths(data.path, samples, type, technology)
   
   if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores < length(full.path)) n.cores else length(full.path)," cores"))
   out <- full.path %>%
@@ -660,20 +663,27 @@ createUniqueCellNames <- function(cms,
 #' @param data.path character Path for directory containing sample-wise directories with Cell Ranger count/Parse outputs
 #' @param samples character Sample names to include (default = NULL)
 #' @param type character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs, does not work for Parse), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")
+#' @param technology character Used technology ("parse", "10x", "10xflex", "10xmultiome") (default = NULL)
 #' @keywords internal
 getH5Paths <- function(data.path, 
                        samples = NULL, 
-                       type = NULL) {
+                       type = NULL,
+                       technology = NULL) {
+  
   # Check input
   type %<>%
     tolower() %>% 
     match.arg(c("raw","filtered","cellbender","cellbender_filtered"))
   
+  technology %<>%
+    tolower() %>% 
+    match.arg(c("parse", "10x", "10xflex", "10xmultiome"))
+  
   # Get H5 paths
   paths <- data.path %>% 
     pathsToList(samples) %>% 
     sapply(\(i) {
-      folder <- getFolderPaths(i, data.path = data.path)
+      folder <- getFolderPaths(i, technology = technology)
       if (grepl("cellbender", type)) {
         paste0(folder,"/",type,".h5")
       } else {
@@ -691,7 +701,7 @@ getH5Paths <- function(data.path,
     
     miss <- miss.names %>% 
       sapply(\(i) {
-        folder <- getFolderPaths(i, data.path= data.path)
+        folder <- getFolderPaths(i, technology = technology)
         if (type == "raw") {
           paste0(folder, "/raw_[feature/gene]_bc_matrix.h5")
         } else if (type == "filtered") {
@@ -764,7 +774,7 @@ checkDataPath <- function(data.path) {
 }
 
 
-# no title?
+# returns a list where the first element contains all sample names and the second element the path
 pathsToList <- function(data.path, samples) {
   data.path %>% 
     lapply(\(path) list.dirs(path, recursive = F, full.names = F) %>% 
@@ -778,13 +788,11 @@ pathsToList <- function(data.path, samples) {
 
 
 # this function uses the output of pathsToList() as input "i"
-getFolderPaths <- function(i, data.path) {
-  # Determine which folder to use based on whether 'combined' (parse) is in the data path or 'per_sample_outs' (10x flex) is in the data path
-  use_dge_unfiltered <- grepl("combined", data.path)
-  use_count <- grepl("per_sample_outs", data.path)
-  if (use_dge_unfiltered) {
+getFolderPaths <- function(i, technology) {
+  # Determine which folder to use based on which technology was used
+  if (technology == "parse") {
     return(file.path(i[2], i[1], "DGE_unfiltered"))
-  } else if (use_count) {
+  } else if (technology == "10xflex") {
     return(file.path(i[2], i[1], "count"))
   } else {
     return(file.path(i[2], i[1], "outs"))

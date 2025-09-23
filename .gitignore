@@ -37,5 +37,9 @@ CRAN-SUBMISSION
 control_6
 control_7
 metadata.csv
+metadata_test.csv
+metadata_test2.csv
+metadata_test_multiome.csv
+metadata_parse.csv
 # summary of updates for users
 CRMetrics_updates_for_users.Rmd
