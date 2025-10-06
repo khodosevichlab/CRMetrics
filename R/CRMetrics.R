@@ -1488,7 +1488,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Get cell index
-    cell.idx <- crm$cms %>% 
+    cell.idx <- self$cms %>% 
       lapply(colnames) %>%
       Reduce(c, .)
     

@@ -1,3 +1,8 @@
+# CRMetrics 0.3.2
+
+* Fixed error in `plotFilteredCells`
+* Added author e-mail (missing)
+
 # CRMetrics 0.3.1
 
 * Minor bug fix for issue #52
