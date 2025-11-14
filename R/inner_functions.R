@@ -396,12 +396,13 @@ addSummaryMetrics <- function(data.path,
   samples.tmp <- list.dirs(data.path, recursive = FALSE, full.names = FALSE)
   samples <- intersect(samples.tmp, metadata$sample)
   
-  # checking if there are duplicated sample names only among the samples that will be used/are in metadata
-  doubles <- table(samples) %>% 
+  # checking if there are duplicated sample name directories among the samples in metadata
+  doubles <- table(samples.tmp) %>% 
     .[. > 1] %>% 
     names()
+  overlap <- intersect(doubles, metadata$sample)
   
-  if (length(doubles) > 0) stop(paste0("One or more samples are present twice in 'data.path'. Sample names must be unique. Affected sample(s): ",paste(doubles, collapse = " ")))
+  if (length(overlap) > 0) stop(paste0("One or more samples are present twice in 'data.path' and are provided in 'metadata'. Sample names must be unique. Affected sample(s): ",paste(doubles, collapse = " ")))
   if (length(samples) != length(samples.tmp)) message("'metadata' doesn't contain the following sample(s) derived from 'data.path' (dropped): ",setdiff(samples.tmp, samples) %>% paste(collapse = " "))
   
   if (verbose) message(paste0(Sys.time()," Adding ",length(samples)," samples"))

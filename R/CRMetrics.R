@@ -63,7 +63,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
   #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
   #' @param cms list List with count matrices (default = NULL)
-  #' @param samples character Sample names. Only relevant is cms is provided (default = NULL)
+  #' @param samples character Sample names. Only relevant if cms is provided (default = NULL)
   #' @param unique.names logical Create unique cell names. Only relevant if cms is provided (default = TRUE)
   #' @param sep.cells character Sample-cell separator. Only relevant if cms is provided and `unique.names=TRUE` (default = "!!")
   #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)
@@ -128,15 +128,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$pal <- pal
     
     # Metadata
+    # behaviour if metadata file is not given
     if (is.null(metadata)) {
       if (!is.null(data.path)) {
         self$metadata <- lapply(data.path, 
                                 list.dirs, 
                                 recursive = FALSE, 
                                 full.names = FALSE) %>% 
-          Reduce(c, .) %>% 
-   .[pathsToList(data.path, .) %>% sapply(\(path) file.exists(paste0(path[2],"/",path[1],"/outs")))] %>% 
-          {data.frame(sample = .)}
+          Reduce(c, .) %>%
+          { subfolder <- switch(technology,
+                                "parse"   = "DGE_filtered",
+                                "10xflex" = "count", 
+                                "10x" = "outs")
+          # filter the directory names vector (.) to keep only those directories for which a corresponding subfolder exists, problem in Parse: all-sample folder also has that subfolder
+          .[pathsToList(data.path, .) 
+          %>% sapply(function(path) file.exists(file.path(path[2], path[1], subfolder)))] 
+          } %>% 
+          { data.frame(sample = .) }
       } else {
         if (is.null(names(cms))) {
           if (is.null(samples)) {
@@ -164,8 +172,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (!is.null(metadata)) {
       if (!raw.meta) self$metadata %<>% lapply(type.convert, as.is = FALSE) %>% bind_cols()
     }
+    # check if metadata has duplicated samples 
+    doubles <- table(self$metadata$sample) %>% 
+      .[. > 1] %>% 
+      names()
+    if (length(doubles) > 0) stop(paste0("One or more samples are present twice in provided/derived 'metadata'. 
+                                         Sample names must be unique. Affected sample(s): ",paste(doubles, collapse = " ")))
+    # check if metadata contains 'all-sample' which is created by parse pipeline automatically and remove it
+    all_sample_rows <- grepl("^all[-_ ]?sample$", self$metadata$sample, ignore.case = TRUE)
+    if (any(all_sample_rows)) {
+      message("Removed 'all-sample' entries automatically created by the Parse pipeline: ",
+              paste(self$metadata$sample[all_sample_rows], collapse = ", "))
+      self$metadata <- self$metadata[!all_sample_rows, , drop = FALSE]
+    }
     
-    # Add CMs
+    
+     # Add CMs
     if (!is.null(cms)) {
       self$addCms(cms = cms, 
                   samples = samples, 
@@ -639,7 +661,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (length(depth.cutoff) > 1) {
         main <- "Cells with low depth with sample-specific cutoff"
       } else {
-        main <- paste0("Cells with low depth, < ",depth.cutoff)
+        main <- paste0("Cells with depth < ",depth.cutoff)
       }
         g <- self$con$plotGraph(colors = (!depths) * 1, title = main, size = size, ...)
     }
@@ -675,8 +697,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' @description Plot the sequencing depth in histogram.
-  #' @param cutoff numeric The depth cutoff to color the cells in the embedding (default = 1e3).
+  #' @description Plot per-sample density histograms of cell depths (=total UMI counts per cell). The plot highlights cells below or above a specified UMI cutoff with distinct colors, helping to assess data quality and filtering thresholds.
+  #' @param cutoff numeric  Depth cutoff used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @param keep.col character Color for density of cells that are kept (default = "#E7CDC2")
@@ -722,7 +744,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       stop("No Conos object found, please run createEmbedding.")
     }
     
-    if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
+    if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(self$con$samples)," samples. Please adjust."))
     
     depths <- self$getDepth()
     
@@ -732,7 +754,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       mutate(sample = sample %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1)) %>%
       split(., .$sample) %>% 
       .[samples] %>% 
-      lapply(\(z) with(density(z$depth, adjust = 1/10), data.frame(x,y))) %>% 
+      lapply(\(z) with(density(z$depth, adjust = 1/10, from = 0), data.frame(x,y))) %>% 
       {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
       bind_rows()
     
@@ -757,7 +779,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           geom_line() +
           xlim(0,xmax) +
           theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin = unit(c(0, 0, 0, 0.5), "cm")) +
-          labs(title = id, y = "Density [AU]", x = "")
+          labs(title = id, y = "Density [AU]", x = "UMI counts")
         
         if (length(cutoff) == 1) {
           plot.cutoff <- cutoff
@@ -780,6 +802,64 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     return(depth.plot)
   },
+
+  #' @description Plot per-sample histograms of total UMI counts per cell (= cell depth), allowing visualization of sequencing depth distributions across samples.
+  #' @param cutoff numeric Depth (UMI count) cutoff used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (Default = 1e3).
+  #' @param samples character Vector of sample names to include in the plot (default = self$metadata$sample).
+  #' @param sep  character Separator for creating unique cell names (default = "!!")
+  #' @param binwidth numeric Width of the histogram bins (default = 10).
+  #' @param xupper numeric Optional upper x-axis limit (default = 2e4).
+  #' @return A combined `ggplot` object showing UMI count histograms per sample.
+
+  plotRawDepth = function(cutoff = 1e3,
+                           samples = self$metadata$sample,
+                           sep = "!!",
+                           binwidth = 10,
+                           xupper = 2e4){
+    
+    # Checks
+    checkPackageInstalled("conos", cran = TRUE)
+    if (is.null(self$con)) {
+     stop("No Conos object found, please run createEmbedding.")
+   }
+  
+  if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(self$con$samples)," samples. Please adjust."))
+  
+  depths <- self$getDepth()
+    # build tidy df
+    tmp <- depths %>% 
+      {data.frame(depth = unname(.), sample = names(.))} %>% 
+      mutate(sample = sample %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1)) %>%
+      filter(sample %in% samples)
+    
+    ncol.plot <- samples %>% 
+      length() %>% 
+      pmin(3)
+    
+    # Plot
+    depth.plot <- lapply(unique(tmp$sample), function(id) {
+      tmp.plot <- tmp %>% filter(sample == id)
+        
+    g <- ggplot(tmp.plot, aes(x = depth)) +
+          geom_histogram(binwidth = binwidth, boundary = 0, closed = "left") +
+          labs(title = id, x = "UMI counts", y = "Number of cells") +
+          self$theme +
+          xlim(0,xupper) + geom_vline(xintercept = cutoff, color="red", linetype = "dashed")
+        # optional: + scale_x_log10()
+        
+    if (length(cutoff) == 1) {
+      plot.cutoff <- cutoff
+    } else {
+      plot.cutoff <- cutoff[names(cutoff) == id]
+    }
+        
+  return(g)
+    }) %>% 
+    plot_grid(plotlist = ., ncol = ncol.plot, label_size = 5)
+    
+    return(depth.plot)
+  },   
+  
   
   #' @description Plot the mitochondrial fraction in histogram.
   #' @param cutoff numeric The mito. fraction cutoff to color the embedding (default = 0.05)
@@ -1572,7 +1652,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(g)
   },
   
-  #' @description Extract sequencing depth from Conos object.
+  #' @description Extract sum of UMI counts per cell (= cell depth) 
   #' @param cms list List of (sparse) count matrices (default = self$cms)
   #' @return data frame
   #' @examples 
@@ -1786,36 +1866,36 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       full.path <- data.path %>% 
         pathsToList(samples) %>% 
         sapply(\(sample) {
-           paste0(sample[2],"/",sample[1],"/DGE_unfiltered")
+           paste0(sample[2],sample[1], "/DGE_unfiltered")
         })
       lapply(full.path, function(x) {
         
         # 1. Check and create genes.tsv
-        if (file.exists(paste0(x,"/","genes.tsv"))) {
+        if (file.exists(file.path(x,"genes.tsv"))) {
           warning(paste0("genes.tsv already exists in ", x))
         } else {
           if(verbose) message(paste0(Sys.time()," Creating genes.tsv in ", x))
-          fread(paste0(x,"/","all_genes.csv"), sep = ",", header = TRUE) %>%
+          data.table::fread(file.path(x,"all_genes.csv"), sep = ",", header = TRUE) %>%
             mutate(genome = "Gene Expression") %>%
-            fwrite(paste0(x,"/","genes.tsv"), sep = "\t", col.names = FALSE)
+            data.table::fwrite(file.path(x,"genes.tsv"), sep = "\t", col.names = FALSE)
         }
         # 2. Check and create barcodes.tsv
-        if (file.exists(paste0(x,"/","barcodes.tsv"))) {
+        if (file.exists(file.path(x,"barcodes.tsv"))) {
           warning(paste0("barcodes.tsv already exists in ", x))
         } else {
           if(verbose) message(paste0(Sys.time()," Creating barcodes.tsv in ", x))
-          fread(paste0(x,"/","cell_metadata.csv"), sep = ",", header = TRUE) %>%
+          data.table::fread(file.path(x,"cell_metadata.csv"), sep = ",", header = TRUE) %>%
             .[, "bc_wells"] %>%
-            write.table(paste0(x,"/","barcodes.tsv"), row.names=F, col.names=F)
+            write.table(file.path(x,"barcodes.tsv"), row.names=F, col.names=F)
         }
         # 3. Check and create matrix.mtx
-        if (file.exists(paste0(x,"/","matrix.mtx"))) {
+        if (file.exists(file.path(x,"matrix.mtx"))) {
           warning(paste0("matrix.mtx already exists in ", x))
         } else {
           if(verbose) message(paste0(Sys.time()," Creating matrix.mtx in ", x))
-        fread(paste0(full.path[1],"/","count_matrix.mtx"), header = F) %>%
+          data.table::fread(file.path(x,"count_matrix.mtx"), header = F) %>%
           select(V2, V1, V3)  %>%
-          fwrite(paste0(full.path[1],"/","matrix.mtx"), col.names=F)
+            data.table::fwrite(file.path(x,"matrix.mtx"), col.names=F)
         }
       })
     }
@@ -1860,24 +1940,24 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       inputs <- data.path %>%
         pathsToList(samples) %>% 
         sapply(\(sample) {
-            paste0(sample[2], "/", sample[1], "/DGE_unfiltered")})
+            file.path(sample[2],sample[1],"DGE_unfiltered")})
       
       #check that transformed files exists for parse
       lapply(inputs, function(x) {
         
         # 1. Check genes.tsv
-        if (!file.exists(paste0(x,"/","genes.tsv"))) {
-          error("genes.tsv missing in ", x, " run prepareCellbender first.")
+        if (!file.exists(file.path(x,"genes.tsv"))) {
+          stop("genes.tsv missing in ", x, " run prepareCellbender first.")
           
         }
         #2. Check barcodes.tsv
-        if (!file.exists(paste0(x,"/","barcodes.tsv"))) {
-          error("barcodes.tsv missing in ", x, " run prepareCellbender first.")
+        if (!file.exists(file.path(x,"barcodes.tsv"))) {
+          stop("barcodes.tsv missing in ", x, " run prepareCellbender first.")
         }
         
         #2. Check matrix.mtx
-        if (!file.exists(paste0(x,"/","matrix.mtx"))) {
-          error("matrix.mtx missing in ", x, " run prepareCellbender first.")
+        if (!file.exists(file.path(x,"matrix.mtx"))) {
+          stop("matrix.mtx missing in ", x, " run prepareCellbender first.")
         }
       })
       
@@ -1889,11 +1969,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       pathsToList(samples) %>% 
     sapply(\(sample) {
         if (technology == "parse") {
-          paste0(sample[2], "/", sample[1], "/DGE_unfiltered/cellbender.h5")
+          file.path(sample[2], sample[1], "DGE_unfiltered/cellbender.h5")
         } else if (technology == "10xflex") {
-          paste0(sample[2], "/", sample[1], "/count/cellbender.h5")
+          file.path(sample[2],sample[1], "count/cellbender.h5")
         } else {
-          paste0(sample[2], "/", sample[1], "/outs/cellbender.h5")
+          file.path(sample[2],sample[1], "outs/cellbender.h5")
         }
       }) %>%
       setNames(samples)
@@ -1929,8 +2009,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     out <- list("#! /bin/sh", script.list) %>% 
       unlist()
-    
-    cat(out, file = paste0(data.path,file), sep = "\n")
+    # if there are several data.path "file" is saved to the first element of data.paht vector
+    cat(out, file = file.path(data.path[1],file), sep = "\n")
+    message(paste0(file ," was saved into ", data.path[1]))
   },
   
   #' @description Extract the expected number of cells per sample based on the Cell Ranger summary metrics
@@ -2228,6 +2309,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       bind_rows()
     
     ggplot(cell.prob, aes(cell, prob, col = prob)) + 
+      geom_point() +
       scale_color_gradient(low=low.col, high=high.col) +
       self$theme +
       labs(x = "Cells", y = "Cell probability", col = "") +
