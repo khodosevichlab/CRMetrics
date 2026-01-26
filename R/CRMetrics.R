@@ -24,7 +24,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field metadata data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
    metadata = NULL,
    
-   #' @field data.path character Path(s) to Cell Ranger count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)
+   #' @field data.path character Path(s) to Cell Ranger or Parse count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)
    data.path = NULL, 
    
    #' @field cms list List with count matrices (default = NULL)
@@ -33,10 +33,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field cms.preprocessed list List with preprocessed count matrices after $doPreprocessing() (default = NULL)
    cms.preprocessed = NULL,
    
-   #' @field cms.raw list List with raw, unfiltered count matrices, i.e., including all CBs detected also empty droplets (default = NULL)
+   #' @field cms.raw list List with raw, unfiltered count matrices, i.e., including all cell barcodes detected, also empty ones (default = NULL)
    cms.raw = NULL,
    
-   #' @field summary.metrics data.frame Summary metrics from Cell Ranger (default = NULL)
+   #' @field summary.metrics data.frame Summary metrics from Cell Ranger or Parse pipeline (default = NULL)
    summary.metrics = NULL,
    
    #' @field detailed.metrics data.frame Detailed metrics, i.e., no. genes and UMIs per cell (default = NULL)
@@ -244,6 +244,108 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     self$detailed.metrics <- addDetailedMetricsInner(cms = cms, verbose = verbose, n.cores = n.cores)
   },
+  
+  
+  #' @description Read in raw count matrices and save UMI counts to object in "cellbender" slot, then create barcode rank plots for quality control
+  #' @param shrinkage integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
+  #' @param show.expected.cells logical Plot line depicting called cells by Parse or Cell Ranger pipeline (default = TRUE)
+  #' @param cms.raw list Raw count matrices from HDF5 Cell Ranger or Parse outputs (default = self$cms.raw)
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
+  #' @param umi.counts list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger or Parse outputs (default: stored list)
+  #' @param data.path character Path to Cell Ranger or Parse outputs (default = self$data.path)
+  #' @param samples character Sample names to include (default = self$metadata$sample)
+  #' @param verbose logical Show progress (default: stored vector)
+  #' @param n.cores integer Number of cores (default: stored vector)
+  #' @param unique.names logical Create unique cell names (default = FALSE)
+  #' @param sep character Separator for creating unique cell names (default = "!!")
+  #' @return ggplot2 object and bash script
+  #' @examples 
+  #' \dontrun{
+  #' crm <- CRMetrics$new(data.path = "/path/to/count/data")
+  #' crm$prepareCellbender()
+  #' }
+  plotBarcodeRankPlot = function(shrinkage = 100, 
+                               show.expected.cells = TRUE, 
+                               cms.raw = self$cms.raw, 
+                               technology = self$technology,
+                               umi.counts = self$cellbender$umi.counts, 
+                               data.path = self$data.path, 
+                               samples = self$metadata$sample, 
+                               verbose = self$verbose, 
+                               n.cores = self$n.cores, 
+                               unique.names = FALSE,
+                               sep = "!!") {
+    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
+    # Preparations
+    if (verbose) message(paste0(Sys.time()," Started run using ", if (n.cores < length(samples)) n.cores else length(samples)," cores"))
+    expected.cells <- self$getExpectedCells(samples)
+    
+    # Read raw CMs from HDF5 files
+    
+    if (!is.null(cms.raw)) {
+      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger/Parse outputs. To overwrite, set $cms.raw <- NULL"))
+    } else {
+      
+      checkDataPath(data.path)
+      
+      if (technology == "parse") {
+        if (verbose) message(paste0(Sys.time()," Loading Parse outputs"))
+        cms.raw <- readParse(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
+      } else {
+        if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
+        cms.raw <- read10xH5(data.path, samples, "raw", technology = self$technology, n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
+      }
+      self$cms.raw <- cms.raw
+    }
+    
+    # Get UMI counts
+    if (!is.null(umi.counts)) {
+      if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set $cellbender$umi.counts <- NULL"))
+    } else {
+      if (verbose) message(paste0(Sys.time()," Calculating UMI counts per sample"))
+      umi.counts <- cms.raw[samples] %>% 
+        plapply(\(cm) {
+          sparseMatrixStats::colSums2(cm) %>%
+            sort(decreasing = TRUE) %>% 
+            {data.frame(y = .)} %>% 
+            filter(y > 0) %>% 
+            mutate(., x = seq_len(nrow(.)))
+        }, n.cores = n.cores) %>% 
+        setNames(samples)
+      self$cellbender$umi.counts <- umi.counts
+    }
+    
+    # Create plot
+    if (verbose) message(paste0(Sys.time()," Plotting"))
+    data.df <- umi.counts[samples] %>% 
+      names() %>% 
+      lapply(\(sample) {
+        umi.counts[[sample]] %>% 
+          mutate(sample = sample) %>% 
+          .[seq(1, nrow(.), shrinkage),]
+      }) %>% 
+      bind_rows()
+    
+    line.df <- expected.cells %>% 
+      {data.frame(sample = names(.), exp = .)}
+    
+    g <- ggplot(data.df, aes(x, y)) + 
+      geom_line(color = "red") + 
+      scale_x_log10(labels = scales::comma) +
+      scale_y_log10(labels = scales::comma) +
+      self$theme +
+      labs(x = "Barcode ID ranked by count", y = "UMI count per barcode", col = "")
+    
+    if (show.expected.cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
+    
+    g <- g + facet_wrap(~ sample, scales = "free")
+    
+    if (verbose) message(paste0(Sys.time()," Done!"))
+    
+    # return the plot object
+    return(g)
+  },
+  
   
   #' @description Add comparison group for statistical testing.
   #' @param comp.group character Comparison metric (default = self$comp.group).
@@ -595,7 +697,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param depth logical Plot depth or not (default = FALSE).
   #' @param doublet.method character Doublet detection method (default = NULL).
   #' @param doublet.scores logical Plot doublet scores or not (default = FALSE).
-  #' @param depth.cutoff numeric Depth cutoff (default = 1e3).
+  #' @param depth.cutoff numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).
+  #' @param depth.cutoff.upper numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).
   #' @param mito.frac logical Plot mitochondrial fraction or not (default = FALSE).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = 0.05).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
@@ -635,7 +738,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotEmbedding = function(depth = FALSE, 
                            doublet.method = NULL, 
                            doublet.scores = FALSE, 
-                           depth.cutoff = 1e3, 
+                           depth.cutoff = NULL,
+                           depth.cutoff.upper = NULL,
                            mito.frac = FALSE, 
                            mito.cutoff = 0.05, 
                            species = c("human","mouse"), 
@@ -656,15 +760,84 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Depth
     if (depth) {
-      depths <- self$getDepth() %>% 
-        filterVector("depth.cutoff", depth.cutoff, self$con$samples %>% names(), sep)
-      if (length(depth.cutoff) > 1) {
-        main <- "Cells with low depth with sample-specific cutoff"
+      
+      depth_vals <- self$getDepth()
+      cell_names <- names(depth_vals)
+      
+      # LOWER cutoff
+      if (!is.null(depth.cutoff)) {
+        
+        pass_lower <- filterVector(
+          num.vec = depth_vals,
+          name    = "depth.cutoff",
+          filter  = depth.cutoff,
+          samples = self$con$samples %>% names(),
+          sep     = sep
+        )
+        low_depth <- !pass_lower
+        
       } else {
-        main <- paste0("Cells with depth < ",depth.cutoff)
+        low_depth <- rep(FALSE, length(depth_vals))
+        names(low_depth) <- cell_names
       }
-        g <- self$con$plotGraph(colors = (!depths) * 1, title = main, size = size, ...)
+      
+      # UPPER cutoff
+      if (!is.null(depth.cutoff.upper)) {
+        
+        pass_upper <- filterVector(
+          num.vec = -depth_vals,
+          name    = "depth.cutoff.upper",
+          filter  = -depth.cutoff.upper,
+          samples = self$con$samples %>% names(),
+          sep     = sep
+        )
+        high_depth <- !pass_upper
+        
+      } else {
+        high_depth <- rep(FALSE, length(depth_vals)) # default is FALSE
+        names(high_depth) <- cell_names
+      }
+  
+      
+      # combine into 3-state vector
+      depth_flag <- integer(length(depth_vals))
+      names(depth_flag) <- cell_names
+      
+      depth_flag[low_depth]  <- 1
+      depth_flag[high_depth] <- 2
+      
+      # title
+      lower_sample_specific <- !is.null(depth.cutoff) &&
+        length(depth.cutoff) > 1
+      upper_sample_specific <- !is.null(depth.cutoff.upper) &&
+        length(depth.cutoff.upper) > 1
+      
+      if (!is.null(depth.cutoff.upper)) {
+        if (lower_sample_specific || upper_sample_specific) {
+          main <- "Cells with low (red) or high (blue) depth (sample-specific cutoffs)"
+        } else if (!is.null(depth.cutoff)) {
+          main <- paste0(
+            "Cells with depth < ", depth.cutoff , " (red) or > ", depth.cutoff.upper , " (blue)"
+          )
+        } else {
+          main <- paste0("Cells with depth > ", depth.cutoff.upper)
+        }
+      } else {
+        if (lower_sample_specific) {
+          main <- "Cells with low depth (sample-specific cutoff)"
+        } else {
+          main <- paste0("Cells with depth < ", depth.cutoff)
+        }
+      }
+      
+      g <- self$con$plotGraph(
+        groups  = depth_flag,
+        title   = main,
+        size    = size, mark.groups=F,
+        ...)+scale_color_manual(values = c("0"= "lightgrey", "1" = "red", "2" = "blue"))
     }
+    
+
     
     # Doublets
     if (!is.null(doublet.method)) {
@@ -698,7 +871,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Plot per-sample density histograms of cell depths (=total UMI counts per cell). The plot highlights cells below or above a specified UMI cutoff with distinct colors, helping to assess data quality and filtering thresholds.
-  #' @param cutoff numeric  Depth cutoff used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).
+  #' @param cutoff numeric Depth cutoff (lower). Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).
   #' @param samples character Sample names to include for plotting (default = $metadata$sample).
   #' @param sep character Separator for creating unique cell names (default = "!!")
   #' @param keep.col character Color for density of cells that are kept (default = "#E7CDC2")
@@ -804,7 +977,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
 
   #' @description Plot per-sample histograms of total UMI counts per cell (= cell depth), allowing visualization of sequencing depth distributions across samples.
-  #' @param cutoff numeric Depth (UMI count) cutoff used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (Default = 1e3).
+  #' @param cutoff numeric Depth cutoff (lower) used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (Default = 1e3).
   #' @param samples character Vector of sample names to include in the plot (default = self$metadata$sample).
   #' @param sep  character Separator for creating unique cell names (default = "!!")
   #' @param binwidth numeric Width of the histogram bins (default = 10).
@@ -837,21 +1010,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       pmin(3)
     
     # Plot
+    
+    
     depth.plot <- lapply(unique(tmp$sample), function(id) {
       tmp.plot <- tmp %>% filter(sample == id)
-        
+      
+      if (length(cutoff) == 1) {
+        plot.cutoff <- cutoff
+      } else {
+        plot.cutoff <- cutoff[names(cutoff) == id]
+      } 
+      
     g <- ggplot(tmp.plot, aes(x = depth)) +
           geom_histogram(binwidth = binwidth, boundary = 0, closed = "left") +
           labs(title = id, x = "UMI counts", y = "Number of cells") +
           self$theme +
-          xlim(0,xupper) + geom_vline(xintercept = cutoff, color="red", linetype = "dashed")
+          xlim(0,xupper) + geom_vline(xintercept = plot.cutoff, color="red", linetype = "dashed")
         # optional: + scale_x_log10()
-        
-    if (length(cutoff) == 1) {
-      plot.cutoff <- cutoff
-    } else {
-      plot.cutoff <- cutoff[names(cutoff) == id]
-    }
         
   return(g)
     }) %>% 
@@ -910,7 +1085,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       stop("No Conos object found, please run createEmbedding.")
     }
     
-    if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(tmp)," samples. Please adjust."))
+    if (length(cutoff) > 1 & length(self$con$samples) != length(cutoff)) stop(paste0("'cutoff' has a length of ",length(cutoff),", but the conos object contains ",length(self$con$samples)," samples. Please adjust."))
     
     mf <- self$getMitoFraction(species = species)
     
@@ -924,7 +1099,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       mutate(sample = sample %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1)) %>%
       split(., .$sample) %>% 
       .[samples] %>% 
-      lapply(\(z) with(density(z$mito.frac, adjust = 1/10), data.frame(x,y))) %>% 
+      lapply(\(z) with(density(z$mito.frac, adjust = 1/10, from = 0), data.frame(x,y))) %>% 
       {lapply(names(.), \(x) data.frame(.[[x]], sample = x))} %>% 
       bind_rows()
     
@@ -1308,7 +1483,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
-  #' @param depth.cutoff numeric Depth (transcripts per cell) cutoff (default = NULL).
+  #' @param depth.cutoff numeric Lower depth (total UMI counts per cell) cutoff (default = NULL).
+  #' @param depth.cutoff.upper numeric Upper depth (total UMI counts per cell) cutoff (default = NULL).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = NULL).
   #' @param doublets character Doublet detection method to use (default = NULL).
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
@@ -1348,6 +1524,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   #' }
   filterCms = function(depth.cutoff = NULL, 
+                       depth.cutoff.upper = NULL,
                        mito.cutoff = NULL, 
                        doublets = NULL,
                        species = c("human","mouse"),
@@ -1358,7 +1535,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     if (verbose) {
       filters <- c()
-      if (!is.null(depth.cutoff)) filters %<>% c(paste0("depth.cutoff = ",depth.cutoff))
+      if (!is.null(depth.cutoff)) filters %<>% c(paste0("depth.cutoff.lower = ", depth.cutoff))
+      if (!is.null(depth.cutoff.upper)) filters %<>% c(paste0("depth.cutoff.upper = ", depth.cutoff.upper))
       if (!is.null(mito.cutoff)) filters %<>% c(paste0("mito.cutoff = ",mito.cutoff," and species = ",species))
       if (!is.null(doublets)) filters %<>% c(paste0("doublet method = ",doublets))
       
@@ -1388,9 +1566,24 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       names()
     
     # Depth
-    if (!is.null(depth.cutoff)) {
-      depth.filter <- self$getDepth() %>% 
-        filterVector("depth.cutoff", depth.cutoff, samples, sep)
+    # Depth
+    if (!is.null(depth.cutoff) || !is.null(depth.cutoff.upper)) {
+      depth_vals <- self$getDepth()
+      depth.keep <- rep(TRUE, length(depth_vals))
+      names(depth.keep) <- names(depth_vals)
+      
+      # lower cutoff
+      if (!is.null(depth.cutoff)) {
+        keep_lower <- filterVector(depth_vals, "depth.cutoff", depth.cutoff, samples, sep)
+        depth.keep <- depth.keep & keep_lower
+      }
+      # upper cutoff 
+      if (!is.null(depth.cutoff.upper)) {
+        keep_upper <- !filterVector(depth_vals, "depth.cutoff.upper", depth.cutoff.upper, samples, sep)
+        depth.keep <- depth.keep & keep_upper
+      }
+      depth.filter <- depth.keep
+      
     } else {
       depth.filter <- NULL
     }
@@ -1483,8 +1676,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' @description Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
   #' @param type character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).
-  #' @param depth logical Plot the depth or not (default = TRUE).
-  #' @param depth.cutoff numeric Depth cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 1e3).
+  #' @param depth logical Plot the depth (= total amount of UMI counts per cell) or not (default = TRUE).
+  #' @param depth.cutoff numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = 1e3).
+  #' @param depth.cutoff.upper numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param doublet.method character Method to detect doublets (default = NULL).
   #' @param mito.frac logical Plot the mitochondrial fraction or not (default = TRUE).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 0.05).
@@ -1527,6 +1721,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   plotFilteredCells = function(type = c("embedding","bar","tile","export"), 
                                depth = TRUE, 
                                depth.cutoff = 1e3, 
+                               depth.cutoff.upper = NULL,
                                doublet.method = NULL, 
                                mito.frac = TRUE, 
                                mito.cutoff = 0.05, 
@@ -1542,14 +1737,35 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (mito.frac) species %<>% tolower() %>% match.arg(c("human","mouse"))
     
     # Prepare data
+    # depth
     if (depth) {
-      depths <- self$getDepth() %>% 
-        filterVector("depth.cutoff", depth.cutoff, depth.cutoff %>% names(), sep) %>% 
-        {ifelse(!., "depth", "")}
+      depth_vals <- self$getDepth()
+      cell_names <- names(depth_vals)
+      samples <- self$con$samples[cell_names]
+      
+      low_depth <- !filterVector(depth_vals, "depth.cutoff", depth.cutoff, self$con$samples %>% names(), sep)
+    
+      # upper cutoff
+      if (!is.null(depth.cutoff.upper)) {
+        
+        high_depth <- filterVector(depth_vals,"depth.cutoff.upper",depth.cutoff.upper,self$con$samples %>% names(),sep)
+      } else {
+        high_depth <- rep(FALSE, length(depth_vals))
+        names(high_depth) <- cell_names
+      }
+      
+      # encode as labels
+      depths <- rep("", length(depth_vals))
+      names(depths) <- cell_names
+      
+      depths[low_depth]  <- "low.depth"
+      depths[high_depth] <- "high.depth"
+      
     } else {
       depths <- NULL
     }
-    
+   
+
     if (mito.frac) {
       mf <- self$getMitoFraction(species = species) %>% 
         filterVector("mito.cutoff", mito.cutoff, mito.cutoff %>% names(), sep) %>% 
@@ -1752,12 +1968,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' @description Create plots and script call for CellBender
+  #' @description Read in raw cms and save umi counts to object, then plot barcode rank plots and in case of Parse data generate input files for CellBender
   #' @param shrinkage integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
   #' @param show.expected.cells logical Plot line depicting expected number of cells (default = TRUE)
-  #' @param show.total.droplets logical Plot line depicting total droplets included for CellBender run (default = TRUE)
-  #' @param expected.cells named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
-  #' @param total.droplets named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
+  #' @param show.total.barcodes logical Plot line depicting total barcodes included for CellBender run (default = TRUE)
+  #' @param expected.cells named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by respective pipeline. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
+  #' @param total.barcodes named numeric If NULL, total barcodes included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total barcodes included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
   #' @param cms.raw list Raw count matrices from HDF5 Cell Ranger outputs (default = self$cms.raw)
   #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
   #' @param umi.counts list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
@@ -1775,9 +1991,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   prepareCellbender = function(shrinkage = 100, 
                                show.expected.cells = TRUE, 
-                               show.total.droplets = TRUE, 
+                               show.total.barcodes = TRUE, 
                                expected.cells = NULL, 
-                               total.droplets = NULL, 
+                               total.barcodes = NULL, 
                                cms.raw = self$cms.raw, 
                                technology = self$technology,
                                umi.counts = self$cellbender$umi.counts, 
@@ -1791,7 +2007,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     # Preparations
     if (verbose) message(paste0(Sys.time()," Started run using ", if (n.cores < length(samples)) n.cores else length(samples)," cores"))
     if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
-    if (is.null(total.droplets)) total.droplets <- self$getTotalDroplets(samples)
+    if (is.null(total.barcodes)) total.barcodes <- self$getTotalBarcodes(samples)
     
     # Read CMs from HDF5 files
     
@@ -1842,17 +2058,17 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     line.df <- expected.cells %>% 
       {data.frame(sample = names(.), exp = .)} %>% 
-      mutate(total = total.droplets %>% unname())
+      mutate(total = total.barcodes %>% unname())
     
     g <- ggplot(data.df, aes(x, y)) + 
       geom_line(color = "red") + 
       scale_x_log10(labels = scales::comma) +
       scale_y_log10(labels = scales::comma) +
       self$theme +
-      labs(x = "Droplet ID ranked by count", y = "UMI count per droplet", col = "")
+      labs(x = "Barcode ID ranked by count", y = "UMI count per barcode", col = "")
     
     if (show.expected.cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
-    if (show.total.droplets) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total droplets included"))
+    if (show.total.barcodes) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total barcodes included"))
     
     g <- g + facet_wrap(~ sample, scales = "free")
     
@@ -1904,14 +2120,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   
-  
+  #' @description Create CellBender script
   #' @param file character File name for CellBender script. Will be stored in `data.path` (default: "cellbender_script.sh")
   #' @param technology character Applied single cell technology (default = self$technology).
   #' @param fpr numeric False positive rate for CellBender (default = 0.01)
   #' @param epochs integer Number of epochs for CellBender (default = 150)
   #' @param use.gpu logical Use CUDA capable GPU (default = TRUE)
   #' @param expected.cells logical or named numeric vector If FALSE, the --expected-cells argument is omitted in the generated script.If TRUE, expected cells will be deduced from the number of cells per sample identified by Cell Ranger/Parse. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE) 
-  #' @param total.droplets logical or named numeric vector If FALSE, the --total.droplets argument is omitted in the generated script.If TRUE, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE)
+  #' @param total.barcodes logical or named numeric vector If FALSE, the --total.barcodes argument is omitted in the generated script.If TRUE, total barcodes included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total barcodes included with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @param args character (optional) Additional parameters for CellBender
@@ -1928,7 +2144,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                   epochs = 150, 
                                   use.gpu = TRUE, 
                                   expected.cells = FALSE, 
-                                  total.droplets = FALSE, 
+                                  total.barcodes = FALSE, 
                                   data.path = self$data.path, 
                                   samples = self$metadata$sample, 
                                   args = NULL) {
@@ -1986,12 +2202,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         stop("If expected.cells is a vector, it must be named with sample names.")
       }
     
-    if (isTRUE(total.droplets)) {
-      total.droplets <- self$getTotalDroplets(samples)
-    } else if (isFALSE(total.droplets)) {
-      total.droplets <- NULL
-    } else if (is.vector(total.droplets) && is.null(names(total.droplets))) {
-       stop("If total.droplets is a vector, it must be named with sample names.")
+    if (isTRUE(total.barcodes)) {
+      total.barcodes <- self$getTotalBarcodes(samples)
+    } else if (isFALSE(total.barcodes)) {
+      total.barcodes <- NULL
+    } else if (is.vector(total.barcodes) && is.null(names(total.barcodes))) {
+       stop("If total.barcodes is a vector, it must be named with sample names.")
     }
     
     # Create CellBender shell scripts
@@ -2001,7 +2217,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                " --output ",outputs[sample],
                if (use.gpu) c(" --cuda ") else c(" "),
                if (!is.null(expected.cells)) paste0("--expected-cells ", expected.cells[sample], " ") else c(" "),
-               if (!is.null(total.droplets)) paste0("--total-droplets-included ", total.droplets[sample], " ") else c(" "),
+               if (!is.null(total.barcodes)) paste0("--total-barcodes-included ", total.barcodes[sample], " ") else c(" "),
                " --fpr ",fpr,
                " --epochs ",epochs,
                " ",if (!is.null(args)) paste(args, collapse = " "))
@@ -2047,7 +2263,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(expected.cells)
   },
   
-  #' @description Get the total number of droplets included in the CellBender estimations. Based on the Cell Ranger summary metrics and multiplied by a preset multiplier.
+  #' @description Get the total number of barcodes included in the CellBender estimations. Based on the Cell Ranger summary metrics and multiplied by a preset multiplier.
   #' @param samples character Samples names to include (default = self$metadata$sample)
   #' @param multiplier numeric Number to multiply expected number of cells with (default = 3)
   #' @return A numeric vector
@@ -2067,15 +2283,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' # Add summary
   #' crm$addSummaryFromCms()
   #' 
-  #' # Get no. droplets
-  #' crm$getTotalDroplets()
-  getTotalDroplets = function(samples = self$metadata$sample, 
+  #' # Get no. barcodes
+  #' crm$getTotalBarcodes()
+  getTotalBarcodes = function(samples = self$metadata$sample, 
                               multiplier = 3) {
     if (!is.numeric(multiplier)) stop("'multiplier' must be numeric.")
     expected.cells <- self$getExpectedCells(samples = samples)
-    total.droplets <- expected.cells * multiplier
+    total.barcodes <- expected.cells * multiplier
     
-    return(total.droplets)
+    return(total.barcodes)
   },
   
   #' @description Add a list of count matrices to the CRMetrics object.

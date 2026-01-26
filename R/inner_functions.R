@@ -186,7 +186,7 @@ readFlex <- function(data.path,
   return(tmp)
 }
 
-#' @title Load filtered Parse count matrices
+#' @title Load Parse count matrices
 #' @description Load gene expression count data
 #' @param data.path Path to Parse count data.
 #' @param samples Vector of sample names (default = NULL)
@@ -461,7 +461,7 @@ addSummaryMetrics <- function(data.path,
                             header = TRUE, sep = ",", stringsAsFactors = FALSE) %>%
             select(Metric.Name, Metric.Value) %>% # Only select 'Metric Name' and 'Metric Value' columns
             rename(metric = Metric.Name, value = Metric.Value) %>%
-            slice(1:12) %>%
+            slice(1:15) %>%
             mutate(value = gsub(",", "", value),  # Remove commas
                    value = ifelse(grepl("%", value), as.numeric(gsub("%", "", value)) / 100, as.numeric(value)))  %>%  # Handle percentages
             mutate(sample = s[1]) %>% # Add sample column
