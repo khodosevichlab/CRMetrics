@@ -24,13 +24,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field metadata data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
    metadata = NULL,
    
-   #' @field data.path character Path(s) to Cell Ranger or Parse count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)
+   #' @field data.path character Path(s) to Cell Ranger or Parse's split-pipe count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)
    data.path = NULL, 
    
-   #' @field cms list List with count matrices (default = NULL)
+   #' @field cms list List with count matrices from Cell Ranger or Parse's split-pipe (default = NULL)
    cms = NULL,
    
-   #' @field cms.preprocessed list List with preprocessed count matrices after $doPreprocessing() (default = NULL)
+   #' @field cms.preprocessed list List with pagoda2- or seurat-preprocessed count matrices after $doPreprocessing() (default = NULL)
    cms.preprocessed = NULL,
    
    #' @field cms.raw list List with raw, unfiltered count matrices, i.e., including all cell barcodes detected, also empty ones (default = NULL)
@@ -204,7 +204,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (is.null(cms)) self$summary.metrics <- addSummaryMetrics(data.path = data.path, metadata = self$metadata, n.cores = self$n.cores, verbose = verbose)
   },
   
-  #' @description Function to read in detailed metrics. This is not done upon initialization for speed.
+  #' @description Function to read in detailed metrics (total UMI count and gene count per cell). This is not done upon object initialization for speed.
   #' @param cms list List of (sparse) count matrices (default = self$cms)
   #' @param min.transcripts.per.cell numeric Minimal number of transcripts per cell (default = 100)
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores).
@@ -268,7 +268,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                show.expected.cells = TRUE, 
                                cms.raw = self$cms.raw, 
                                technology = self$technology,
-                               umi.counts = self$cellbender$umi.counts, 
+                               umi.counts = self$umi.counts, 
                                data.path = self$data.path, 
                                samples = self$metadata$sample, 
                                verbose = self$verbose, 
@@ -300,7 +300,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # Get UMI counts
     if (!is.null(umi.counts)) {
-      if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set $cellbender$umi.counts <- NULL"))
+      if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set crm$umi.counts <- NULL"))
     } else {
       if (verbose) message(paste0(Sys.time()," Calculating UMI counts per sample"))
       umi.counts <- cms.raw[samples] %>% 
@@ -312,7 +312,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
             mutate(., x = seq_len(nrow(.)))
         }, n.cores = n.cores) %>% 
         setNames(samples)
-      self$cellbender$umi.counts <- umi.counts
+      self$umi.counts <- umi.counts
     }
     
     # Create plot
@@ -344,6 +344,36 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # return the plot object
     return(g)
+  },
+  
+  #' @description Extract the expected number of cells per sample based on the Cell Ranger or Parse's split-pipe summary metrics.
+  #' @param samples character Sample names to include (default = self$metadata$sample) 
+  #' @return A numeric vector
+  #' @examples
+  #' # Simulate data
+  #' testdata.cms <- lapply(seq_len(2), \(x) {
+  #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+  #' out[out < 0] <- 1
+  #' dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+  #' sapply(seq_len(1e3), \(x) paste0("cell",x)))
+  #' return(out)
+  #' })
+  #' 
+  #' # Initialize
+  #' crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
+  #' 
+  #' # Get summary
+  #' crm$addSummaryFromCms()
+  #' 
+  #' # Get no. cells
+  #' crm$getExpectedCells()
+  getExpectedCells = function(samples = self$metadata$sample) {
+    expected.cells <- self$summary.metrics %>% 
+      filter(metric == "estimated number of cells") %$% 
+      setNames(value, sample) %>%
+      .[samples]
+    
+    return(expected.cells)
   },
   
   
@@ -1968,116 +1998,35 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(tmp)
   },
   
-  #' @description Read in raw cms and save umi counts to object, then plot barcode rank plots and in case of Parse data generate input files for CellBender
-  #' @param shrinkage integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
-  #' @param show.expected.cells logical Plot line depicting expected number of cells (default = TRUE)
-  #' @param show.total.barcodes logical Plot line depicting total barcodes included for CellBender run (default = TRUE)
-  #' @param expected.cells named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by respective pipeline. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
-  #' @param total.barcodes named numeric If NULL, total barcodes included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total barcodes included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)
-  #' @param cms.raw list Raw count matrices from HDF5 Cell Ranger outputs (default = self$cms.raw)
+  #' @description Generates input files for CellBender from Parse's split-pipe output.
   #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
-  #' @param umi.counts list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @param verbose logical Show progress (default: stored vector)
   #' @param n.cores integer Number of cores (default: stored vector)
   #' @param unique.names logical Create unique cell names (default = FALSE)
   #' @param sep character Separator for creating unique cell names (default = "!!")
-  #' @return ggplot2 object and bash script
+  #' @return Saves files to disc.
   #' @examples 
   #' \dontrun{
   #' crm <- CRMetrics$new(data.path = "/path/to/count/data")
   #' crm$prepareCellbender()
   #' }
-  prepareCellbender = function(shrinkage = 100, 
-                               show.expected.cells = TRUE, 
-                               show.total.barcodes = TRUE, 
-                               expected.cells = NULL, 
-                               total.barcodes = NULL, 
-                               cms.raw = self$cms.raw, 
-                               technology = self$technology,
-                               umi.counts = self$cellbender$umi.counts, 
+  prepareCellbender = function(technology = self$technology, 
                                data.path = self$data.path, 
                                samples = self$metadata$sample, 
                                verbose = self$verbose, 
                                n.cores = self$n.cores, 
                                unique.names = FALSE,
                                sep = "!!") {
-    checkPackageInstalled("sparseMatrixStats", bioc = TRUE)
-    # Preparations
-    if (verbose) message(paste0(Sys.time()," Started run using ", if (n.cores < length(samples)) n.cores else length(samples)," cores"))
-    if (is.null(expected.cells)) expected.cells <- self$getExpectedCells(samples)
-    if (is.null(total.barcodes)) total.barcodes <- self$getTotalBarcodes(samples)
     
-    # Read CMs from HDF5 files
-    
-    #add parse case, use readParse function
-    if (!is.null(cms.raw)) {
-      if (verbose) message(paste0(Sys.time()," Using stored HDF5 Cell Ranger/Parse outputs. To overwrite, set $cms.raw <- NULL"))
-    } else {
-      
-      checkDataPath(data.path)
-      
-      if (technology == "parse") {
-        if (verbose) message(paste0(Sys.time()," Loading Parse outputs"))
-        cms.raw <- readParse(data.path, samples, "raw", n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
-    } else {
-      if (verbose) message(paste0(Sys.time()," Loading HDF5 Cell Ranger outputs"))
-      cms.raw <- read10xH5(data.path, samples, "raw", technology = self$technology, n.cores = n.cores, verbose = verbose, unique.names = unique.names, sep = sep)
-     }
-    self$cms.raw <- cms.raw
-  }
-    
-    # Get UMI counts
-    if (!is.null(umi.counts)) {
-      if (verbose) message(paste0(Sys.time()," Using stored UMI counts calculations. To overwrite, set $cellbender$umi.counts <- NULL"))
-    } else {
-      if (verbose) message(paste0(Sys.time()," Calculating UMI counts per sample"))
-      umi.counts <- cms.raw[samples] %>% 
-        plapply(\(cm) {
-          sparseMatrixStats::colSums2(cm) %>%
-            sort(decreasing = TRUE) %>% 
-            {data.frame(y = .)} %>% 
-            filter(y > 0) %>% 
-            mutate(., x = seq_len(nrow(.)))
-        }, n.cores = n.cores) %>% 
-        setNames(samples)
-      self$cellbender$umi.counts <- umi.counts
+    if (technology != "parse") {
+      message(paste0(Sys.time()," This function only needs to be run for Parse Biosciences data. "))
     }
-    
-    # Create plot
-    if (verbose) message(paste0(Sys.time()," Plotting"))
-    data.df <- umi.counts[samples] %>% 
-      names() %>% 
-      lapply(\(sample) {
-        umi.counts[[sample]] %>% 
-          mutate(sample = sample) %>% 
-          .[seq(1, nrow(.), shrinkage),]
-      }) %>% 
-      bind_rows()
-    
-    line.df <- expected.cells %>% 
-      {data.frame(sample = names(.), exp = .)} %>% 
-      mutate(total = total.barcodes %>% unname())
-    
-    g <- ggplot(data.df, aes(x, y)) + 
-      geom_line(color = "red") + 
-      scale_x_log10(labels = scales::comma) +
-      scale_y_log10(labels = scales::comma) +
-      self$theme +
-      labs(x = "Barcode ID ranked by count", y = "UMI count per barcode", col = "")
-    
-    if (show.expected.cells) g <- g + geom_vline(data = line.df, aes(xintercept = exp, col = "Expected cells"))
-    if (show.total.barcodes) g <- g + geom_vline(data = line.df, aes(xintercept = total, col = "Total barcodes included"))
-    
-    g <- g + facet_wrap(~ sample, scales = "free")
-    
-    if (verbose) message(paste0(Sys.time()," Done!"))
-   
-  
+      
   # transform parse output to work as input for cellbender
     if (technology == "parse") {
-      if (verbose) message(paste0(Sys.time()," Transforming Parse outputs as preparation for cellbender"))
+      if (verbose) message(paste0(Sys.time()," Transforming Parse's split-pipe outputs as preparation for CellBender"))
       # check if transformed data already exists
       full.path <- data.path %>% 
         pathsToList(samples) %>% 
@@ -2115,8 +2064,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         }
       })
     }
-    # return the plot object
-    return(g)
   },
   
   
@@ -2126,9 +2073,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param fpr numeric False positive rate for CellBender (default = 0.01)
   #' @param epochs integer Number of epochs for CellBender (default = 150)
   #' @param use.gpu logical Use CUDA capable GPU (default = TRUE)
-  #' @param expected.cells logical or named numeric vector If FALSE, the --expected-cells argument is omitted in the generated script.If TRUE, expected cells will be deduced from the number of cells per sample identified by Cell Ranger/Parse. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE) 
-  #' @param total.barcodes logical or named numeric vector If FALSE, the --total.barcodes argument is omitted in the generated script.If TRUE, total barcodes included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total barcodes included with sample IDs as names. Sample IDs must match those in summary.metrics (default: FALSE)
-  #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
+  #' @param expected.cells named numeric vector By default, the --expected-cells argument is omitted in the generated script. Otherwise, a named vector of expected cell numbers with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).
+  #' @param total.droplets named numeric vector By default, the --total-droplets-included argument is omitted in the generated script. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).
+  #' @param data.path character Path to Cell Ranger or Parse's split-pipe outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @param args character (optional) Additional parameters for CellBender
   #' @return bash script
@@ -2143,8 +2090,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                   fpr = 0.01, 
                                   epochs = 150, 
                                   use.gpu = TRUE, 
-                                  expected.cells = FALSE, 
-                                  total.barcodes = FALSE, 
+                                  expected.cells = NULL, 
+                                  total.droplets = NULL, 
                                   data.path = self$data.path, 
                                   samples = self$metadata$sample, 
                                   args = NULL) {
@@ -2152,11 +2099,11 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     checkDataPath(data.path)
     
     if (technology == "parse") {
-      # in case of parse we use the genes, matrix, barcodes files stored in DGE_unfiltered and therefor we just need to give the path to DGE_unfiltered
+      # in case of parse we use the genes, matrix, barcodes files stored in DGE_unfiltered and therefore we just need to give the path to DGE_unfiltered
       inputs <- data.path %>%
         pathsToList(samples) %>% 
         sapply(\(sample) {
-            file.path(sample[2],sample[1],"DGE_unfiltered")})
+          paste0(sample[2],sample[1],"/DGE_unfiltered")})
       
       #check that transformed files exists for parse
       lapply(inputs, function(x) {
@@ -2185,29 +2132,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       pathsToList(samples) %>% 
     sapply(\(sample) {
         if (technology == "parse") {
-          file.path(sample[2], sample[1], "DGE_unfiltered/cellbender.h5")
+          paste0(sample[2], sample[1],"/DGE_unfiltered/cellbender.h5")
         } else if (technology == "10xflex") {
-          file.path(sample[2],sample[1], "count/cellbender.h5")
+          paste0(sample[2],sample[1],"/count/cellbender.h5")
         } else {
-          file.path(sample[2],sample[1], "outs/cellbender.h5")
+          paste0(sample[2],sample[1],"/outs/cellbender.h5")
         }
       }) %>%
       setNames(samples)
     
-    if (isTRUE(expected.cells)) {
-      expected.cells <- self$getExpectedCells(samples)
-    } else if (isFALSE(expected.cells)) { 
-      expected.cells <- NULL
-    } else if (is.vector(expected.cells) && is.null(names(expected.cells))) {
+
+     if (is.vector(expected.cells) && is.null(names(expected.cells))) {
         stop("If expected.cells is a vector, it must be named with sample names.")
       }
     
-    if (isTRUE(total.barcodes)) {
-      total.barcodes <- self$getTotalBarcodes(samples)
-    } else if (isFALSE(total.barcodes)) {
-      total.barcodes <- NULL
-    } else if (is.vector(total.barcodes) && is.null(names(total.barcodes))) {
-       stop("If total.barcodes is a vector, it must be named with sample names.")
+
+     if (is.vector(total.droplets) && is.null(names(total.droplets))) {
+       stop("If total.droplets is a vector, it must be named with sample names.")
     }
     
     # Create CellBender shell scripts
@@ -2217,7 +2158,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                " --output ",outputs[sample],
                if (use.gpu) c(" --cuda ") else c(" "),
                if (!is.null(expected.cells)) paste0("--expected-cells ", expected.cells[sample], " ") else c(" "),
-               if (!is.null(total.barcodes)) paste0("--total-barcodes-included ", total.barcodes[sample], " ") else c(" "),
+               if (!is.null(total.droplets)) paste0("--total-droplets-included ", total.droplets[sample], " ") else c(" "),
                " --fpr ",fpr,
                " --epochs ",epochs,
                " ",if (!is.null(args)) paste(args, collapse = " "))
@@ -2225,82 +2166,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     out <- list("#! /bin/sh", script.list) %>% 
       unlist()
-    # if there are several data.path "file" is saved to the first element of data.paht vector
+    # if there are several data.path "file" is saved to the first element of data.path vector
     cat(out, file = file.path(data.path[1],file), sep = "\n")
     message(paste0(file ," was saved into ", data.path[1]))
   },
   
-  #' @description Extract the expected number of cells per sample based on the Cell Ranger summary metrics
-  #' @param samples character Sample names to include (default = self$metadata$sample) 
-  #' @return A numeric vector
-  #' @examples
-  #' # Simulate data
-  #' testdata.cms <- lapply(seq_len(2), \(x) {
-  #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-  #' out[out < 0] <- 1
-  #' dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-  #' sapply(seq_len(1e3), \(x) paste0("cell",x)))
-  #' return(out)
-  #' })
-  #' 
-  #' # Initialize
-  #' crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
-  #' 
-  #' # Get summary
-  #' crm$addSummaryFromCms()
-  #' 
-  #' # Get no. cells
-  #' crm$getExpectedCells()
-  #' 
-
-  #included parse and 10x flex nomenclature
-  getExpectedCells = function(samples = self$metadata$sample) {
-    expected.cells <- self$summary.metrics %>% 
-      filter(metric %in% c("estimated number of cells", "number_of_cells", "cells")) %$% 
-      setNames(value, sample) %>%
-      .[samples]
-    
-    return(expected.cells)
-  },
   
-  #' @description Get the total number of barcodes included in the CellBender estimations. Based on the Cell Ranger summary metrics and multiplied by a preset multiplier.
-  #' @param samples character Samples names to include (default = self$metadata$sample)
-  #' @param multiplier numeric Number to multiply expected number of cells with (default = 3)
-  #' @return A numeric vector
-  #' @examples
-  #' # Simulate data
-  #' testdata.cms <- lapply(seq_len(2), \(x) {
-  #' out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-  #' out[out < 0] <- 1
-  #' dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-  #' sapply(seq_len(1e3), \(x) paste0("cell",x)))
-  #' return(out)
-  #' })
-  #' 
-  #' # Initialize
-  #' crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
-  #' 
-  #' # Add summary
-  #' crm$addSummaryFromCms()
-  #' 
-  #' # Get no. barcodes
-  #' crm$getTotalBarcodes()
-  getTotalBarcodes = function(samples = self$metadata$sample, 
-                              multiplier = 3) {
-    if (!is.numeric(multiplier)) stop("'multiplier' must be numeric.")
-    expected.cells <- self$getExpectedCells(samples = samples)
-    total.barcodes <- expected.cells * multiplier
-    
-    return(total.barcodes)
-  },
   
   #' @description Add a list of count matrices to the CRMetrics object.
   #' @param cms list List of (sparse) count matrices (default = NULL)
-  #' @param data.path character Path to Cell Ranger or Parse count data (default = self$data.path).
+  #' @param data.path character Path to Cell Ranger or Parse's split-pipe count data (default = self$data.path).
   #' @param technology character Applied single cell technology (default = self$technology).
   #' @param samples character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)
   #' @param cellbender logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)
-  #' @param raw logical Add raw count matrices from Cell Ranger or Parse output. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
+  #' @param raw logical Add raw count matrices from Cell Ranger or Parse's split-pipe output. Cannot be combined with `cellbender=TRUE`. (default = FALSE)
   #' @param symbol character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)
   #' @param unique.names logical Make cell names unique based on `sep` parameter (default = TRUE)
   #' @param sep character Separator used to create unique cell names (default = "!!")

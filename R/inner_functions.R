@@ -27,7 +27,7 @@ checkCompGroup <- function(comp.group,
 
 #' @title Check whether 'comp.group' is in metadata
 #' @description Checks whether 'comp.group' is any of the column names in metadata.
-#' @param comp.group Comparison metric.
+#' @param comp.group Comparison metric.?
 #' @param metadata Metadata for samples.
 #' @keywords internal
 #' @return nothing or stop
