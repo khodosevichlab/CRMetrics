@@ -2,7 +2,7 @@
 % Please edit documentation in R/inner_functions.R
 \name{addDetailedMetricsInner}
 \alias{addDetailedMetricsInner}
-\title{Add detailed metrics}
+\title{Add detailed metrics (= total UMI count and gene count per cell).}
 \usage{
 addDetailedMetricsInner(cms, verbose = TRUE, n.cores = 1)
 }
@@ -17,6 +17,6 @@ addDetailedMetricsInner(cms, verbose = TRUE, n.cores = 1)
 data frame
 }
 \description{
-Add detailed metrics, requires to load raw count matrices using pagoda2.
+Add detailed metrics, uses not preprocessed count matrices.
 }
 \keyword{internal}

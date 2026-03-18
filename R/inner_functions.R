@@ -6,7 +6,7 @@
 #' @importFrom sccore checkPackageInstalled
 NULL
 
-utils::globalVariables(c(".","value","variable","V1","V2","metric"))
+utils::globalVariables(c(".","value","variable","V1","V2","metric", "Metric.Name", "Metric.Value"))
 
 #' @title Set correct 'comp.group' parameter
 #' @description Set comp.group to 'category' if null.
@@ -25,9 +25,9 @@ checkCompGroup <- function(comp.group,
   return(comp.group)
 }
 
-#' @title Check whether 'comp.group' is in metadata
+#' @title Check whether 'comp.group' is a column name in metadata
 #' @description Checks whether 'comp.group' is any of the column names in metadata.
-#' @param comp.group Comparison metric.?
+#' @param comp.group Grouping variable.
 #' @param metadata Metadata for samples.
 #' @keywords internal
 #' @return nothing or stop
@@ -256,8 +256,8 @@ readParse <- function(data.path,
   return(tmp)
 }
   
-#' @title Add detailed metrics
-#' @description Add detailed metrics, requires to load raw count matrices using pagoda2.
+#' @title Add detailed metrics (= total UMI count and gene count per cell).
+#' @description Add detailed metrics, uses not preprocessed count matrices.
 #' @param cms List containing the count matrices. 
 #' @param verbose Print messages (default = TRUE).
 #' @param n.cores Number of cores for the calculations (default = 1).
@@ -317,7 +317,7 @@ addDetailedMetricsInner <- function(cms,
 #' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
 #' @param primary.test Primary statistical test, e.g. "anova", "kruskal.test".
 #' @param secondary.test Secondary statistical test, e.g. "t-test", "wilcox.test"
-#' @param exact Whether to calculate exact p values (default = FALSE).
+#' @param exact Whether to display exact p-values instead of rounded values (default = FALSE).
 #' @keywords internal
 #' @return ggplot2 object
 addPlotStats <- function(p, 
@@ -350,10 +350,10 @@ addPlotStats <- function(p,
 #' @title Add statistics to plot
 #' @description Use ggpubr to add statistics to samples or plot
 #' @param p Plot to add statistics to. 
-#' @param comp.group Comparison metric.
+#' @param comp.group Metadata column used as the primary grouping variable. Must match a column name of metadata (default = self$comp.group).
 #' @param metadata Metadata for samples.
-#' @param h.adj Position of statistics test p value as % of max(y) (default = 0.05).
-#' @param exact Whether to calculate exact p values (default = FALSE).
+#' @param h.adj Relative vertical offset for displaying the statistical test p-value in the plot, expressed as a % of the maximum y-value (default = 0.05).
+#' @param exact Whether to display exact p-values instead of rounded values (default = FALSE).
 #' @param second.comp.group Second comparison metric.
 #' @keywords internal
 #' @return ggplot2 object
@@ -382,8 +382,8 @@ addPlotStatsSamples <- function(p,
 }
 
 #' @title Add summary metrics
-#' @description Add summary metrics by reading Cell Ranger metrics summary files.
-#' @param data.path Path to cellranger count data.
+#' @description Add summary metrics by reading Cell Ranger or Parse's split-pipe metrics summary files.
+#' @param data.path Path to count data.
 #' @param metadata Metadata for samples.
 #' @param n.cores Number of cores for the calculations (default = 1).
 #' @param verbose Print messages (default = TRUE).

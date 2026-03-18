@@ -2,12 +2,13 @@
 % Please edit documentation in R/inner_functions.R
 \name{read10xH5}
 \alias{read10xH5}
-\title{Read 10x HDF5 files}
+\title{Read 10x or cellbenders HDF5 files}
 \usage{
 read10xH5(
   data.path,
   samples = NULL,
   type = c("raw", "filtered", "cellbender", "cellbender_filtered"),
+  technology = c("10x", "10xmultiome", "flex"),
   symbol = TRUE,
   sep = "!!",
   n.cores = 1,
@@ -21,6 +22,8 @@ read10xH5(
 \item{samples}{character vector, select specific samples for processing (default = NULL)}
 
 \item{type}{name of H5 file to search for, "raw" and "filtered" are Cell Ranger count outputs, "cellbender" is output from CellBender after running script from saveCellbenderScript}
+
+\item{technology}{character Used single-cell technology (c("10x", "10xmultiome", "flex"))}
 
 \item{symbol}{logical Use gene SYMBOLs (TRUE) or ENSEMBL IDs (FALSE) (default = TRUE)}
 
@@ -36,7 +39,7 @@ read10xH5(
 list with sparse count matrices
 }
 \description{
-Read 10x HDF5 files
+Read 10x or cellbenders HDF5 files
 }
 \examples{
 \dontrun{

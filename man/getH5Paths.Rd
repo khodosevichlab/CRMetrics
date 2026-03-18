@@ -4,14 +4,16 @@
 \alias{getH5Paths}
 \title{Get H5 file paths}
 \usage{
-getH5Paths(data.path, samples = NULL, type = NULL)
+getH5Paths(data.path, samples = NULL, type = NULL, technology = NULL)
 }
 \arguments{
-\item{data.path}{character Path for directory containing sample-wise directories with Cell Ranger count outputs}
+\item{data.path}{character Path for directory containing sample-wise directories with Cell Ranger count/Parse outputs}
 
 \item{samples}{character Sample names to include (default = NULL)}
 
-\item{type}{character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")}
+\item{type}{character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs, does not work for Parse), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")}
+
+\item{technology}{character Used technology ("parse", "10x", "10xflex", "10xmultiome") (default = NULL)}
 }
 \description{
 Get file paths for H5 files

@@ -4,7 +4,7 @@
 \alias{CRMetrics}
 \title{CRMetrics class object}
 \description{
-Functions to analyze Cell Ranger count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
+Functions to analyze 10x Genomics Cell Ranger and Parse Biosciences split-pipe count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
 }
 \examples{
 
@@ -34,6 +34,37 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 
 # Run function
 crm$addDetailedMetrics()
+
+## ------------------------------------------------
+## Method `CRMetrics$plotBarcodeRankPlot`
+## ------------------------------------------------
+
+\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data")
+crm$prepareCellbender()
+}
+
+## ------------------------------------------------
+## Method `CRMetrics$getExpectedCells`
+## ------------------------------------------------
+
+# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
+
+# Get summary
+crm$addSummaryFromCms()
+
+# Get no. cells
+crm$getExpectedCells()
 
 ## ------------------------------------------------
 ## Method `CRMetrics$addComparison`
@@ -481,50 +512,6 @@ crm$saveCellbenderScript()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$getExpectedCells`
-## ------------------------------------------------
-
-# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
-
-# Get summary
-crm$addSummaryFromCms()
-
-# Get no. cells
-crm$getExpectedCells()
-
-## ------------------------------------------------
-## Method `CRMetrics$getTotalDroplets`
-## ------------------------------------------------
-
-# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
-
-# Add summary
-crm$addSummaryFromCms()
-
-# Get no. droplets
-crm$getTotalDroplets()
-
-## ------------------------------------------------
 ## Method `CRMetrics$addCms`
 ## ------------------------------------------------
 
@@ -657,17 +644,17 @@ crm$addDoublets()
 \describe{
 \item{\code{metadata}}{data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
-\item{\code{data.path}}{character Path(s) to Cell Ranger count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)}
+\item{\code{data.path}}{character Path(s) to Cell Ranger or Parse's split-pipe count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)}
 
-\item{\code{cms}}{list List with count matrices (default = NULL)}
+\item{\code{cms}}{list List with count matrices from Cell Ranger or Parse's split-pipe (default = NULL)}
 
-\item{\code{cms.preprocessed}}{list List with preprocessed count matrices after $doPreprocessing() (default = NULL)}
+\item{\code{cms.preprocessed}}{list List with pagoda2- or seurat-preprocessed count matrices after $doPreprocessing() (default = NULL)}
 
-\item{\code{cms.raw}}{list List with raw, unfiltered count matrices, i.e., including all CBs detected also empty droplets (default = NULL)}
+\item{\code{cms.raw}}{list List with raw, unfiltered count matrices, i.e., including all cell barcodes detected, also empty ones (default = NULL)}
 
-\item{\code{summary.metrics}}{data.frame Summary metrics from Cell Ranger (default = NULL)}
+\item{\code{summary.metrics}}{data.frame Summary metrics from Cell Ranger or Parse's split-pipe pipeline (default = NULL)}
 
-\item{\code{detailed.metrics}}{data.frame Detailed metrics, i.e., no. genes and UMIs per cell (default = NULL)}
+\item{\code{detailed.metrics}}{data.frame Detailed metrics, i.e., total number of genes and UMIs per cell (default = NULL)}
 
 \item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
 
@@ -687,12 +674,15 @@ Initialize a CRMetrics object}
 \itemize{
 \item \href{#method-CRMetrics-new}{\code{CRMetrics$new()}}
 \item \href{#method-CRMetrics-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
+\item \href{#method-CRMetrics-plotBarcodeRankPlot}{\code{CRMetrics$plotBarcodeRankPlot()}}
+\item \href{#method-CRMetrics-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
 \item \href{#method-CRMetrics-addComparison}{\code{CRMetrics$addComparison()}}
 \item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
 \item \href{#method-CRMetrics-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
 \item \href{#method-CRMetrics-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
 \item \href{#method-CRMetrics-plotEmbedding}{\code{CRMetrics$plotEmbedding()}}
 \item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
+\item \href{#method-CRMetrics-plotRawDepth}{\code{CRMetrics$plotRawDepth()}}
 \item \href{#method-CRMetrics-plotMitoFraction}{\code{CRMetrics$plotMitoFraction()}}
 \item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
 \item \href{#method-CRMetrics-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
@@ -704,8 +694,6 @@ Initialize a CRMetrics object}
 \item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
 \item \href{#method-CRMetrics-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
 \item \href{#method-CRMetrics-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
-\item \href{#method-CRMetrics-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
-\item \href{#method-CRMetrics-getTotalDroplets}{\code{CRMetrics$getTotalDroplets()}}
 \item \href{#method-CRMetrics-addCms}{\code{CRMetrics$addCms()}}
 \item \href{#method-CRMetrics-plotCbTraining}{\code{CRMetrics$plotCbTraining()}}
 \item \href{#method-CRMetrics-plotCbCellProbs}{\code{CRMetrics$plotCbCellProbs()}}
@@ -723,10 +711,11 @@ Initialize a CRMetrics object}
 \if{html}{\out{<a id="method-CRMetrics-new"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-new}{}}}
 \subsection{Method \code{new()}}{
-To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
+To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'metadata' is also recommended, but not required.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$new(
   data.path = NULL,
+  technology = c("10x", "10xflex", "10xmultiome", "parse"),
   metadata = NULL,
   cms = NULL,
   samples = NULL,
@@ -745,13 +734,15 @@ To initialize new object, 'data.path' or 'cms' is needed. 'metadata' is also rec
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{data.path}}{character Path to directory with Cell Ranger count data, one directory per sample (default = NULL).}
+\item{\code{data.path}}{character Path to directory with count data, one directory per sample (default = NULL).}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
 
 \item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
 \item{\code{cms}}{list List with count matrices (default = NULL)}
 
-\item{\code{samples}}{character Sample names. Only relevant is cms is provided (default = NULL)}
+\item{\code{samples}}{character Sample names. Only relevant if cms is provided (default = NULL)}
 
 \item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
 
@@ -791,7 +782,7 @@ crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 \if{html}{\out{<a id="method-CRMetrics-addDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addDetailedMetrics}{}}}
 \subsection{Method \code{addDetailedMetrics()}}{
-Function to read in detailed metrics. This is not done upon initialization for speed.
+Function to read in detailed metrics (total UMI count and gene count per cell). This is not done upon object initialization for speed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
   cms = self$cms,
@@ -833,6 +824,113 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 
 # Run function
 crm$addDetailedMetrics()
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CRMetrics-plotBarcodeRankPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotBarcodeRankPlot}{}}}
+\subsection{Method \code{plotBarcodeRankPlot()}}{
+Read in raw count matrices and save UMI counts to object in "cellbender" slot, then create barcode rank plots for quality control
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotBarcodeRankPlot(
+  shrinkage = 100,
+  show.expected.cells = TRUE,
+  cms.raw = self$cms.raw,
+  technology = self$technology,
+  umi.counts = self$umi.counts,
+  data.path = self$data.path,
+  samples = self$metadata$sample,
+  verbose = self$verbose,
+  n.cores = self$n.cores,
+  unique.names = FALSE,
+  sep = "!!"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{shrinkage}}{integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)}
+
+\item{\code{show.expected.cells}}{logical Plot line depicting called cells by Parse or Cell Ranger pipeline (default = TRUE)}
+
+\item{\code{cms.raw}}{list Raw count matrices from HDF5 Cell Ranger or Parse outputs (default = self$cms.raw)}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+
+\item{\code{umi.counts}}{list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger or Parse outputs (default: stored list)}
+
+\item{\code{data.path}}{character Path to Cell Ranger or Parse outputs (default = self$data.path)}
+
+\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{verbose}}{logical Show progress (default: stored vector)}
+
+\item{\code{n.cores}}{integer Number of cores (default: stored vector)}
+
+\item{\code{unique.names}}{logical Create unique cell names (default = FALSE)}
+
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+ggplot2 object and bash script
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+crm <- CRMetrics$new(data.path = "/path/to/count/data")
+crm$prepareCellbender()
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CRMetrics-getExpectedCells"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-getExpectedCells}{}}}
+\subsection{Method \code{getExpectedCells()}}{
+Extract the expected number of cells per sample based on the Cell Ranger or Parse's split-pipe summary metrics.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getExpectedCells(samples = self$metadata$sample)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{# Simulate data
+testdata.cms <- lapply(seq_len(2), \(x) {
+out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
+out[out < 0] <- 1
+dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
+sapply(seq_len(1e3), \(x) paste0("cell",x)))
+return(out)
+})
+
+# Initialize
+crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
+
+# Get summary
+crm$addSummaryFromCms()
+
+# Get no. cells
+crm$getExpectedCells()
 }
 \if{html}{\out{</div>}}
 
@@ -996,7 +1094,7 @@ Plot all summary stats or a selected list.
 
 \item{\code{summary.metrics}}{data.frame Summary metrics (default = self$summary.metrics).}
 
-\item{\code{plot.geom}}{character Which geometric is used to plot the data (default = "point").}
+\item{\code{plot.geom}}{character Which geometric is used to plot the data (default = "bar").}
 
 \item{\code{se}}{logical For regression lines, show SE (default = FALSE)}
 
@@ -1115,7 +1213,8 @@ Plot cells in embedding using Conos and color by depth and doublets.
   depth = FALSE,
   doublet.method = NULL,
   doublet.scores = FALSE,
-  depth.cutoff = 1000,
+  depth.cutoff = NULL,
+  depth.cutoff.upper = NULL,
   mito.frac = FALSE,
   mito.cutoff = 0.05,
   species = c("human", "mouse"),
@@ -1135,7 +1234,9 @@ Plot cells in embedding using Conos and color by depth and doublets.
 
 \item{\code{doublet.scores}}{logical Plot doublet scores or not (default = FALSE).}
 
-\item{\code{depth.cutoff}}{numeric Depth cutoff (default = 1e3).}
+\item{\code{depth.cutoff}}{numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
+
+\item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
 
 \item{\code{mito.frac}}{logical Plot mitochondrial fraction or not (default = FALSE).}
 
@@ -1195,7 +1296,7 @@ message("Package 'pagoda2' not available.")
 \if{html}{\out{<a id="method-CRMetrics-plotDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotDepth}{}}}
 \subsection{Method \code{plotDepth()}}{
-Plot the sequencing depth in histogram.
+Plot per-sample density histograms of cell depths (=total UMI counts per cell). The plot highlights cells below or above a specified UMI cutoff with distinct colors, helping to assess data quality and filtering thresholds.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(
   cutoff = 1000,
@@ -1209,7 +1310,7 @@ Plot the sequencing depth in histogram.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{cutoff}}{numeric The depth cutoff to color the cells in the embedding (default = 1e3).}
+\item{\code{cutoff}}{numeric Depth cutoff (lower). Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).}
 
 \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
 
@@ -1259,6 +1360,40 @@ message("Package 'pagoda2' not available.")
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CRMetrics-plotRawDepth"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-plotRawDepth}{}}}
+\subsection{Method \code{plotRawDepth()}}{
+Plot per-sample histograms of total UMI counts per cell (= cell depth), allowing visualization of sequencing depth distributions across samples.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotRawDepth(
+  cutoff = 1000,
+  samples = self$metadata$sample,
+  sep = "!!",
+  binwidth = 10,
+  xupper = 20000
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{cutoff}}{numeric Depth cutoff (lower) used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (Default = 1e3).}
+
+\item{\code{samples}}{character Vector of sample names to include in the plot (default = self$metadata$sample).}
+
+\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+
+\item{\code{binwidth}}{numeric Width of the histogram bins (default = 10).}
+
+\item{\code{xupper}}{numeric Optional upper x-axis limit (default = 2e4).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A combined \code{ggplot} object showing UMI count histograms per sample.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotMitoFraction"></a>}}
@@ -1511,7 +1646,7 @@ Create Conos embedding.
 
 \item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list())}
 
-\item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP))}
+\item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP"))}
 }
 \if{html}{\out{</div>}}
 }
@@ -1559,6 +1694,7 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
   depth.cutoff = NULL,
+  depth.cutoff.upper = NULL,
   mito.cutoff = NULL,
   doublets = NULL,
   species = c("human", "mouse"),
@@ -1572,7 +1708,9 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{depth.cutoff}}{numeric Depth (transcripts per cell) cutoff (default = NULL).}
+\item{\code{depth.cutoff}}{numeric Lower depth (total UMI counts per cell) cutoff (default = NULL).}
+
+\item{\code{depth.cutoff.upper}}{numeric Upper depth (total UMI counts per cell) cutoff (default = NULL).}
 
 \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
 
@@ -1682,6 +1820,7 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
   type = c("embedding", "bar", "tile", "export"),
   depth = TRUE,
   depth.cutoff = 1000,
+  depth.cutoff.upper = NULL,
   doublet.method = NULL,
   mito.frac = TRUE,
   mito.cutoff = 0.05,
@@ -1698,9 +1837,11 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
 \describe{
 \item{\code{type}}{character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).}
 
-\item{\code{depth}}{logical Plot the depth or not (default = TRUE).}
+\item{\code{depth}}{logical Plot the depth (= total amount of UMI counts per cell) or not (default = TRUE).}
 
-\item{\code{depth.cutoff}}{numeric Depth cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 1e3).}
+\item{\code{depth.cutoff}}{numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = 1e3).}
+
+\item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).}
 
 \item{\code{doublet.method}}{character Method to detect doublets (default = NULL).}
 
@@ -1764,7 +1905,7 @@ message("Package 'pagoda2' not available.")
 \if{html}{\out{<a id="method-CRMetrics-getDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-getDepth}{}}}
 \subsection{Method \code{getDepth()}}{
-Extract sequencing depth from Conos object.
+Extract sum of UMI counts per cell (= cell depth)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getDepth(cms = self$cms)}\if{html}{\out{</div>}}
 }
@@ -1876,16 +2017,10 @@ message("Package 'pagoda2' not available.")
 \if{html}{\out{<a id="method-CRMetrics-prepareCellbender"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-prepareCellbender}{}}}
 \subsection{Method \code{prepareCellbender()}}{
-Create plots and script call for CellBender
+Generates input files for CellBender from Parse's split-pipe output.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$prepareCellbender(
-  shrinkage = 100,
-  show.expected.cells = TRUE,
-  show.total.droplets = TRUE,
-  expected.cells = NULL,
-  total.droplets = NULL,
-  cms.raw = self$cms.raw,
-  umi.counts = self$cellbender$umi.counts,
+  technology = self$technology,
   data.path = self$data.path,
   samples = self$metadata$sample,
   verbose = self$verbose,
@@ -1898,19 +2033,7 @@ Create plots and script call for CellBender
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{shrinkage}}{integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)}
-
-\item{\code{show.expected.cells}}{logical Plot line depicting expected number of cells (default = TRUE)}
-
-\item{\code{show.total.droplets}}{logical Plot line depicting total droplets included for CellBender run (default = TRUE)}
-
-\item{\code{expected.cells}}{named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
-
-\item{\code{total.droplets}}{named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
-
-\item{\code{cms.raw}}{list Raw count matrices from HDF5 Cell Ranger outputs (default = self$cms.raw)}
-
-\item{\code{umi.counts}}{list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger outputs (default: stored list)}
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
 
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
@@ -1927,7 +2050,7 @@ Create plots and script call for CellBender
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-ggplot2 object and bash script
+Saves files to disc.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
@@ -1945,9 +2068,11 @@ crm$prepareCellbender()
 \if{html}{\out{<a id="method-CRMetrics-saveCellbenderScript"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-saveCellbenderScript}{}}}
 \subsection{Method \code{saveCellbenderScript()}}{
+Create CellBender script
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveCellbenderScript(
   file = "cellbender_script.sh",
+  technology = self$technology,
   fpr = 0.01,
   epochs = 150,
   use.gpu = TRUE,
@@ -1964,17 +2089,19 @@ crm$prepareCellbender()
 \describe{
 \item{\code{file}}{character File name for CellBender script. Will be stored in \code{data.path} (default: "cellbender_script.sh")}
 
+\item{\code{technology}}{character Applied single cell technology (default = self$technology).}
+
 \item{\code{fpr}}{numeric False positive rate for CellBender (default = 0.01)}
 
 \item{\code{epochs}}{integer Number of epochs for CellBender (default = 150)}
 
 \item{\code{use.gpu}}{logical Use CUDA capable GPU (default = TRUE)}
 
-\item{\code{expected.cells}}{named numeric If NULL, expected cells will be deduced from the number of cells per sample identified by Cell Ranger. Otherwise, a named vector of expected cells with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
+\item{\code{expected.cells}}{named numeric vector By default, the --expected-cells argument is omitted in the generated script. Otherwise, a named vector of expected cell numbers with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).}
 
-\item{\code{total.droplets}}{named numeric If NULL, total droplets included will be deduced from expected cells multiplied by 3. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default: stored named vector)}
+\item{\code{total.droplets}}{named numeric vector By default, the --total-droplets-included argument is omitted in the generated script. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).}
 
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+\item{\code{data.path}}{character Path to Cell Ranger or Parse's split-pipe outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
 
@@ -1999,96 +2126,6 @@ crm$saveCellbenderScript()
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-getExpectedCells"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-getExpectedCells}{}}}
-\subsection{Method \code{getExpectedCells()}}{
-Extract the expected number of cells per sample based on the Cell Ranger summary metrics
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getExpectedCells(samples = self$metadata$sample)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric vector
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
-
-# Get summary
-crm$addSummaryFromCms()
-
-# Get no. cells
-crm$getExpectedCells()
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-getTotalDroplets"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-getTotalDroplets}{}}}
-\subsection{Method \code{getTotalDroplets()}}{
-Get the total number of droplets included in the CellBender estimations. Based on the Cell Ranger summary metrics and multiplied by a preset multiplier.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getTotalDroplets(samples = self$metadata$sample, multiplier = 3)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{samples}}{character Samples names to include (default = self$metadata$sample)}
-
-\item{\code{multiplier}}{numeric Number to multiply expected number of cells with (default = 3)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric vector
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
-testdata.cms <- lapply(seq_len(2), \(x) {
-out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
-out[out < 0] <- 1
-dimnames(out) <- list(sapply(seq_len(2e3), \(x) paste0("gene",x)),
-sapply(seq_len(1e3), \(x) paste0("cell",x)))
-return(out)
-})
-
-# Initialize
-crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.cores = 1)
-
-# Add summary
-crm$addSummaryFromCms()
-
-# Get no. droplets
-crm$getTotalDroplets()
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addCms"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addCms}{}}}
 \subsection{Method \code{addCms()}}{
@@ -2097,6 +2134,7 @@ Add a list of count matrices to the CRMetrics object.
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
   cms = NULL,
   data.path = self$data.path,
+  technology = self$technology,
   samples = self$metadata$sample,
   cellbender = FALSE,
   raw = FALSE,
@@ -2114,13 +2152,15 @@ Add a list of count matrices to the CRMetrics object.
 \describe{
 \item{\code{cms}}{list List of (sparse) count matrices (default = NULL)}
 
-\item{\code{data.path}}{character Path to cellranger count data (default = self$data.path).}
+\item{\code{data.path}}{character Path to Cell Ranger or Parse's split-pipe count data (default = self$data.path).}
+
+\item{\code{technology}}{character Applied single cell technology (default = self$technology).}
 
 \item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
 
 \item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
 
-\item{\code{raw}}{logical Add raw count matrices from Cell Ranger output. Cannot be combined with \code{cellbender=TRUE} (default = FALSE)}
+\item{\code{raw}}{logical Add raw count matrices from Cell Ranger or Parse's split-pipe output. Cannot be combined with \code{cellbender=TRUE}. (default = FALSE)}
 
 \item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
 
@@ -2170,6 +2210,7 @@ Plot the results from the CellBender estimations
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbTraining(
   data.path = self$data.path,
   samples = self$metadata$sample,
+  technology = self$technology,
   pal = self$pal
 )}\if{html}{\out{</div>}}
 }
@@ -2180,6 +2221,8 @@ Plot the results from the CellBender estimations
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
 
 \item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
@@ -2212,6 +2255,7 @@ Plot the CellBender assigned cell probabilities
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCellProbs(
   data.path = self$data.path,
   samples = self$metadata$sample,
+  technology = self$technology,
   low.col = "gray",
   high.col = "red"
 )}\if{html}{\out{</div>}}
@@ -2223,6 +2267,8 @@ Plot the CellBender assigned cell probabilities
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
 
 \item{\code{low.col}}{character Color for low probabilities (default = "gray")}
 
@@ -2257,7 +2303,8 @@ Plot the estimated ambient gene expression per sample from CellBender calculatio
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbExp(
   cutoff = 0.005,
   data.path = self$data.path,
-  samples = self$metadata$sample
+  samples = self$metadata$sample,
+  technology = self$technology
 )}\if{html}{\out{</div>}}
 }
 
@@ -2269,6 +2316,8 @@ Plot the estimated ambient gene expression per sample from CellBender calculatio
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
 }
 \if{html}{\out{</div>}}
 }
@@ -2300,6 +2349,7 @@ Plot the most abundant estimated ambient genes from the CellBender calculations
   cutoff = 0.005,
   data.path = self$data.path,
   samples = self$metadata$sample,
+  technology = self$technology,
   pal = self$pal
 )}\if{html}{\out{</div>}}
 }
@@ -2312,6 +2362,8 @@ Plot the most abundant estimated ambient genes from the CellBender calculations
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
 
 \item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
@@ -2476,6 +2528,7 @@ Plot CellBender cell estimations against the estimated cell numbers from Cell Ra
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCells(
   data.path = self$data.path,
   samples = self$metadata$sample,
+  technology = self$technology,
   pal = self$pal
 )}\if{html}{\out{</div>}}
 }
@@ -2486,6 +2539,8 @@ Plot CellBender cell estimations against the estimated cell numbers from Cell Ra
 \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
 
 \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+
+\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) description}
 
 \item{\code{pal}}{character Plotting palette (default = self$pal)}
 }

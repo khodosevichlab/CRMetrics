@@ -17,7 +17,7 @@ utils::globalVariables(c("Valid Barcodes","Fraction Reads in Cells"))
 
 #' CRMetrics class object
 #' 
-#' @description Functions to analyze Cell Ranger count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
+#' @description Functions to analyze 10x Genomics Cell Ranger and Parse Biosciences split-pipe count data. To initialize a new object, 'data.path' or 'cms' is needed. 'metadata' is also recommended, but not required.
 #' @export
 CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE, 
  public = list(
@@ -36,10 +36,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
    #' @field cms.raw list List with raw, unfiltered count matrices, i.e., including all cell barcodes detected, also empty ones (default = NULL)
    cms.raw = NULL,
    
-   #' @field summary.metrics data.frame Summary metrics from Cell Ranger or Parse pipeline (default = NULL)
+   #' @field summary.metrics data.frame Summary metrics from Cell Ranger or Parse's split-pipe pipeline (default = NULL)
    summary.metrics = NULL,
    
-   #' @field detailed.metrics data.frame Detailed metrics, i.e., no. genes and UMIs per cell (default = NULL)
+   #' @field detailed.metrics data.frame Detailed metrics, i.e., total number of genes and UMIs per cell (default = NULL)
    detailed.metrics = NULL, 
    
    #' @field comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)
@@ -66,7 +66,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param samples character Sample names. Only relevant if cms is provided (default = NULL)
   #' @param unique.names logical Create unique cell names. Only relevant if cms is provided (default = TRUE)
   #' @param sep.cells character Sample-cell separator. Only relevant if cms is provided and `unique.names=TRUE` (default = "!!")
-  #' @param comp.group character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)
+  #' @param comp.group character A grouping variable present in the metadata column names, can be added with addComparison (default = NULL)
   #' @param verbose logical Print messages or not (default = TRUE)
   #' @param theme ggplot2 theme (default: theme_bw())
   #' @param n.cores integer Number of cores for the calculations (default = self$n.cores)
@@ -187,7 +187,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     
-     # Add CMs
+     # Add CMs if they are provided
     if (!is.null(cms)) {
       self$addCms(cms = cms, 
                   samples = samples, 
@@ -200,7 +200,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     checkCompMeta(comp.group, self$metadata)
     
-    # Add summary metrics
+    # Add summary metrics from files, only possible if data.path is provided
     if (is.null(cms)) self$summary.metrics <- addSummaryMetrics(data.path = data.path, metadata = self$metadata, n.cores = self$n.cores, verbose = verbose)
   },
   
@@ -231,7 +231,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                                 verbose = self$verbose) {
     # Checks
     if (!is.null(self$detailed.metrics)) stop("Detailed metrics already present. To overwrite, set $detailed.metrics = NULL and rerun this function")
-    if (is.null(cms)) stop("No CMs found, run $addCms first.")
+    if (is.null(cms)) stop("No count matrtices found, run $addCms first.")
       
     size.check <- cms %>% 
       sapply(dim) %>% 
@@ -405,12 +405,12 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     self$comp.group <- comp.group
   },
   
-  #' @description Plot the number of samples.
-  #' @param comp.group character Comparison metric, must match a column name of metadata (default = self$comp.group).
-  #' @param h.adj numeric Position of statistics test p value as % of max(y) (default = 0.05).
-  #' @param exact logical Whether to calculate exact p values (default = FALSE).
+  #' @description Plot the number of samples per group based on metadata.
+  #' @param comp.group character Metadata column used as the primary grouping variable. Must match a column name of metadata (default = self$comp.group).
+  #' @param h.adj numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as a % of the maximum y-value (default = 0.05).
+  #' @param exact logical Whether to display exact p-values instead of rounded values (default = FALSE).
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
-  #' @param second.comp.group character Second comparison metric, must match a column name of metadata (default = NULL).
+  #' @param second.comp.group character Optional second metadata column used for grouping and coloring bars in the plot. Must match a column name of metadata (default = NULL).
   #' @param pal character Plotting palette (default = self$pal)
   #' @return ggplot2 object
   #' @examples
@@ -470,19 +470,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Plot all summary stats or a selected list.
-  #' @param comp.group character Comparison metric (default = self$comp.group).
-  #' @param second.comp.group character Second comparison metric, used for the metric "samples per group" or when "comp.group" is a numeric or an integer (default = NULL).
-  #' @param metrics character Metrics to plot (default = NULL).
-  #' @param h.adj numeric Position of statistics test p value as % of max(y) (default = 0.05)
-  #' @param plot.stat logical Show statistics in plot. Will be FALSE if "comp.group" = "sample" or if "comp.group" is a numeric or an integer (default = TRUE)
-  #' @param stat.test character Statistical test to perform to compare means. Can either be "non-parametric" or "parametric" (default = "non-parametric").
-  #' @param exact logical Whether to calculate exact p values (default = FALSE).
+  #' @param comp.group character Defines the groups to compare (categorical) or the variable for regression analysis (continuous).Must match a column name of metadata (default = self$comp.group).
+  #' @param second.comp.group character Optional metadata column used for grouping, colouring or stratifying the plot. Usually categorical. Used for the metric "samples per group" and for grouped regression when "comp.group" is continuous
+  #' Does not affect statistical testing (default = NULL).
+  #' @param metrics character Vector of metrics to plot. If `NULL`, all available metrics are plotted (default = NULL).
+  #' @param h.adj numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as % of the maximum y-value (default = 0.05)
+  #' @param plot.stat logical Whether to show statistical test results in the plot. Automatically set to `FALSE` if `comp.group` is `"sample"` or continuous (default = TRUE)
+  #' @param stat.test character Statistical test to compare group means. Can either be "non-parametric" or "parametric" (default = "non-parametric").
+  #' @param exact logical Whether to display exact p-values instead of rounded values (default = FALSE).
   #' @param metadata data.frame Metadata for samples (default = self$metadata).
-  #' @param summary.metrics data.frame Summary metrics (default = self$summary.metrics).
-  #' @param plot.geom character Which geometric is used to plot the data (default = "bar").
-  #' @param se logical For regression lines, show SE (default = FALSE)
-  #' @param group.reg.lines logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)
-  #' @param secondary.testing logical Whether to show post hoc testing (default = TRUE)
+  #' @param summary.metrics data.frame Data frame of precomputed summary metrics for the samples (default = self$summary.metrics).
+  #' @param plot.geom character Geometric used to plot the data. Options include `"bar"`, `"point"`, `"violin"`, `"histogram"` (default = "bar").
+  #' @param se logical For regression lines, whether to display standard errors (default = FALSE)
+  #' @param group.reg.lines logical For regression lines, if FALSE show a single line, if TRUE show one line per group defined by second.comp.group (default = FALSE)
+  #' @param secondary.testing logical Whether to show post hoc testing which is performed in case of multiple-group comparisons (default = TRUE)
   #' @param pal character Plotting palette (default = self$pal)
   #' @return ggplot2 object
   #' @examples
@@ -612,7 +613,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     
     # To return the plots
     if (exists("sample.plot")) {
-      if (length("plotList") > 0){
+      if (length(plotList) > 0){
         return(plot_grid(plotlist = plotList, 
                          sample.plot, 
                          ncol = min(length(plotList)+1, 3)))

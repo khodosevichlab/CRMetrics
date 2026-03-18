@@ -7,7 +7,7 @@
 checkCompMeta(comp.group, metadata)
 }
 \arguments{
-\item{comp.group}{Comparison metric.}
+\item{comp.group}{Comparison metric.?}
 
 \item{metadata}{Metadata for samples.}
 }
