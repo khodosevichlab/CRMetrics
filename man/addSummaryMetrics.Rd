@@ -7,7 +7,7 @@
 addSummaryMetrics(data.path, metadata, n.cores = 1, verbose = TRUE)
 }
 \arguments{
-\item{data.path}{Path to cellranger count data.}
+\item{data.path}{Path to count data.}
 
 \item{metadata}{Metadata for samples.}
 
@@ -19,6 +19,6 @@ addSummaryMetrics(data.path, metadata, n.cores = 1, verbose = TRUE)
 data frame
 }
 \description{
-Add summary metrics by reading Cell Ranger metrics summary files.
+Add summary metrics by reading Cell Ranger or Parse's split-pipe metrics summary files.
 }
 \keyword{internal}
