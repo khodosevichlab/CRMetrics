@@ -3,6 +3,8 @@
 export(CRMetrics)
 export(read10x)
 export(read10xH5)
+export(readFlex)
+export(readParse)
 import(dplyr)
 import(ggplot2)
 import(ggpmisc)
