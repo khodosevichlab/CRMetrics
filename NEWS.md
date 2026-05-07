@@ -1,12 +1,15 @@
-# CRMetrics 0.3.2
+# CRMetrics 0.3.3
 
-* Fixed error in `plotFilteredCells`
-* Added author e-mail (missing)
 * Added functionality for 10x Flex, Parse, 10x multiome
 * Added 'technology' flag when creating R6 object
 * Added plotBarcodeRankPlot
 * Added plotRawDepth
 * Added 'depth.cutoff.upper' flag for plotEmbedding, plotFilteredCells, filterCms
+
+# CRMetrics 0.3.2
+
+* Fixed error in `plotFilteredCells`
+* Added author e-mail (missing)
 
 # CRMetrics 0.3.1
 
