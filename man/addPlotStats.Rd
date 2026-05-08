@@ -27,7 +27,7 @@ addPlotStats(
 
 \item{secondary.test}{Secondary statistical test, e.g. "t-test", "wilcox.test"}
 
-\item{exact}{Whether to calculate exact p values (default = FALSE).}
+\item{exact}{Whether to display exact p-values instead of rounded values (default = FALSE).}
 }
 \value{
 ggplot2 object

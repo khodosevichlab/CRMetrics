@@ -2,12 +2,12 @@
 % Please edit documentation in R/inner_functions.R
 \name{checkCompMeta}
 \alias{checkCompMeta}
-\title{Check whether 'comp.group' is in metadata}
+\title{Check whether 'comp.group' is a column name in metadata}
 \usage{
 checkCompMeta(comp.group, metadata)
 }
 \arguments{
-\item{comp.group}{Comparison metric.?}
+\item{comp.group}{Grouping variable.}
 
 \item{metadata}{Metadata for samples.}
 }

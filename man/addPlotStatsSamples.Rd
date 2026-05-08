@@ -16,13 +16,13 @@ addPlotStatsSamples(
 \arguments{
 \item{p}{Plot to add statistics to.}
 
-\item{comp.group}{Comparison metric.}
+\item{comp.group}{Metadata column used as the primary grouping variable. Must match a column name of metadata (default = self$comp.group).}
 
 \item{metadata}{Metadata for samples.}
 
-\item{h.adj}{Position of statistics test p value as \% of max(y) (default = 0.05).}
+\item{h.adj}{Relative vertical offset for displaying the statistical test p-value in the plot, expressed as a \% of the maximum y-value (default = 0.05).}
 
-\item{exact}{Whether to calculate exact p values (default = FALSE).}
+\item{exact}{Whether to display exact p-values instead of rounded values (default = FALSE).}
 
 \item{second.comp.group}{Second comparison metric.}
 }

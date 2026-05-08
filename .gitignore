@@ -44,6 +44,8 @@ metadata_test.csv
 metadata_test2.csv
 metadata_test_multiome.csv
 metadata_parse.csv
+crm_scd.rds
+
 # summary of updates for users
 CRMetrics_updates_for_users.Rmd
 
