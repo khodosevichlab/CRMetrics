@@ -727,7 +727,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot cells in an embedding using Conos, with coloring based on depth (= total UMI count per cell), doublet status, or mitochondrial gene fraction. Users can either specify cutoff thresholds to highlight filtered cells or plot the raw continuous values on the UMAP.
   #' @param doublet.method character Colour cells based on doublet calling result of respective doublet detection method (default = NULL).
   #' @param doublet.scores logical Colour cells by doublet score. Applied doublet method must be supplied in parameter 'doublet.method' (default = FALSE).
-  #' @param doublet.score.threshold numeric Set manual threshold for doublets. If NULL and doublet.scores = TRUE, continuous scores are plotted (default = NULL).
+  #' @param doublet.score.threshold numeric Set manual threshold for doublets. If NULL and doublet.scores = TRUE, continuous scores are plotted. Applied doublet method must be supplied in parameter 'doublet.method' (default = NULL).
   #' @param depth logical Colour cells by depth. If TRUE and no cutoffs are supplied, continuous depth values are plotted (default = FALSE).
   #' @param depth.cutoff numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).
   #' @param depth.cutoff.upper numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).
@@ -1839,13 +1839,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' @description Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
   #' @param type character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).
-  #' @param depth logical Plot the depth (= total amount of UMI counts per cell) or not (default = TRUE).
-  #' @param depth.cutoff numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = 1e3).
+  #' @param depth logical Plot the depth (= total amount of UMI counts per cell) or not (default = FALSE).
+  #' @param depth.cutoff numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param depth.cutoff.upper numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param doublet.method character Method to detect doublets (default = NULL).
   #' @param doublet.score.threshold Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets. (default = NULL)
-  #' @param mito.frac logical Plot the mitochondrial fraction or not (default = TRUE).
-  #' @param mito.cutoff numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 0.05).
+  #' @param mito.frac logical Plot the mitochondrial fraction or not (default = FALSE).
+  #' @param mito.cutoff numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
   #' @param sep character Separator for creating unique cell names (default = "!!")
@@ -1883,13 +1883,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   #' }
   plotFilteredCells = function(type = c("embedding","bar","tile","export"), 
-                               depth = TRUE, 
-                               depth.cutoff = 1e3, 
+                               depth = FALSE, 
+                               depth.cutoff = NULL, 
                                depth.cutoff.upper = NULL,
                                doublet.method = NULL, 
                                doublet.score.threshold = NULL,
-                               mito.frac = TRUE, 
-                               mito.cutoff = 0.05, 
+                               mito.frac = FALSE, 
+                               mito.cutoff = NULL, 
                                species = c("human","mouse"),
                                size = 0.3,
                                sep = "!!",
