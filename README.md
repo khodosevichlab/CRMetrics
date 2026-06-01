@@ -47,7 +47,6 @@ A CRMetrics object can be initialized in different ways using
 
 For usage, please see the
 [vignette](http://kkh.bric.ku.dk/rasmus/CRMetrics/walkthrough.html)
-/ [code](https://github.com/khodosevichlab/CRMetrics/blob/main/inst/docs/walkthrough.Rmd).
 
 # Python integrations
 
