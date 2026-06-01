@@ -748,7 +748,7 @@ To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'meta
 
 \item{\code{sep.cells}}{character Sample-cell separator. Only relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
 
-\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
+\item{\code{comp.group}}{character A grouping variable present in the metadata column names, can be added with addComparison (default = NULL)}
 
 \item{\code{verbose}}{logical Print messages or not (default = TRUE)}
 
@@ -987,7 +987,7 @@ crm$addComparison(comp.group = "sex")
 \if{html}{\out{<a id="method-CRMetrics-plotSamples"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotSamples}{}}}
 \subsection{Method \code{plotSamples()}}{
-Plot the number of samples.
+Plot the number of samples per group based on metadata.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSamples(
   comp.group = self$comp.group,
@@ -1002,15 +1002,15 @@ Plot the number of samples.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{comp.group}}{character Comparison metric, must match a column name of metadata (default = self$comp.group).}
+\item{\code{comp.group}}{character Metadata column used as the primary grouping variable. Must match a column name of metadata (default = self$comp.group).}
 
-\item{\code{h.adj}}{numeric Position of statistics test p value as \% of max(y) (default = 0.05).}
+\item{\code{h.adj}}{numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as a \% of the maximum y-value (default = 0.05).}
 
-\item{\code{exact}}{logical Whether to calculate exact p values (default = FALSE).}
+\item{\code{exact}}{logical Whether to display exact p-values instead of rounded values (default = FALSE).}
 
 \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
 
-\item{\code{second.comp.group}}{character Second comparison metric, must match a column name of metadata (default = NULL).}
+\item{\code{second.comp.group}}{character Optional second metadata column used for grouping and coloring bars in the plot. Must match a column name of metadata (default = NULL).}
 
 \item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
@@ -1076,31 +1076,32 @@ Plot all summary stats or a selected list.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{comp.group}}{character Comparison metric (default = self$comp.group).}
+\item{\code{comp.group}}{character Defines the groups to compare (categorical) or the variable for regression analysis (continuous).Must match a column name of metadata (default = self$comp.group).}
 
-\item{\code{second.comp.group}}{character Second comparison metric, used for the metric "samples per group" or when "comp.group" is a numeric or an integer (default = NULL).}
+\item{\code{second.comp.group}}{character Optional metadata column used for grouping, colouring or stratifying the plot. Usually categorical. Used for the metric "samples per group" and for grouped regression when "comp.group" is continuous
+Does not affect statistical testing (default = NULL).}
 
-\item{\code{metrics}}{character Metrics to plot (default = NULL).}
+\item{\code{metrics}}{character Vector of metrics to plot. If \code{NULL}, all available metrics are plotted (default = NULL).}
 
-\item{\code{h.adj}}{numeric Position of statistics test p value as \% of max(y) (default = 0.05)}
+\item{\code{h.adj}}{numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as \% of the maximum y-value (default = 0.05)}
 
-\item{\code{plot.stat}}{logical Show statistics in plot. Will be FALSE if "comp.group" = "sample" or if "comp.group" is a numeric or an integer (default = TRUE)}
+\item{\code{plot.stat}}{logical Whether to show statistical test results in the plot. Automatically set to \code{FALSE} if \code{comp.group} is \code{"sample"} or continuous (default = TRUE)}
 
-\item{\code{stat.test}}{character Statistical test to perform to compare means. Can either be "non-parametric" or "parametric" (default = "non-parametric").}
+\item{\code{stat.test}}{character Statistical test to compare group means. Can either be "non-parametric" or "parametric" (default = "non-parametric").}
 
-\item{\code{exact}}{logical Whether to calculate exact p values (default = FALSE).}
+\item{\code{exact}}{logical Whether to display exact p-values instead of rounded values (default = FALSE).}
 
 \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
 
-\item{\code{summary.metrics}}{data.frame Summary metrics (default = self$summary.metrics).}
+\item{\code{summary.metrics}}{data.frame Data frame of precomputed summary metrics for the samples (default = self$summary.metrics).}
 
-\item{\code{plot.geom}}{character Which geometric is used to plot the data (default = "bar").}
+\item{\code{plot.geom}}{character Geometric used to plot the data. Options include \code{"bar"}, \code{"point"}, \code{"violin"}, \code{"histogram"} (default = "bar").}
 
-\item{\code{se}}{logical For regression lines, show SE (default = FALSE)}
+\item{\code{se}}{logical For regression lines, whether to display standard errors (default = FALSE)}
 
-\item{\code{group.reg.lines}}{logical For regression lines, if FALSE show one line, if TRUE show line per group defined by second.comp.group (default = FALSE)}
+\item{\code{group.reg.lines}}{logical For regression lines, if FALSE show a single line, if TRUE show one line per group defined by second.comp.group (default = FALSE)}
 
-\item{\code{secondary.testing}}{logical Whether to show post hoc testing (default = TRUE)}
+\item{\code{secondary.testing}}{logical Whether to show post hoc testing which is performed in case of multiple-group comparisons (default = TRUE)}
 
 \item{\code{pal}}{character Plotting palette (default = self$pal)}
 }
@@ -1207,16 +1208,17 @@ crm$plotDetailedMetrics()
 \if{html}{\out{<a id="method-CRMetrics-plotEmbedding"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotEmbedding}{}}}
 \subsection{Method \code{plotEmbedding()}}{
-Plot cells in embedding using Conos and color by depth and doublets.
+Plot cells in an embedding using Conos, with coloring based on depth (= total UMI count per cell), doublet status, or mitochondrial gene fraction. Users can either specify cutoff thresholds to highlight filtered cells or plot the raw continuous values on the UMAP.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotEmbedding(
-  depth = FALSE,
   doublet.method = NULL,
   doublet.scores = FALSE,
+  doublet.score.threshold = NULL,
+  depth = FALSE,
   depth.cutoff = NULL,
   depth.cutoff.upper = NULL,
   mito.frac = FALSE,
-  mito.cutoff = 0.05,
+  mito.cutoff = NULL,
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
@@ -1228,19 +1230,21 @@ Plot cells in embedding using Conos and color by depth and doublets.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{depth}}{logical Plot depth or not (default = FALSE).}
+\item{\code{doublet.method}}{character Colour cells based on doublet calling result of respective doublet detection method (default = NULL).}
 
-\item{\code{doublet.method}}{character Doublet detection method (default = NULL).}
+\item{\code{doublet.scores}}{logical Colour cells by doublet score. Applied doublet method must be supplied in parameter 'doublet.method' (default = FALSE).}
 
-\item{\code{doublet.scores}}{logical Plot doublet scores or not (default = FALSE).}
+\item{\code{doublet.score.threshold}}{numeric Set manual threshold for doublets. If NULL and doublet.scores = TRUE, continuous scores are plotted. Applied doublet method must be supplied in parameter 'doublet.method' (default = NULL).}
+
+\item{\code{depth}}{logical Colour cells by depth. If TRUE and no cutoffs are supplied, continuous depth values are plotted (default = FALSE).}
 
 \item{\code{depth.cutoff}}{numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
 
 \item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
 
-\item{\code{mito.frac}}{logical Plot mitochondrial fraction or not (default = FALSE).}
+\item{\code{mito.frac}}{logical Plot mitochondrial fraction. If TRUE and mito.cutoff is NULL, continuous values are plotted (default = FALSE).}
 
-\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = 0.05).}
+\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
 
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
 
@@ -1471,10 +1475,10 @@ message("Package 'pagoda2' not available.")
 \if{html}{\out{<a id="method-CRMetrics-detectDoublets"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-detectDoublets}{}}}
 \subsection{Method \code{detectDoublets()}}{
-Detect doublet cells.
+Run doublet detection methods.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
-  method = c("scrublet", "doubletdetection"),
+  method = c("scrublet", "doubletdetection", "scdblfinder"),
   cms = self$cms,
   samples = self$metadata$sample,
   env = "r-reticulate",
@@ -1490,7 +1494,7 @@ Detect doublet cells.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{method}}{character Which method to use, either \code{scrublet} or \code{doubletdetection} (default="scrublet").}
+\item{\code{method}}{character Which method to use, \code{scrublet}, \code{doubletdetection} or \code{scdblfinder} (default="scrublet").}
 
 \item{\code{cms}}{list List containing the count matrices (default=self$cms).}
 
@@ -1504,9 +1508,9 @@ Detect doublet cells.
 
 \item{\code{verbose}}{logical Print messages or not (default = self$verbose)}
 
-\item{\code{args}}{list A list with additional arguments for either \code{DoubletDetection} or \code{scrublet}. Please check the respective manuals.}
+\item{\code{args}}{list A list with additional arguments for \code{DoubletDetection}, \code{scrublet} or \code{scDblFinder}. Please check the respective manuals.}
 
-\item{\code{export}}{boolean Export CMs in order to detect doublets outside R (default = FALSE)}
+\item{\code{export}}{boolean Export count matrices as transposed .mtx files and save python script to run doublet detection outside R (default = FALSE)}
 
 \item{\code{data.path}}{character Path to write data, only relevant if \code{export = TRUE}. Last character must be \code{/} (default = self$data.path)}
 }
@@ -1696,7 +1700,8 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
   depth.cutoff = NULL,
   depth.cutoff.upper = NULL,
   mito.cutoff = NULL,
-  doublets = NULL,
+  doublet.method = NULL,
+  doublet.score.threshold = NULL,
   species = c("human", "mouse"),
   samples.to.exclude = NULL,
   verbose = self$verbose,
@@ -1714,7 +1719,9 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
 
 \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
 
-\item{\code{doublets}}{character Doublet detection method to use (default = NULL).}
+\item{\code{doublet.method}}{character Doublet detection method to use (default = NULL).}
+
+\item{\code{doublet.score.threshold}}{Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets (default = NULL).}
 
 \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
 
@@ -1822,6 +1829,7 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
   depth.cutoff = 1000,
   depth.cutoff.upper = NULL,
   doublet.method = NULL,
+  doublet.score.threshold = NULL,
   mito.frac = TRUE,
   mito.cutoff = 0.05,
   species = c("human", "mouse"),
@@ -1844,6 +1852,8 @@ Plot filtered cells in an embedding, in a bar plot, on a tile or export the data
 \item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).}
 
 \item{\code{doublet.method}}{character Method to detect doublets (default = NULL).}
+
+\item{\code{doublet.score.threshold}}{Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets. (default = NULL)}
 
 \item{\code{mito.frac}}{logical Plot the mitochondrial fraction or not (default = TRUE).}
 

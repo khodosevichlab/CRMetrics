@@ -724,14 +724,15 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       }
   },
   
-  #' @description Plot cells in embedding using Conos and color by depth and doublets.
-  #' @param depth logical Plot depth or not (default = FALSE).
-  #' @param doublet.method character Doublet detection method (default = NULL).
-  #' @param doublet.scores logical Plot doublet scores or not (default = FALSE).
+  #' @description Plot cells in an embedding using Conos, with coloring based on depth (= total UMI count per cell), doublet status, or mitochondrial gene fraction. Users can either specify cutoff thresholds to highlight filtered cells or plot the raw continuous values on the UMAP.
+  #' @param doublet.method character Colour cells based on doublet calling result of respective doublet detection method (default = NULL).
+  #' @param doublet.scores logical Colour cells by doublet score. Applied doublet method must be supplied in parameter 'doublet.method' (default = FALSE).
+  #' @param doublet.score.threshold numeric Set manual threshold for doublets. If NULL and doublet.scores = TRUE, continuous scores are plotted. Applied doublet method must be supplied in parameter 'doublet.method' (default = NULL).
+  #' @param depth logical Colour cells by depth. If TRUE and no cutoffs are supplied, continuous depth values are plotted (default = FALSE).
   #' @param depth.cutoff numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).
   #' @param depth.cutoff.upper numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).
-  #' @param mito.frac logical Plot mitochondrial fraction or not (default = FALSE).
-  #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = 0.05).
+  #' @param mito.frac logical Plot mitochondrial fraction. If TRUE and mito.cutoff is NULL, continuous values are plotted (default = FALSE).
+  #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = NULL).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
   #' @param sep character Separator for creating unique cell names (default = "!!")
@@ -766,24 +767,27 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' message("Package 'pagoda2' not available.")
   #' }
   #' }
-  plotEmbedding = function(depth = FALSE, 
-                           doublet.method = NULL, 
+  plotEmbedding = function(doublet.method = NULL, 
                            doublet.scores = FALSE, 
+                           doublet.score.threshold = NULL,
+                           depth = FALSE,
                            depth.cutoff = NULL,
                            depth.cutoff.upper = NULL,
                            mito.frac = FALSE, 
-                           mito.cutoff = 0.05, 
+                           mito.cutoff = NULL, 
                            species = c("human","mouse"), 
                            size = 0.3,
                            sep = "!!",
                            pal = NULL,
                            ...) {
     checkPackageInstalled("conos", cran = TRUE)
+    
     if (sum(depth, mito.frac, !is.null(doublet.method)) > 1) stop("Only one filter allowed. For multiple filters, use plotFilteredCells(type = 'embedding').")
     
     species %<>% 
       tolower() %>% 
       match.arg(c("human","mouse"))
+    
     # Check for existing Conos object and preprocessed data
     if (is.null(self$con)) {
       if (self$verbose) stop("No embedding found, please run createEmbedding.")
@@ -795,10 +799,23 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       depth_vals <- self$getDepth()
       cell_names <- names(depth_vals)
       
-      # LOWER cutoff
-      if (!is.null(depth.cutoff)) {
+      # continuous mode: colour by raw depth values
+      if (is.null(depth.cutoff) && is.null(depth.cutoff.upper)) {
+     
+        g <- self$con$plotGraph(
+          colors  = depth_vals,
+          title   = "Depth (total UMI count per cell)",
+          size    = size,
+          palette = pal,
+          ...
+        ) + scale_color_viridis_c(option = "magma", direction = -1, name = "UMI counts") + theme(legend.position = "right")
+      
+      # cutoff mode  
+      } else { 
         
-        pass_lower <- filterVector(
+      # LOWER cutoff
+        if (!is.null(depth.cutoff)) {
+          pass_lower <- filterVector(
           num.vec = depth_vals,
           name    = "depth.cutoff",
           filter  = depth.cutoff,
@@ -806,7 +823,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           sep     = sep
         )
         low_depth <- !pass_lower
-        
       } else {
         low_depth <- rep(FALSE, length(depth_vals))
         names(low_depth) <- cell_names
@@ -814,7 +830,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       
       # UPPER cutoff
       if (!is.null(depth.cutoff.upper)) {
-        
         pass_upper <- filterVector(
           num.vec = -depth_vals,
           name    = "depth.cutoff.upper",
@@ -823,83 +838,114 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           sep     = sep
         )
         high_depth <- !pass_upper
-        
       } else {
         high_depth <- rep(FALSE, length(depth_vals)) # default is FALSE
         names(high_depth) <- cell_names
       }
   
-      
       # combine into 3-state vector
       depth_flag <- integer(length(depth_vals))
       names(depth_flag) <- cell_names
-      
       depth_flag[low_depth]  <- 1
       depth_flag[high_depth] <- 2
       
       # title
-      lower_sample_specific <- !is.null(depth.cutoff) &&
-        length(depth.cutoff) > 1
-      upper_sample_specific <- !is.null(depth.cutoff.upper) &&
-        length(depth.cutoff.upper) > 1
+      lower_sample_specific <- !is.null(depth.cutoff) && length(depth.cutoff) > 1
+      upper_sample_specific <- !is.null(depth.cutoff.upper) && length(depth.cutoff.upper) > 1
       
-      if (!is.null(depth.cutoff.upper)) {
-        if (lower_sample_specific || upper_sample_specific) {
+      if (!is.null(depth.cutoff) && !is.null(depth.cutoff.upper)) {
+        if (lower_sample_specific && upper_sample_specific) {
           main <- "Cells with low (red) or high (blue) depth (sample-specific cutoffs)"
-        } else if (!is.null(depth.cutoff)) {
-          main <- paste0(
-            "Cells with depth < ", depth.cutoff , " (red) or > ", depth.cutoff.upper , " (blue)"
-          )
+        } else if (lower_sample_specific && !upper_sample_specific) {
+          main <- paste0("Cells with low depth (red; sample-specific cutoffs) or > ", depth.cutoff.upper , " (blue)")
+        } else if (!lower_sample_specific && upper_sample_specific) {
+          main <- paste0("Cells with depth < ", depth.cutoff, " (red) or high depth (blue; sample-specific cutoffs)")
         } else {
-          main <- paste0("Cells with depth > ", depth.cutoff.upper)
+          # both exist, neither sample-specific
+          main <- paste0( "Cells with depth < ", depth.cutoff," (red) or > ", depth.cutoff.upper, " (blue)")
         }
+   } else if (!is.null(depth.cutoff)) {
+       if (lower_sample_specific) {
+          main <-  "Cells with low depth (sample-specific cutoff)"
       } else {
-        if (lower_sample_specific) {
-          main <- "Cells with low depth (sample-specific cutoff)"
-        } else {
           main <- paste0("Cells with depth < ", depth.cutoff)
-        }
-      }
+         }
+   } else if (!is.null(depth.cutoff.upper)) {
+      if (upper_sample_specific) {
+          main <-  "Cells with high depth (sample-specific cutoff)"
+       } else {
+          main <- paste0("Cells with depth > ", depth.cutoff.upper)
+         }   
+       }
       
       g <- self$con$plotGraph(
         groups  = depth_flag,
         title   = main,
         size    = size, mark.groups=F,
-        ...)+scale_color_manual(values = c("0"= "lightgrey", "1" = "red", "2" = "blue"))
+        ...) + scale_color_manual(values = c("0"= "lightgrey", "1" = "red", "2" = "blue"))
+      }
     }
     
 
-    
     # Doublets
     if (!is.null(doublet.method)) {
       dres <- self$doublets[[doublet.method]]$result
       if (is.null(dres)) stop("No results found for doublet.method '",doublet.method,"'. Please run doubletDetection(method = '",doublet.method,"'.")
+      # label by doublet scores
       if (doublet.scores) {
         doublets <- dres$scores
         label <- "scores"
+        
+      # label by own doublet score threshold  
+      } else if (doublet.score.threshold) {
+        doublets <- dres$scores
+        doublets <- (doublets > doublet.score.threshold) * 1
+        label <- paste0("scores: cells with doublet score > ", doublet.score.threshold, " marked in red")
       } else {
+        # label by results of method
         doublets <- dres$labels * 1
-        label <- "labels"
+        label <- "labels (detected doublets marked in red)"
       } 
       doublets %<>% setNames(rownames(dres))
       g <- self$con$plotGraph(colors = doublets, title = paste(doublet.method,label, collapse = " "), size = size, palette = pal, ...)
+      
+      if (doublet.scores) {
+        g <- g + scale_color_viridis_c(option = "magma", direction = -1) + theme(legend.position = "right")
+
+      }
     }
     
     # Mitochondrial fraction
     if (mito.frac) {
-      mf <- self$getMitoFraction(species = species) %>% 
+      mf <- self$getMitoFraction(species = species)
+      
+      # continuous mode: colour by mito fraction
+      if (is.null(mito.cutoff)) {
+        
+        g <- self$con$plotGraph(
+          colors  = mf * 1,
+          title   = "mitochondrial gene fraction per cell",
+          size    = size,
+          palette = pal,
+          ...
+        ) + scale_color_viridis_c(option = "magma", direction = -1) + theme(legend.position = "right")
+        
+      # cutoff mode  
+    } else { 
+      mf %>% 
         filterVector("mito.cutoff", mito.cutoff, self$con$samples %>% names(), sep)
       if (length(mito.cutoff) > 1) {
-        main <- "Cells with low mito. frac with sample-specific cutoff"
+        main <- "Cells with high mito. frac with sample-specific cutoff"
       } else {
-        main <- paste0("Cells with high mito. fraction, > ",mito.cutoff*100,"%")
+        main <- paste0("Cells with high mito. fraction (> ",mito.cutoff*100,"%)")
       }
         g <- self$con$plotGraph(colors = mf * 1, title = main, size = size, ...)
+      }
     }
-    
     if (!exists("g")) g <- self$con$plotGraph(palette = pal, size = size, ...)
     return(g)
-  },
+     
+    },
   
   #' @description Plot per-sample density histograms of cell depths (=total UMI counts per cell). The plot highlights cells below or above a specified UMI cutoff with distinct colors, helping to assess data quality and filtering thresholds.
   #' @param cutoff numeric Depth cutoff (lower). Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).
@@ -1174,16 +1220,16 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     return(mf.plot)
   },
   
-  #' @description Detect doublet cells.
-  #' @param method character Which method to use, either `scrublet` or `doubletdetection` (default="scrublet").
+  #' @description Run doublet detection methods.
+  #' @param method character Which method to use, `scrublet`, `doubletdetection` or `scdblfinder` (default="scrublet").
   #' @param cms list List containing the count matrices (default=self$cms).
   #' @param samples character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)
   #' @param env character Environment to run python in (default="r-reticulate").
   #' @param conda.path character Path to conda environment (default=system("whereis conda")).
   #' @param n.cores integer Number of cores to use (default = self$n.cores)
   #' @param verbose logical Print messages or not (default = self$verbose)
-  #' @param args list A list with additional arguments for either `DoubletDetection` or `scrublet`. Please check the respective manuals.
-  #' @param export boolean Export CMs in order to detect doublets outside R (default = FALSE)
+  #' @param args list A list with additional arguments for `DoubletDetection`, `scrublet` or `scDblFinder`. Please check the respective manuals.
+  #' @param export boolean Export count matrices as transposed .mtx files and save python script to run doublet detection outside R (default = FALSE)
   #' @param data.path character Path to write data, only relevant if `export = TRUE`. Last character must be `/` (default = self$data.path)
   #' @return data.frame
   #' @examples 
@@ -1205,7 +1251,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$detectDoublets(method = "scrublet", 
   #' conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
   #' }
-  detectDoublets = function(method = c("scrublet","doubletdetection"), 
+  detectDoublets = function(method = c("scrublet","doubletdetection", "scdblfinder"), 
                             cms = self$cms,
                             samples = self$metadata$sample,
                             env = "r-reticulate", 
@@ -1216,7 +1262,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                             export = FALSE,
                             data.path = self$data.path) {
     # Checks
-    method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection"))
+    method %<>% tolower() %>% match.arg(c("scrublet","doubletdetection", "scdblfinder"))
     if (!is.list(args)) stop("'args' must be a list.")
     if (!inherits(cms, "list")) stop("'cms' must be a list")
     if (!all(sapply(cms, inherits, "Matrix"))) {
@@ -1227,8 +1273,76 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (length(data.path) > 1) data.path <- data.path[1]
     if (export && is.null(data.path)) stop("When 'export = TRUE', 'data.path' must be provided.") 
     
-    # Prepare arguments
-    if (method == "doubletdetection") {
+    # scDblFinder 
+    if (method == "scdblfinder") {
+      if (export) stop("'export=TRUE' is not supported for scDblFinder.") 
+      
+      if (verbose) message(paste0(Sys.time(), " Loading scDblFinder..."))
+      checkPackageInstalled("scDblFinder", bioc = TRUE)
+      
+      # define standard arguments for scdblfinder
+      args.std <- list(returnType = "scores", dbr.sd = 1, clusters = FALSE)
+      
+      # update defaults with user-supplied arguments
+      if (length(args) > 0) {
+        diff <- setdiff(names(args), names(args.std))
+        if (length(diff) > 0) stop(paste0(
+          "Argument(s) not recognized for scDblFinder: ", 
+          paste(diff, collapse = ", "), ". Please update 'args' and try again."
+        ))
+        for (i in names(args)) args.std[[i]] <- args[[i]]
+        }
+      
+      if (verbose) message(paste0(Sys.time(), " Running scDblFinder with arguments:\n",
+                                  paste(names(args.std), unlist(args.std), sep = " = ", collapse = "\n")))
+      
+      if (verbose) message(paste0(Sys.time(), " Identifying doublets using 'scDblFinder'..."))
+      
+      tmp <- cms %>% names() %>% 
+        lapply(function(name) {
+          if (verbose) message(paste0(Sys.time(), " Running sample '", name, "'..."))
+          
+          # run scDblFinder on matrix
+          out <- do.call(scDblFinder::scDblFinder, c(list(sce = cms[[name]]), args.std))
+          
+          # Extract results 
+          df <- data.frame(
+            labels = out$class == "doublet",
+            scores = out$score,
+            sample = name,
+            row.names = colnames(cms[[name]])
+          )
+          # save threshold defined by scDblFinder
+          threshold <- out@metadata$scDblFinder.threshold
+          if (is.null(threshold)) threshold <- NA_real_
+          
+          return(list(result = df, output = list(scdblfinder_threshold = threshold)))
+        }) %>% 
+        setNames(names(cms))
+      
+      # Combine results into a single data.frame for all samples
+      df_all <- lapply(tmp, `[[`, "result") %>% bind_rows()
+      df_all[is.na(df_all)] <- FALSE
+      df_all$labels <- as.logical(df_all$labels)
+      
+      
+      
+      # Store in crm object
+      self$doublets[[method]] <- list(
+        result = df_all,
+       output = lapply(tmp, `[[`, "output")
+      )
+      
+      if (verbose) message(paste0(Sys.time(), " Detected ", sum(df_all$labels, na.rm = TRUE),
+                                  " possible doublets out of ", nrow(df_all), " cells."))
+      
+      return(invisible(self)) 
+      }
+    
+      
+    
+    # Prepare arguments for python methods
+    else if (method == "doubletdetection") {
       args.std <- list(boost_rate = 0.25, 
                        clustering_algorithm = "phenograph", 
                        clustering_kwargs = NULL, 
@@ -1331,8 +1445,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
                   output = output)
       if (verbose) message(paste0(Sys.time()," Detected ",sum(df$labels, na.rm = TRUE)," possible doublets out of ",nrow(df)," cells."))
       self$doublets[[method]] <- res
+      
     } else {
-      # Check for existing files
+      # if export = TRUE, check for existing files
       files <- setdiff(samples %>% sapply(paste0, ".mtx"), dir(data.path)) %>% 
         strsplit(".mtx",) %>% 
         sapply('[[', 1)
@@ -1340,7 +1455,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       diff <- length(samples) - length(files)
       
       # Save data
-      if (verbose) message(paste0(Sys.time()," Saving ",length(cms)," CMs"))
+      if (verbose) message(paste0(Sys.time()," Saving ",length(cms)," count matrices (.mtx)"))
       if (diff > 0) message("Existing save files already found, skipping ",diff," samples: ",paste(c("",setdiff(samples, files)), collapse = "\n"))
       
       for (i in files) {
@@ -1517,7 +1632,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param depth.cutoff numeric Lower depth (total UMI counts per cell) cutoff (default = NULL).
   #' @param depth.cutoff.upper numeric Upper depth (total UMI counts per cell) cutoff (default = NULL).
   #' @param mito.cutoff numeric Mitochondrial fraction cutoff (default = NULL).
-  #' @param doublets character Doublet detection method to use (default = NULL).
+  #' @param doublet.method character Doublet detection method to use (default = NULL).
+  #' @param doublet.score.threshold Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets (default = NULL).
   #' @param species character Species to calculate the mitochondrial fraction for (default = "human").
   #' @param samples.to.exclude character Sample names to exclude (default = NULL)
   #' @param verbose logical Show progress (default = self$verbose)
@@ -1557,7 +1673,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   filterCms = function(depth.cutoff = NULL, 
                        depth.cutoff.upper = NULL,
                        mito.cutoff = NULL, 
-                       doublets = NULL,
+                       doublet.method = NULL,
+                       doublet.score.threshold = NULL,
                        species = c("human","mouse"),
                        samples.to.exclude = NULL,
                        verbose = self$verbose,
@@ -1569,7 +1686,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       if (!is.null(depth.cutoff)) filters %<>% c(paste0("depth.cutoff.lower = ", depth.cutoff))
       if (!is.null(depth.cutoff.upper)) filters %<>% c(paste0("depth.cutoff.upper = ", depth.cutoff.upper))
       if (!is.null(mito.cutoff)) filters %<>% c(paste0("mito.cutoff = ",mito.cutoff," and species = ",species))
-      if (!is.null(doublets)) filters %<>% c(paste0("doublet method = ",doublets))
+      if (!is.null(doublet.method)) filters %<>% c(paste0("doublet method = ",doublet.method))
+      if (!is.null(doublet.score.threshold)) filters %<>% c(paste0("doublet score threshold = ",doublet.score.threshold))
       
       message(paste0("Filtering based on: ",paste(filters, collapse="; ")))
     }
@@ -1596,7 +1714,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     samples <- cms %>% 
       names()
     
-    # Depth
     # Depth
     if (!is.null(depth.cutoff) || !is.null(depth.cutoff.upper)) {
       depth_vals <- self$getDepth()
@@ -1629,12 +1746,27 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # Doublets
-    if (!is.null(doublets)) {
-      if (is.null(self$doublets[[doublets]])) stop("Results for doublet detection method '",doublets,"' not found. Please run detectDoublets(method = '",doublets,"'.")
+    if (!is.null(doublet.method) && is.null(doublet.score.threshold)) {
+      if (is.null(self$doublets[[doublet.method]])) { stop("Results for doublet detection method '",doublet.method,"' not found. Please run detectDoublets(method = '",doublet.method,"'.")
+      }
       
-      doublets.filter <- self$doublets[[doublets]]$result %>% 
-        mutate(labels = replace_na(labels, FALSE)) %>% 
-        {setNames(!.$labels, rownames(.))}
+      tmp.doublets <- self$doublets[[doublet.method]]$result %>% 
+        mutate(labels = replace_na(labels, FALSE))  # replace NAs with FALSE
+      doublets.filter <- setNames(!tmp.doublets$labels, rownames(tmp.doublets)) # singlet and NA is TRUE, doublet is FALSE
+      
+    } else if (!is.null(doublet.method) && !is.null(doublet.score.threshold)) {
+      if (is.null(self$doublets[[doublet.method]])) { stop("Results for doublet detection method '",doublet.method,"' not found. Please run detectDoublets(method = '",doublet.method,"'.")
+      }
+      
+      tmp.doublets <- self$doublets[[doublet.method]]$result
+      tmp.doublet.scores <- tmp.doublets$scores %>% setNames(rownames(tmp.doublets))
+      doublets.flag <- filterVector(tmp.doublet.scores, "doublet.score.threshold", doublet.score.threshold, self$con$samples %>% names(), sep)
+      doublets.filter <- replace_na(!doublets.flag, TRUE) # singlet and NA is TRUE, doublet is FALSE
+        
+    } else if (is.null(doublet.method) && !is.null(doublet.score.threshold)) {
+      stop("Provide 'doublet.method', if you are providing a 'doublet.score.threshold'")
+      
+
     } else {
       doublets.filter <- NULL
     }
@@ -1707,12 +1839,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   
   #' @description Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
   #' @param type character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).
-  #' @param depth logical Plot the depth (= total amount of UMI counts per cell) or not (default = TRUE).
-  #' @param depth.cutoff numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = 1e3).
+  #' @param depth logical Plot the depth (= total amount of UMI counts per cell) or not (default = FALSE).
+  #' @param depth.cutoff numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param depth.cutoff.upper numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param doublet.method character Method to detect doublets (default = NULL).
-  #' @param mito.frac logical Plot the mitochondrial fraction or not (default = TRUE).
-  #' @param mito.cutoff numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 0.05).
+  #' @param doublet.score.threshold Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets. (default = NULL)
+  #' @param mito.frac logical Plot the mitochondrial fraction or not (default = FALSE).
+  #' @param mito.cutoff numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).
   #' @param species character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).
   #' @param size numeric Dot size (default = 0.3)
   #' @param sep character Separator for creating unique cell names (default = "!!")
@@ -1750,12 +1883,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   #' }
   plotFilteredCells = function(type = c("embedding","bar","tile","export"), 
-                               depth = TRUE, 
-                               depth.cutoff = 1e3, 
+                               depth = FALSE, 
+                               depth.cutoff = NULL, 
                                depth.cutoff.upper = NULL,
                                doublet.method = NULL, 
-                               mito.frac = TRUE, 
-                               mito.cutoff = 0.05, 
+                               doublet.score.threshold = NULL,
+                               mito.frac = FALSE, 
+                               mito.cutoff = NULL, 
                                species = c("human","mouse"),
                                size = 0.3,
                                sep = "!!",
@@ -1805,11 +1939,22 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       mf <- NULL
     }
     
-    if (!is.null(doublet.method)) {
+    if (!is.null(doublet.method) && is.null(doublet.score.threshold)) {
       tmp.doublets <- self$doublets[[doublet.method]]$result
       doublets <- tmp.doublets$labels %>% 
-        ifelse("doublet","") %>% 
+        ifelse(., "doublet","") %>% 
         setNames(rownames(tmp.doublets))
+      
+    } else if (!is.null(doublet.method) && !is.null(doublet.score.threshold)) {
+      tmp.doublets <- self$doublets[[doublet.method]]$result
+      tmp.doublet.scores <- tmp.doublets$scores %>% setNames(rownames(tmp.doublets))
+      doublets_flag <- filterVector(tmp.doublet.scores, "doublet.score.threshold", doublet.score.threshold, self$con$samples %>% names(), sep)  
+      doublets <- ifelse(doublets_flag, "doublet", "")
+      names(doublets) <- names(tmp.doublet.scores)
+      
+    } else if (is.null(doublet.method) && !is.null(doublet.score.threshold)) {
+        stop("Provide 'doublet.method' parameter if you are providing a 'doublet.score.threshold'")
+  
     } else {
       doublets <- NULL
     }
