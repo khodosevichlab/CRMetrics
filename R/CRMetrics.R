@@ -1871,7 +1871,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' # Create embedding
   #' crm$doPreprocessing()
   #' crm$createEmbedding()
-  #'
+  #' 
   #' # Plot and extract result
   #' crm$plotFilteredCells(type = "embedding")
   #' filtered.cells <- crm$plotFilteredCells(type = "export")
@@ -1930,7 +1930,6 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       depths <- NULL
     }
    
-
     if (mito.frac) {
       mf <- self$getMitoFraction(species = species) %>% 
         filterVector("mito.cutoff", mito.cutoff, mito.cutoff %>% names(), sep) %>% 
@@ -1959,87 +1958,93 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       doublets <- NULL
     }
     
-    # Get cell index
-    cell.idx <- self$cms %>% 
-      lapply(colnames) %>%
-      Reduce(c, .)
-    
-    # Create data.frame
-    tmp <- list(depth = depths,
-                mito = mf, 
-                doublets = doublets) %>% 
-      .[!sapply(., is.null)] %>%
-      lapply(\(filter) filter[cell.idx]) %>% # Ensure same order of cells
-      bind_cols() %>% 
-      as.data.frame() %>% 
-      `rownames<-`(cell.idx)
-    
-    if (type == "embedding" || type == "bar") {
-      tmp %<>% 
-        mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
-        mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
-                 gsub("  ", " ", ., fixed = TRUE) %>% 
-                 gsub(" ", "+", .))
-      
-      tmp$filter[tmp$filter == ""] <- "kept"
-      tmp$filter %<>% 
-        factor()
-      
-      if ("kept" %in% levels(tmp$filter)) {
-        tmp$filter %<>% relevel(ref = "kept")
-        colstart <- 1
-      } else {
-        colstart <- 2
-      }
+    if (is.null(mf) && is.null(doublets) && is.null(depths)) {
+      message("No filtered cells to plot.")
+      g <- NULL
     } else {
-      tmp %<>%
-        apply(2, \(x) x != "") %>% 
-        {data.frame(. * 1)} %>% 
-        mutate(., sample = rownames(.) %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1),
-               cell = rownames(.)) %>%
-        pivot_longer(cols = -c(sample,cell),
-                     names_to = "variable",
-                     values_to = "value")
-    }
-    # Embedding plot
-    if (type == "embedding"){
-      g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
-        scale_color_manual(values = cols[colstart:(tmp$filter %>% levels() %>% length())])
-    }
-    # Bar plot
-    if (type == "bar") {
-      g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit(sep) %>% sapply('[[', 1), 
-                          filter = ifelse(grepl("+", filter, fixed = TRUE), "combination", as.character(filter))) %>%
-        group_by(sample,filter) %>% 
-        dplyr::count() %>% 
-        ungroup() %>% 
-        group_by(sample) %>% 
-        mutate(pct = n/sum(n)*100) %>%
-        ungroup() %>% 
-        filter(filter != "kept") %>%
-        ggplot(aes(sample, pct, fill = filter)) +
-        geom_bar(stat = "identity") +
-        geom_text_repel(aes(label = sprintf("%0.2f", round(pct, digits = 2))),
-                        position = position_stack(vjust = 0.5), direction = "y", size = 2.5) +
-        self$theme +
-        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-        labs(x = "", y = "Percentage cells filtered")
-    } else if (type == "tile") {
-      # Tile plot
-      tmp.plot <- labelsFilter(tmp)
+      # Get cell index
+      cell.idx <- self$cms %>% 
+        lapply(colnames) %>%
+        Reduce(c, .)
       
-      if ("mito" %in% tmp.plot$fraction) {
-        tmp.plot %<>% 
-          mutate(., fraction = gsub("mito", "mito.fraction", .$fraction))
+      # Create data.frame
+      tmp <- list(depth = depths,
+                  mito = mf, 
+                  doublets = doublets) %>% 
+        .[!sapply(., is.null)] %>%
+        lapply(\(filter) filter[cell.idx]) %>% # Ensure same order of cells
+        bind_cols() %>% 
+        as.data.frame() %>% 
+        `rownames<-`(cell.idx)
+      
+      message("Step 5")
+      if (type == "embedding" || type == "bar") {
+        tmp %<>% 
+          mutate(., filter = apply(., 1, paste, collapse=" ")) %>% 
+          mutate(filter = gsub('^\\s+|\\s+$', '', filter) %>% 
+                   gsub("  ", " ", ., fixed = TRUE) %>% 
+                   gsub(" ", "+", .))
+        
+        tmp$filter[tmp$filter == ""] <- "kept"
+        tmp$filter %<>% 
+          factor()
+        
+        if ("kept" %in% levels(tmp$filter)) {
+          tmp$filter %<>% relevel(ref = "kept")
+          colstart <- 1
+        } else {
+          colstart <- 2
+        }
+      } else {
+        tmp %<>%
+          apply(2, \(x) x != "") %>% 
+          {data.frame(. * 1)} %>% 
+          mutate(., sample = rownames(.) %>% strsplit(sep, TRUE) %>% sapply(`[[`, 1),
+                 cell = rownames(.)) %>%
+          pivot_longer(cols = -c(sample,cell),
+                       names_to = "variable",
+                       values_to = "value")
       }
+      # Embedding plot
+      if (type == "embedding"){
+        g <- self$con$plotGraph(groups = tmp$filter %>% setNames(rownames(tmp)), mark.groups = FALSE, show.legend = TRUE, shuffle.colors = TRUE, title = "Cells to filter", size = size, ...) +
+          scale_color_manual(values = cols[colstart:(tmp$filter %>% levels() %>% length())])
+      }
+      # Bar plot
+      if (type == "bar") {
+        g <- tmp %>% mutate(., sample = rownames(.) %>% strsplit(sep) %>% sapply('[[', 1), 
+                            filter = ifelse(grepl("+", filter, fixed = TRUE), "combination", as.character(filter))) %>%
+          group_by(sample,filter) %>% 
+          dplyr::count() %>% 
+          ungroup() %>% 
+          group_by(sample) %>% 
+          mutate(pct = n/sum(n)*100) %>%
+          ungroup() %>% 
+          filter(filter != "kept") %>%
+          ggplot(aes(sample, pct, fill = filter)) +
+          geom_bar(stat = "identity") +
+          geom_text_repel(aes(label = sprintf("%0.2f", round(pct, digits = 2))),
+                          position = position_stack(vjust = 0.5), direction = "y", size = 2.5) +
+          self$theme +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+          labs(x = "", y = "Percentage cells filtered")
+      } else if (type == "tile") {
+        # Tile plot
+        tmp.plot <- labelsFilter(tmp)
+        
+        if ("mito" %in% tmp.plot$fraction) {
+          tmp.plot %<>% 
+            mutate(., fraction = gsub("mito", "mito.fraction", .$fraction))
+        }
         g <- tmp.plot %>% 
           ggplot(aes(fraction, sample, fill = value)) +
           geom_tile(aes(width = 0.7, height = 0.7), color = "black", size = 0.5) +
           scale_fill_manual(values = c("green", "orange", "red")) +
           self$theme +
           labs(x = "", y = "", fill = "")
-    } else if (type == "export") {
-      g <- tmp
+      } else if (type == "export") {
+        g <- tmp
+      }
     }
     return(g)
   },
@@ -2078,7 +2083,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' }
   getDepth = function(cms = self$cms) {
     cms %>% 
-      lapply(\(cm) `names<-`(sparseMatrixStats::colSums2(cm), colnames(cm))) %>% 
+      lapply(\(cm)
+        sparseMatrixStats::colSums2(cm) %>% 
+          setNames(colnames(cm))) %>% 
       Reduce(c, .)
   },
   
