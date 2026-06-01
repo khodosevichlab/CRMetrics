@@ -6,7 +6,7 @@ Description: Sample and cell filtering as well as visualisation of output metric
 License: GPL-3
 Encoding: UTF-8
 Depends:
-    R (>= 4.0.0)
+    R (>= 4.1.0)
 biocViews:
 Imports:
     cowplot,
