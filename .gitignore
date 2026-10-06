@@ -39,11 +39,7 @@ CRAN-SUBMISSION
 # test data
 control_6
 control_7
-metadata.csv
-metadata_test.csv
-metadata_test2.csv
-metadata_test_multiome.csv
-metadata_parse.csv
+metadata*
 crm_scd.rds
 
 # summary of updates for users

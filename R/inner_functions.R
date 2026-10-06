@@ -186,6 +186,75 @@ readFlex <- function(data.path,
   return(tmp)
 }
 
+#' @title Load 10x flex v2 count matrices
+#' @description Load gene expression count data
+#' @param data.path Path to cellranger count data.
+#' @param samples Vector of sample names (default = NULL)
+#' @param raw logical Add raw count matrices (default = FALSE)
+#' @param symbol The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE).
+#' @param sep Separator for cell names (default = "!!").
+#' @param n.cores Number of cores for the calculations (default = 1).
+#' @param verbose Print messages (default = TRUE).
+#' @keywords internal
+#' @return data frame
+#' @examples 
+#' \dontrun{
+#'
+#' @export
+readFlexv2 <- function(data.path, 
+                     samples = NULL, 
+                     raw = FALSE, 
+                     symbol = TRUE, 
+                     sep = "!!", 
+                     unique.names = TRUE, 
+                     n.cores = 1, 
+                     verbose = TRUE) {
+  checkPackageInstalled("data.table", cran = TRUE)
+  if (is.null(samples)) samples <- list.dirs(data.path, full.names = FALSE, recursive = FALSE)
+  
+  full.path <- data.path %>% 
+    pathsToList(samples) %>% 
+    sapply(\(sample) {
+      if (raw) pat <- glob2rx("sample_raw_*_bc_matri*") else pat <- glob2rx("sample_filtered_*_bc_matri*")
+      dir(paste(sample[2],sample[1], sep = "/"), pattern = pat, full.names = TRUE) %>% 
+        .[!grepl(".h5", .)]
+    })
+  
+  if (verbose) message(paste0(Sys.time()," Loading ",length(full.path)," count matrices using ", if (n.cores > length(full.path)) length(full.path) else n.cores," cores"))
+  tmp <- full.path %>%
+    plapply(\(sample) {
+      tmp.dir <- dir(sample, full.names = TRUE)
+      # Read matrix
+      mat.path <- tmp.dir %>%
+        .[grepl("mtx", .)]
+      if (grepl("gz", mat.path)) {
+        mat <- as(Matrix::readMM(gzcon(file(mat.path, "rb"))), "CsparseMatrix")
+      } else {
+        mat <- as(Matrix::readMM(mat.path), "CsparseMatrix")
+      }
+      
+      # Add features
+      feat <- tmp.dir %>%
+        .[grepl(ifelse(any(grepl("features.tsv", .)),"features.tsv","genes.tsv"), .)] %>%
+        data.table::fread(header = FALSE)
+      if (symbol) rownames(mat) <- feat %>% pull(V2) else rownames(mat) <- feat %>% pull(V1)
+      
+      # Add barcodes
+      barcodes <- tmp.dir %>%
+        .[grepl("barcodes.tsv", .)] %>%
+        data.table::fread(header = FALSE)
+      colnames(mat) <- barcodes %>% pull(V1)
+      return(mat)
+    }, n.cores = n.cores) %>%
+    setNames(samples)
+  
+  if (unique.names) tmp %<>% createUniqueCellNames(samples, sep)
+  
+  if (verbose) message(paste0(Sys.time()," Done!"))
+  
+  return(tmp)
+}      
+      
 #' @title Load Parse count matrices
 #' @description Load gene expression count data
 #' @param data.path Path to Parse count data.
@@ -365,10 +434,13 @@ addPlotStatsSamples <- function(p,
                                 second.comp.group) {
   checkCompMeta(comp.group, metadata)
   checkCompMeta(second.comp.group, metadata)
+  # use chi square if comparing variable with itself
   if (comp.group == second.comp.group) { 
     stat <- metadata %>% select(comp.group, second.comp.group) %>% table(dnn = comp.group) %>% chisq.test()
+    # use chi square if both variables have exactly 2 levels, why??
   } else if (length(unique(metadata[[comp.group]])) == 2 && length(unique(metadata[[second.comp.group]])) == 2) {
     stat <- metadata %>% select(comp.group, second.comp.group) %>% table(dnn = comp.group) %>% chisq.test()
+    # otherwise use fisher test (but fisher test is suited if comparing very low counts)
   } else {
     stat <- metadata %>% select(comp.group, second.comp.group) %>% table(dnn = comp.group) %>% fisher.test()
   }
@@ -382,7 +454,7 @@ addPlotStatsSamples <- function(p,
 }
 
 #' @title Add summary metrics
-#' @description Add summary metrics by reading Cell Ranger or Parse's split-pipe metrics summary files.
+#' @description Add summary metrics by reading Cell Ranger or Parse Biosciences split-pipe metrics summary files.
 #' @param data.path Path to count data.
 #' @param metadata Metadata for samples.
 #' @param n.cores Number of cores for the calculations (default = 1).
@@ -530,7 +602,7 @@ percFilter <- function(filter.data,
 }
 
 #' @title Get labels for percentage of filtered cells
-#' @description Labels the percentage of filtered cells based on mitochondrial fraction, sequencing depth and doublets as low, medium or high
+#' @description Labels the percentage of filtered cells based on mitochondrial fraction, depth and doublets as low, medium or high
 #' @param filter.data Data frame containing the mitochondrial fraction, depth and doublets per sample.
 #' @keywords internal
 #' @return data frame
@@ -586,7 +658,7 @@ labelsFilter <- function(filter.data) {
 read10xH5 <- function(data.path, 
                       samples = NULL, 
                       type = c("raw","filtered","cellbender","cellbender_filtered"), 
-                      technology = c("10x", "10xmultiome", "flex"),
+                      technology = c("10x", "10xmultiome", "10xflex", "10xflex_v2"),
                       symbol = TRUE, 
                       sep = "!!", 
                       n.cores = 1, 
@@ -664,7 +736,7 @@ createUniqueCellNames <- function(cms,
 #' @param data.path character Path for directory containing sample-wise directories with Cell Ranger count/Parse outputs
 #' @param samples character Sample names to include (default = NULL)
 #' @param type character Type of H5 files to get paths for, one of "raw", "filtered" (Cell Ranger count outputs, does not work for Parse), "cellbender" (raw CellBender outputs), "cellbender_filtered" (CellBender filtered outputs) (default = "type")
-#' @param technology character Used technology ("parse", "10x", "10xflex", "10xmultiome") (default = NULL)
+#' @param technology character Used technology ("parse", "10x", "10xflex", "10xflex_v2", "10xmultiome") (default = NULL)
 #' @keywords internal
 getH5Paths <- function(data.path, 
                        samples = NULL, 
@@ -678,7 +750,7 @@ getH5Paths <- function(data.path,
   
   technology %<>%
     tolower() %>% 
-    match.arg(c("parse", "10x", "10xflex", "10xmultiome"))
+    match.arg(c("parse", "10x", "10xflex", "10xflex_v2", "10xmultiome"))
   
   # Get H5 paths
   paths <- data.path %>% 
@@ -686,10 +758,13 @@ getH5Paths <- function(data.path,
     sapply(\(i) {
       folder <- getFolderPaths(i, technology = technology)
       if (grepl("cellbender", type)) {
-        paste0(folder,"/",type,".h5")
+        files <- paste0(folder,"/",type,".h5")
       } else {
-        dir(paste0(folder), glob2rx(paste0("*", type,"*.h5")), full.names = TRUE)
+        files <- dir(paste0(folder), glob2rx(paste0("*", type,"*.h5")), full.names = TRUE)
+      
+      files <- files[!grepl("probe", basename(files))] # remove folder with "probe" in name which is produced by 10xFlex v2 outputs
       }
+      files
     }) %>% 
     setNames(samples)
   
@@ -704,9 +779,9 @@ getH5Paths <- function(data.path,
       sapply(\(i) {
         folder <- getFolderPaths(i, technology = technology)
         if (type == "raw") {
-          paste0(folder, "/raw_[feature/gene]_bc_matrix.h5")
+          paste0(folder, "/(sample_)?raw_[feature/gene]_bc_matrix.h5") #10x flex outputs start with "sample"
         } else if (type == "filtered") {
-          paste0(folder,"/filtered_[feature/gene]_bc_matrix.h5")
+          paste0(folder,"/(sample_)?filtered_[feature/gene]_bc_matrix.h5")
         } else {
           paste0(folder,"/",type,".h5")
         }
@@ -795,6 +870,8 @@ getFolderPaths <- function(i, technology) {
     return(file.path(i[2], i[1], "DGE_unfiltered"))
   } else if (technology == "10xflex") {
     return(file.path(i[2], i[1], "count"))
+  } else if (technology == "10xflex_v2") {
+    return(file.path(i[2], i[1]))
   } else {
     return(file.path(i[2], i[1], "outs"))
   }

@@ -60,7 +60,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' Initialize a CRMetrics object
   #' @description To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'metadata' is also recommended, but not required.
   #' @param data.path character Path to directory with count data, one directory per sample (default = NULL).
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse")) 
   #' @param metadata data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)
   #' @param cms list List with count matrices (default = NULL)
   #' @param samples character Sample names. Only relevant if cms is provided (default = NULL)
@@ -79,7 +79,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm <- CRMetrics$new(data.path = "/path/to/count/data/")
   #' }
   initialize = function(data.path = NULL,
-                        technology = c("10x", "10xflex", "10xmultiome", "parse"),
+                        technology = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse"),
                         metadata = NULL, 
                         cms = NULL,
                         samples = NULL,
@@ -117,7 +117,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     }
     
     # check that technology is provided and converted to lower case
-    technology %<>% tolower() %>% match.arg(c("10x", "10xflex", "10xmultiome", "parse"))
+    technology %<>% tolower() %>% match.arg(c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse"))
     
     # Write stuff to object
     self$n.cores <- as.integer(n.cores)
@@ -139,10 +139,20 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           { subfolder <- switch(technology,
                                 "parse"   = "DGE_filtered",
                                 "10xflex" = "count", 
-                                "10x" = "outs")
+                                "10x" = "outs",
+                                "10xflex_v2" = NA_character_)
+          # 10x flex v2 has no subfolder
           # filter the directory names vector (.) to keep only those directories for which a corresponding subfolder exists, problem in Parse: all-sample folder also has that subfolder
-          .[pathsToList(data.path, .) 
-          %>% sapply(function(path) file.exists(file.path(path[2], path[1], subfolder)))] 
+          .[pathsToList(data.path, .) %>%
+              sapply(function(path) {
+              check.path <- if (is.na(subfolder)) {
+                file.path(path[2], path[1])
+              } else {
+                file.path(path[2], path[1], subfolder)
+              }
+              file.exists(check.path)
+             })
+           ] 
           } %>% 
           { data.frame(sample = .) }
       } else {
@@ -250,7 +260,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param shrinkage integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)
   #' @param show.expected.cells logical Plot line depicting called cells by Parse or Cell Ranger pipeline (default = TRUE)
   #' @param cms.raw list Raw count matrices from HDF5 Cell Ranger or Parse outputs (default = self$cms.raw)
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex","10xflex_v2", "10xmultiome", "parse")) 
   #' @param umi.counts list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger or Parse outputs (default: stored list)
   #' @param data.path character Path to Cell Ranger or Parse outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
@@ -369,7 +379,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' crm$getExpectedCells()
   getExpectedCells = function(samples = self$metadata$sample) {
     expected.cells <- self$summary.metrics %>% 
-      filter(metric == "estimated number of cells") %$% 
+      filter(metric  %in% c("estimated number of cells", "number_of_cells", "cells")) %$% # Parse uses "number_of_cells", flex&flexv2: "cells"
       setNames(value, sample) %>%
       .[samples]
     
@@ -891,18 +901,18 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
     if (!is.null(doublet.method)) {
       dres <- self$doublets[[doublet.method]]$result
       if (is.null(dres)) stop("No results found for doublet.method '",doublet.method,"'. Please run doubletDetection(method = '",doublet.method,"'.")
-      # label by doublet scores
+      # label by  continuous doublet scores
       if (doublet.scores) {
         doublets <- dres$scores
         label <- "scores"
         
-      # label by own doublet score threshold  
-      } else if (doublet.score.threshold) {
+      # label by user-defined doublet score threshold  
+      } else if (!is.null(doublet.score.threshold) && doublet.score.threshold > 0) { 
         doublets <- dres$scores
         doublets <- (doublets > doublet.score.threshold) * 1
         label <- paste0("scores: cells with doublet score > ", doublet.score.threshold, " marked in red")
       } else {
-        # label by results of method
+      # label by results of method
         doublets <- dres$labels * 1
         label <- "labels (detected doublets marked in red)"
       } 
@@ -1281,7 +1291,14 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       checkPackageInstalled("scDblFinder", bioc = TRUE)
       
       # define standard arguments for scdblfinder
-      args.std <- list(returnType = "scores", dbr.sd = 1, clusters = FALSE)
+      args.std <- list(clusters = TRUE, clustCor = NULL, 
+                       artificialDoublets = NULL, knownDoublets = NULL, dbr = NULL, dbr.sd = NULL, dbr.per1k = 0.008, 
+                       nfeatures = 1352, dims = 20, k = NULL, removeUnidentifiable = TRUE, 
+                       includePCs = 19, propRandom = 0, propMarkers = 0, aggregateFeatures = FALSE, 
+                       returnType = "scores", processing = "default", 
+                       metric = "logloss", nrounds = 0.25, max_depth = 4, iter = 3, 
+                       trainingFeatures = NULL, unident.th = NULL, threshold = TRUE, 
+                       verbose = TRUE)
       
       # update defaults with user-supplied arguments
       if (length(args) > 0) {
@@ -1899,6 +1916,10 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       tolower() %>% 
       match.arg(c("embedding","bar","tile","export"))
     
+    if (!depth && !mito.frac && is.null(doublet.method)) {
+      stop("You must specify at least one filtering criterion: 'depth', 'mito.frac', or 'doublet.method'.")
+    }
+    
     if (mito.frac) species %<>% tolower() %>% match.arg(c("human","mouse"))
     
     # Prepare data
@@ -1908,8 +1929,13 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
       cell_names <- names(depth_vals)
       samples <- self$con$samples[cell_names]
       
-      low_depth <- !filterVector(depth_vals, "depth.cutoff", depth.cutoff, self$con$samples %>% names(), sep)
-    
+      # LOWER cutoff
+      if (!is.null(depth.cutoff)) {
+        low_depth <- !filterVector(depth_vals, "depth.cutoff", depth.cutoff, self$con$samples %>% names(), sep)
+      } else {
+        low_depth <- rep(FALSE, length(depth_vals))
+        names(low_depth) <- cell_names
+      }
       # upper cutoff
       if (!is.null(depth.cutoff.upper)) {
         
@@ -2152,7 +2178,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   },
   
   #' @description Generates input files for CellBender from Parse's split-pipe output.
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) 
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse")) 
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
   #' @param verbose logical Show progress (default: stored vector)
@@ -2288,6 +2314,8 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
           paste0(sample[2], sample[1],"/DGE_unfiltered/cellbender.h5")
         } else if (technology == "10xflex") {
           paste0(sample[2],sample[1],"/count/cellbender.h5")
+        } else if (technology == "10xflex_v2") {
+          paste0(sample[2],sample[1],"/cellbender.h5")
         } else {
           paste0(sample[2],sample[1],"/outs/cellbender.h5")
         }
@@ -2406,7 +2434,9 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
         }  else if (technology == "parse") {       
           cms <- readParse(data.path = data.path, samples = samples, raw = raw, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
         }  else if (technology == "10xflex") {
-          cms <- readFlex(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)   
+          cms <- readFlex(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
+        }  else if (technology == "10xflex_v2") {
+          cms <- readFlexv2(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names) 
            }
        else {
         cms <- read10x(data.path = data.path, samples = samples, raw = raw, symbol = symbol, sep = sep, n.cores = n.cores, verbose = verbose, unique.names = unique.names)
@@ -2431,7 +2461,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the results from the CellBender estimations
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse"))
   #' @param pal character Plotting palette (default = self$pal)
   #' @return A ggplot2 object
   #' @examples 
@@ -2512,7 +2542,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @description Plot the CellBender assigned cell probabilities
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse"))
   #' @param low.col character Color for low probabilities (default = "gray")
   #' @param high.col character Color for high probabilities (default = "red")
   #' @return A ggplot2 object
@@ -2568,7 +2598,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric Horizontal line included in the plot to indicate highly expressed ambient genes (default = 0.005)
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse"))
   #' @return A ggplot2 object
   #' @examples 
   #' \dontrun{
@@ -2627,7 +2657,7 @@ CRMetrics <- R6Class("CRMetrics", lock_objects = FALSE,
   #' @param cutoff numeric Cutoff of ambient gene expression to use to extract ambient genes per sample
   #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
   #' @param samples character Sample names to include (default = self$metadata$sample)
-  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))
+  #' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse"))
   #' @param pal character Plotting palette (default = self$pal)
   #' @return A ggplot2 object
   #' @examples 
@@ -2877,7 +2907,7 @@ plotSoupX = function(plot.df = self$soupx$plot.df) {
 #' @description Plot CellBender cell estimations against the estimated cell numbers from Cell Ranger
 #' @param data.path character Path to Cell Ranger outputs (default = self$data.path)
 #' @param samples character Sample names to include (default = self$metadata$sample)
-#' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) description
+#' @param technology character applied single cell technology (default = c("10x", "10xflex", "10xflex_v2", "10xmultiome", "parse")) description
 #' @param pal character Plotting palette (default = self$pal)
 #' @return A ggplot2 object
 #' @examples 
