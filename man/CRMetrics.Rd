@@ -9,7 +9,7 @@ Functions to analyze 10x Genomics Cell Ranger and Parse Biosciences split-pipe c
 \examples{
 
 ## ------------------------------------------------
-## Method `CRMetrics$new`
+## Method `CRMetrics$new()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -17,7 +17,7 @@ crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$addDetailedMetrics`
+## Method `CRMetrics$addDetailedMetrics()`
 ## ------------------------------------------------
 
 # Simulate data
@@ -36,7 +36,7 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 crm$addDetailedMetrics()
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotBarcodeRankPlot`
+## Method `CRMetrics$plotBarcodeRankPlot()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -45,7 +45,7 @@ crm$prepareCellbender()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$getExpectedCells`
+## Method `CRMetrics$getExpectedCells()`
 ## ------------------------------------------------
 
 # Simulate data
@@ -67,7 +67,7 @@ crm$addSummaryFromCms()
 crm$getExpectedCells()
 
 ## ------------------------------------------------
-## Method `CRMetrics$addComparison`
+## Method `CRMetrics$addComparison()`
 ## ------------------------------------------------
 
 # Simulate data
@@ -89,7 +89,7 @@ crm$metadata <- data.frame(sex = c("male","female"))
 crm$addComparison(comp.group = "sex")
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotSamples`
+## Method `CRMetrics$plotSamples()`
 ## ------------------------------------------------
 
 samples <- c("sample1", "sample2")
@@ -116,7 +116,7 @@ crm <- CRMetrics$new(cms = testdata.cms, metadata = metadata, n.cores = 1)
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotSummaryMetrics`
+## Method `CRMetrics$plotSummaryMetrics()`
 ## ------------------------------------------------
 
 \donttest{
@@ -139,7 +139,7 @@ crm$plotSummaryMetrics(plot.geom = "point")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotDetailedMetrics`
+## Method `CRMetrics$plotDetailedMetrics()`
 ## ------------------------------------------------
 
 \donttest{
@@ -163,7 +163,7 @@ crm$plotDetailedMetrics()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotEmbedding`
+## Method `CRMetrics$plotEmbedding()`
 ## ------------------------------------------------
 
 \donttest{
@@ -195,7 +195,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotDepth`
+## Method `CRMetrics$plotDepth()`
 ## ------------------------------------------------
 
 \donttest{
@@ -228,7 +228,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotMitoFraction`
+## Method `CRMetrics$plotMitoFraction()`
 ## ------------------------------------------------
 
 \donttest{
@@ -261,7 +261,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$detectDoublets`
+## Method `CRMetrics$detectDoublets()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -284,7 +284,7 @@ conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$doPreprocessing`
+## Method `CRMetrics$doPreprocessing()`
 ## ------------------------------------------------
 
 \donttest{
@@ -309,7 +309,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$createEmbedding`
+## Method `CRMetrics$createEmbedding()`
 ## ------------------------------------------------
 
 \donttest{
@@ -339,7 +339,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$filterCms`
+## Method `CRMetrics$filterCms()`
 ## ------------------------------------------------
 
 \donttest{
@@ -373,7 +373,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$selectMetrics`
+## Method `CRMetrics$selectMetrics()`
 ## ------------------------------------------------
 
 # Simulate data
@@ -393,7 +393,7 @@ crm$selectMetrics()
 selection.metrics <- crm$selectMetrics(c(1:4))
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotFilteredCells`
+## Method `CRMetrics$plotFilteredCells()`
 ## ------------------------------------------------
 
 \donttest{
@@ -427,7 +427,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$getDepth`
+## Method `CRMetrics$getDepth()`
 ## ------------------------------------------------
 
 \donttest{
@@ -460,7 +460,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$getMitoFraction`
+## Method `CRMetrics$getMitoFraction()`
 ## ------------------------------------------------
 
 \donttest{
@@ -493,7 +493,7 @@ message("Package 'pagoda2' not available.")
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$prepareCellbender`
+## Method `CRMetrics$prepareCellbender()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -502,7 +502,7 @@ crm$prepareCellbender()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$saveCellbenderScript`
+## Method `CRMetrics$saveCellbenderScript()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -512,7 +512,7 @@ crm$saveCellbenderScript()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$addCms`
+## Method `CRMetrics$addCms()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -531,7 +531,7 @@ crm$addCms(cms = testdata.cms)
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotCbTraining`
+## Method `CRMetrics$plotCbTraining()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -543,7 +543,7 @@ crm$plotCbTraining()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotCbCellProbs`
+## Method `CRMetrics$plotCbCellProbs()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -555,7 +555,7 @@ crm$plotCbCellProbs()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotCbAmbExp`
+## Method `CRMetrics$plotCbAmbExp()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -567,7 +567,7 @@ crm$plotCbAmbExp()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotCbAmbGenes`
+## Method `CRMetrics$plotCbAmbGenes()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -579,7 +579,7 @@ crm$plotCbAmbGenes()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$addSummaryFromCms`
+## Method `CRMetrics$addSummaryFromCms()`
 ## ------------------------------------------------
 
 # Simulate data
@@ -598,7 +598,7 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 crm$addSummaryFromCms()
 
 ## ------------------------------------------------
-## Method `CRMetrics$runSoupX`
+## Method `CRMetrics$runSoupX()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -607,7 +607,7 @@ crm$runSoupX()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotSoupX`
+## Method `CRMetrics$plotSoupX()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -617,7 +617,7 @@ crm$plotSoupX()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$plotCbCells`
+## Method `CRMetrics$plotCbCells()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -629,7 +629,7 @@ crm$plotCbCells()
 }
 
 ## ------------------------------------------------
-## Method `CRMetrics$addDoublets`
+## Method `CRMetrics$addDoublets()`
 ## ------------------------------------------------
 
 \dontrun{
@@ -640,80 +640,81 @@ crm$addDoublets()
 }
 }
 \section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
-\describe{
-\item{\code{metadata}}{data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
+  \if{html}{\out{<div class="r6-fields">}}
+  \describe{
+    \item{\code{metadata}}{data.frame or character Path to metadata file or name of metadata data.frame object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
 
-\item{\code{data.path}}{character Path(s) to Cell Ranger or Parse's split-pipe count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)}
+    \item{\code{data.path}}{character Path(s) to Cell Ranger or Parse's split-pipe count data, one directory per sample. If multiple paths, do c("path1","path2") (default = NULL)}
 
-\item{\code{cms}}{list List with count matrices from Cell Ranger or Parse's split-pipe (default = NULL)}
+    \item{\code{cms}}{list List with count matrices from Cell Ranger or Parse's split-pipe (default = NULL)}
 
-\item{\code{cms.preprocessed}}{list List with pagoda2- or seurat-preprocessed count matrices after $doPreprocessing() (default = NULL)}
+    \item{\code{cms.preprocessed}}{list List with pagoda2- or seurat-preprocessed count matrices after $doPreprocessing() (default = NULL)}
 
-\item{\code{cms.raw}}{list List with raw, unfiltered count matrices, i.e., including all cell barcodes detected, also empty ones (default = NULL)}
+    \item{\code{cms.raw}}{list List with raw, unfiltered count matrices, i.e., including all cell barcodes detected, also empty ones (default = NULL)}
 
-\item{\code{summary.metrics}}{data.frame Summary metrics from Cell Ranger or Parse's split-pipe pipeline (default = NULL)}
+    \item{\code{summary.metrics}}{data.frame Summary metrics from Cell Ranger or Parse's split-pipe pipeline (default = NULL)}
 
-\item{\code{detailed.metrics}}{data.frame Detailed metrics, i.e., total number of genes and UMIs per cell (default = NULL)}
+    \item{\code{detailed.metrics}}{data.frame Detailed metrics, i.e., total number of genes and UMIs per cell (default = NULL)}
 
-\item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
+    \item{\code{comp.group}}{character A group present in the metadata to compare the metrics by, can be added with addComparison (default = NULL)}
 
-\item{\code{verbose}}{logical Print messages or not (default = TRUE)}
+    \item{\code{verbose}}{logical Print messages or not (default = TRUE)}
 
-\item{\code{theme}}{ggplot2 theme (default: theme_bw())}
+    \item{\code{theme}}{ggplot2 theme (default: theme_bw())}
 
-\item{\code{pal}}{Plotting palette (default = NULL)}
+    \item{\code{pal}}{Plotting palette (default = NULL)}
 
-\item{\code{n.cores}}{numeric Number of cores for calculations (default = 1)
+    \item{\code{n.cores}}{numeric Number of cores for calculations (default = 1)
 Initialize a CRMetrics object}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-CRMetrics-new}{\code{CRMetrics$new()}}
-\item \href{#method-CRMetrics-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
-\item \href{#method-CRMetrics-plotBarcodeRankPlot}{\code{CRMetrics$plotBarcodeRankPlot()}}
-\item \href{#method-CRMetrics-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
-\item \href{#method-CRMetrics-addComparison}{\code{CRMetrics$addComparison()}}
-\item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
-\item \href{#method-CRMetrics-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
-\item \href{#method-CRMetrics-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
-\item \href{#method-CRMetrics-plotEmbedding}{\code{CRMetrics$plotEmbedding()}}
-\item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
-\item \href{#method-CRMetrics-plotRawDepth}{\code{CRMetrics$plotRawDepth()}}
-\item \href{#method-CRMetrics-plotMitoFraction}{\code{CRMetrics$plotMitoFraction()}}
-\item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
-\item \href{#method-CRMetrics-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
-\item \href{#method-CRMetrics-createEmbedding}{\code{CRMetrics$createEmbedding()}}
-\item \href{#method-CRMetrics-filterCms}{\code{CRMetrics$filterCms()}}
-\item \href{#method-CRMetrics-selectMetrics}{\code{CRMetrics$selectMetrics()}}
-\item \href{#method-CRMetrics-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
-\item \href{#method-CRMetrics-getDepth}{\code{CRMetrics$getDepth()}}
-\item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
-\item \href{#method-CRMetrics-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
-\item \href{#method-CRMetrics-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
-\item \href{#method-CRMetrics-addCms}{\code{CRMetrics$addCms()}}
-\item \href{#method-CRMetrics-plotCbTraining}{\code{CRMetrics$plotCbTraining()}}
-\item \href{#method-CRMetrics-plotCbCellProbs}{\code{CRMetrics$plotCbCellProbs()}}
-\item \href{#method-CRMetrics-plotCbAmbExp}{\code{CRMetrics$plotCbAmbExp()}}
-\item \href{#method-CRMetrics-plotCbAmbGenes}{\code{CRMetrics$plotCbAmbGenes()}}
-\item \href{#method-CRMetrics-addSummaryFromCms}{\code{CRMetrics$addSummaryFromCms()}}
-\item \href{#method-CRMetrics-runSoupX}{\code{CRMetrics$runSoupX()}}
-\item \href{#method-CRMetrics-plotSoupX}{\code{CRMetrics$plotSoupX()}}
-\item \href{#method-CRMetrics-plotCbCells}{\code{CRMetrics$plotCbCells()}}
-\item \href{#method-CRMetrics-addDoublets}{\code{CRMetrics$addDoublets()}}
-\item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
-}
+  \itemize{
+    \item \href{#method-CRMetrics-initialize}{\code{CRMetrics$new()}}
+    \item \href{#method-CRMetrics-addDetailedMetrics}{\code{CRMetrics$addDetailedMetrics()}}
+    \item \href{#method-CRMetrics-plotBarcodeRankPlot}{\code{CRMetrics$plotBarcodeRankPlot()}}
+    \item \href{#method-CRMetrics-getExpectedCells}{\code{CRMetrics$getExpectedCells()}}
+    \item \href{#method-CRMetrics-addComparison}{\code{CRMetrics$addComparison()}}
+    \item \href{#method-CRMetrics-plotSamples}{\code{CRMetrics$plotSamples()}}
+    \item \href{#method-CRMetrics-plotSummaryMetrics}{\code{CRMetrics$plotSummaryMetrics()}}
+    \item \href{#method-CRMetrics-plotDetailedMetrics}{\code{CRMetrics$plotDetailedMetrics()}}
+    \item \href{#method-CRMetrics-plotEmbedding}{\code{CRMetrics$plotEmbedding()}}
+    \item \href{#method-CRMetrics-plotDepth}{\code{CRMetrics$plotDepth()}}
+    \item \href{#method-CRMetrics-plotRawDepth}{\code{CRMetrics$plotRawDepth()}}
+    \item \href{#method-CRMetrics-plotMitoFraction}{\code{CRMetrics$plotMitoFraction()}}
+    \item \href{#method-CRMetrics-detectDoublets}{\code{CRMetrics$detectDoublets()}}
+    \item \href{#method-CRMetrics-doPreprocessing}{\code{CRMetrics$doPreprocessing()}}
+    \item \href{#method-CRMetrics-createEmbedding}{\code{CRMetrics$createEmbedding()}}
+    \item \href{#method-CRMetrics-filterCms}{\code{CRMetrics$filterCms()}}
+    \item \href{#method-CRMetrics-selectMetrics}{\code{CRMetrics$selectMetrics()}}
+    \item \href{#method-CRMetrics-plotFilteredCells}{\code{CRMetrics$plotFilteredCells()}}
+    \item \href{#method-CRMetrics-getDepth}{\code{CRMetrics$getDepth()}}
+    \item \href{#method-CRMetrics-getMitoFraction}{\code{CRMetrics$getMitoFraction()}}
+    \item \href{#method-CRMetrics-prepareCellbender}{\code{CRMetrics$prepareCellbender()}}
+    \item \href{#method-CRMetrics-saveCellbenderScript}{\code{CRMetrics$saveCellbenderScript()}}
+    \item \href{#method-CRMetrics-addCms}{\code{CRMetrics$addCms()}}
+    \item \href{#method-CRMetrics-plotCbTraining}{\code{CRMetrics$plotCbTraining()}}
+    \item \href{#method-CRMetrics-plotCbCellProbs}{\code{CRMetrics$plotCbCellProbs()}}
+    \item \href{#method-CRMetrics-plotCbAmbExp}{\code{CRMetrics$plotCbAmbExp()}}
+    \item \href{#method-CRMetrics-plotCbAmbGenes}{\code{CRMetrics$plotCbAmbGenes()}}
+    \item \href{#method-CRMetrics-addSummaryFromCms}{\code{CRMetrics$addSummaryFromCms()}}
+    \item \href{#method-CRMetrics-runSoupX}{\code{CRMetrics$runSoupX()}}
+    \item \href{#method-CRMetrics-plotSoupX}{\code{CRMetrics$plotSoupX()}}
+    \item \href{#method-CRMetrics-plotCbCells}{\code{CRMetrics$plotCbCells()}}
+    \item \href{#method-CRMetrics-addDoublets}{\code{CRMetrics$addDoublets()}}
+    \item \href{#method-CRMetrics-clone}{\code{CRMetrics$clone()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-CRMetrics-new"></a>}}
-\if{latex}{\out{\hypertarget{method-CRMetrics-new}{}}}
-\subsection{Method \code{new()}}{
-To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'metadata' is also recommended, but not required.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$new(
+\if{html}{\out{<a id="method-CRMetrics-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-CRMetrics-initialize}{}}}
+\subsection{\code{CRMetrics$new()}}{
+  To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'metadata' is also recommended, but not required.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$new(
   data.path = NULL,
   technology = c("10x", "10xflex", "10xmultiome", "parse"),
   metadata = NULL,
@@ -728,89 +729,71 @@ To initialize new object, 'data.path' or 'cms' and 'technology' is needed. 'meta
   sep.meta = ",",
   raw.meta = FALSE,
   pal = NULL
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data.path}}{character Path to directory with count data, one directory per sample (default = NULL).}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+      \item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
+      \item{\code{cms}}{list List with count matrices (default = NULL)}
+      \item{\code{samples}}{character Sample names. Only relevant if cms is provided (default = NULL)}
+      \item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
+      \item{\code{sep.cells}}{character Sample-cell separator. Only relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
+      \item{\code{comp.group}}{character A grouping variable present in the metadata column names, can be added with addComparison (default = NULL)}
+      \item{\code{verbose}}{logical Print messages or not (default = TRUE)}
+      \item{\code{theme}}{ggplot2 theme (default: theme_bw())}
+      \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores)}
+      \item{\code{sep.meta}}{character Separator for metadata file (default = ",")}
+      \item{\code{raw.meta}}{logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)}
+      \item{\code{pal}}{character Plotting palette (default = NULL)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    CRMetrics object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+}
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data.path}}{character Path to directory with count data, one directory per sample (default = NULL).}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-
-\item{\code{metadata}}{data.frame or character Path to metadata file (comma-separated) or name of metadata dataframe object. Metadata must contain a column named 'sample' containing sample names that must match folder names in 'data.path' (default = NULL)}
-
-\item{\code{cms}}{list List with count matrices (default = NULL)}
-
-\item{\code{samples}}{character Sample names. Only relevant if cms is provided (default = NULL)}
-
-\item{\code{unique.names}}{logical Create unique cell names. Only relevant if cms is provided (default = TRUE)}
-
-\item{\code{sep.cells}}{character Sample-cell separator. Only relevant if cms is provided and \code{unique.names=TRUE} (default = "!!")}
-
-\item{\code{comp.group}}{character A grouping variable present in the metadata column names, can be added with addComparison (default = NULL)}
-
-\item{\code{verbose}}{logical Print messages or not (default = TRUE)}
-
-\item{\code{theme}}{ggplot2 theme (default: theme_bw())}
-
-\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores)}
-
-\item{\code{sep.meta}}{character Separator for metadata file (default = ",")}
-
-\item{\code{raw.meta}}{logical Keep metadata in its raw format. If FALSE, classes will be converted using "type.convert" (default = FALSE)}
-
-\item{\code{pal}}{character Plotting palette (default = NULL)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-CRMetrics object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
-}
-}
-\if{html}{\out{</div>}}
-
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addDetailedMetrics}{}}}
-\subsection{Method \code{addDetailedMetrics()}}{
-Function to read in detailed metrics (total UMI count and gene count per cell). This is not done upon object initialization for speed.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDetailedMetrics(
+\subsection{\code{CRMetrics$addDetailedMetrics()}}{
+  Function to read in detailed metrics (total UMI count and gene count per cell). This is not done upon object initialization for speed.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$addDetailedMetrics(
   cms = self$cms,
   min.transcripts.per.cell = 100,
   n.cores = self$n.cores,
   verbose = self$verbose
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
-
-\item{\code{min.transcripts.per.cell}}{numeric Minimal number of transcripts per cell (default = 100)}
-
-\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
-
-\item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Count matrices
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+      \item{\code{min.transcripts.per.cell}}{numeric Minimal number of transcripts per cell (default = 100)}
+      \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+      \item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Count matrices
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -825,18 +808,18 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 # Run function
 crm$addDetailedMetrics()
 }
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotBarcodeRankPlot"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotBarcodeRankPlot}{}}}
-\subsection{Method \code{plotBarcodeRankPlot()}}{
-Read in raw count matrices and save UMI counts to object in "cellbender" slot, then create barcode rank plots for quality control
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotBarcodeRankPlot(
+\subsection{\code{CRMetrics$plotBarcodeRankPlot()}}{
+  Read in raw count matrices and save UMI counts to object in "cellbender" slot, then create barcode rank plots for quality control
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotBarcodeRankPlot(
   shrinkage = 100,
   show.expected.cells = TRUE,
   cms.raw = self$cms.raw,
@@ -848,73 +831,61 @@ Read in raw count matrices and save UMI counts to object in "cellbender" slot, t
   n.cores = self$n.cores,
   unique.names = FALSE,
   sep = "!!"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{shrinkage}}{integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)}
-
-\item{\code{show.expected.cells}}{logical Plot line depicting called cells by Parse or Cell Ranger pipeline (default = TRUE)}
-
-\item{\code{cms.raw}}{list Raw count matrices from HDF5 Cell Ranger or Parse outputs (default = self$cms.raw)}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-
-\item{\code{umi.counts}}{list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger or Parse outputs (default: stored list)}
-
-\item{\code{data.path}}{character Path to Cell Ranger or Parse outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{verbose}}{logical Show progress (default: stored vector)}
-
-\item{\code{n.cores}}{integer Number of cores (default: stored vector)}
-
-\item{\code{unique.names}}{logical Create unique cell names (default = FALSE)}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object and bash script
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{shrinkage}}{integer Select every nth UMI count per cell for plotting. Improves plotting speed drastically. To plot all cells, set to 1 (default = 100)}
+      \item{\code{show.expected.cells}}{logical Plot line depicting called cells by Parse or Cell Ranger pipeline (default = TRUE)}
+      \item{\code{cms.raw}}{list Raw count matrices from HDF5 Cell Ranger or Parse outputs (default = self$cms.raw)}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+      \item{\code{umi.counts}}{list UMI counts calculated as column sums of raw count matrices from HDF5 Cell Ranger or Parse outputs (default: stored list)}
+      \item{\code{data.path}}{character Path to Cell Ranger or Parse outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{verbose}}{logical Show progress (default: stored vector)}
+      \item{\code{n.cores}}{integer Number of cores (default: stored vector)}
+      \item{\code{unique.names}}{logical Create unique cell names (default = FALSE)}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object and bash script
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data")
 crm$prepareCellbender()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-getExpectedCells"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-getExpectedCells}{}}}
-\subsection{Method \code{getExpectedCells()}}{
-Extract the expected number of cells per sample based on the Cell Ranger or Parse's split-pipe summary metrics.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getExpectedCells(samples = self$metadata$sample)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric vector
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+\subsection{\code{CRMetrics$getExpectedCells()}}{
+  Extract the expected number of cells per sample based on the Cell Ranger or Parse's split-pipe summary metrics.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$getExpectedCells(samples = self$metadata$sample)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A numeric vector
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -932,35 +903,34 @@ crm$addSummaryFromCms()
 # Get no. cells
 crm$getExpectedCells()
 }
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addComparison"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addComparison}{}}}
-\subsection{Method \code{addComparison()}}{
-Add comparison group for statistical testing.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addComparison(comp.group, metadata = self$metadata)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{comp.group}}{character Comparison metric (default = self$comp.group).}
-
-\item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Vector
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+\subsection{\code{CRMetrics$addComparison()}}{
+  Add comparison group for statistical testing.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$addComparison(comp.group, metadata = self$metadata)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{comp.group}}{character Comparison metric (default = self$comp.group).}
+      \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Vector
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -978,50 +948,45 @@ crm$metadata <- data.frame(sex = c("male","female"))
 # Add comparison group
 crm$addComparison(comp.group = "sex")
 }
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotSamples"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotSamples}{}}}
-\subsection{Method \code{plotSamples()}}{
-Plot the number of samples per group based on metadata.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSamples(
+\subsection{\code{CRMetrics$plotSamples()}}{
+  Plot the number of samples per group based on metadata.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotSamples(
   comp.group = self$comp.group,
   h.adj = 0.05,
   exact = FALSE,
   metadata = self$metadata,
   second.comp.group = NULL,
   pal = self$pal
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{comp.group}}{character Metadata column used as the primary grouping variable. Must match a column name of metadata (default = self$comp.group).}
-
-\item{\code{h.adj}}{numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as a \% of the maximum y-value (default = 0.05).}
-
-\item{\code{exact}}{logical Whether to display exact p-values instead of rounded values (default = FALSE).}
-
-\item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
-
-\item{\code{second.comp.group}}{character Optional second metadata column used for grouping and coloring bars in the plot. Must match a column name of metadata (default = NULL).}
-
-\item{\code{pal}}{character Plotting palette (default = self$pal)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{samples <- c("sample1", "sample2")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{comp.group}}{character Metadata column used as the primary grouping variable. Must match a column name of metadata (default = self$comp.group).}
+      \item{\code{h.adj}}{numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as a \% of the maximum y-value (default = 0.05).}
+      \item{\code{exact}}{logical Whether to display exact p-values instead of rounded values (default = FALSE).}
+      \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
+      \item{\code{second.comp.group}}{character Optional second metadata column used for grouping and coloring bars in the plot. Must match a column name of metadata (default = NULL).}
+      \item{\code{pal}}{character Plotting palette (default = self$pal)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{samples <- c("sample1", "sample2")
 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1044,18 +1009,18 @@ crm <- CRMetrics$new(cms = testdata.cms, metadata = metadata, n.cores = 1)
 # Plot
 crm$plotSamples(comp.group = "sex", second.comp.group = "condition")
 }
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotSummaryMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotSummaryMetrics}{}}}
-\subsection{Method \code{plotSummaryMetrics()}}{
-Plot all summary stats or a selected list.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSummaryMetrics(
+\subsection{\code{CRMetrics$plotSummaryMetrics()}}{
+  Plot all summary stats or a selected list.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotSummaryMetrics(
   comp.group = self$comp.group,
   second.comp.group = NULL,
   metrics = NULL,
@@ -1070,50 +1035,36 @@ Plot all summary stats or a selected list.
   group.reg.lines = FALSE,
   secondary.testing = TRUE,
   pal = self$pal
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{comp.group}}{character Defines the groups to compare (categorical) or the variable for regression analysis (continuous).Must match a column name of metadata (default = self$comp.group).}
-
-\item{\code{second.comp.group}}{character Optional metadata column used for grouping, colouring or stratifying the plot. Usually categorical. Used for the metric "samples per group" and for grouped regression when "comp.group" is continuous
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{comp.group}}{character Defines the groups to compare (categorical) or the variable for regression analysis (continuous).Must match a column name of metadata (default = self$comp.group).}
+      \item{\code{second.comp.group}}{character Optional metadata column used for grouping, colouring or stratifying the plot. Usually categorical. Used for the metric "samples per group" and for grouped regression when "comp.group" is continuous
 Does not affect statistical testing (default = NULL).}
-
-\item{\code{metrics}}{character Vector of metrics to plot. If \code{NULL}, all available metrics are plotted (default = NULL).}
-
-\item{\code{h.adj}}{numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as \% of the maximum y-value (default = 0.05)}
-
-\item{\code{plot.stat}}{logical Whether to show statistical test results in the plot. Automatically set to \code{FALSE} if \code{comp.group} is \code{"sample"} or continuous (default = TRUE)}
-
-\item{\code{stat.test}}{character Statistical test to compare group means. Can either be "non-parametric" or "parametric" (default = "non-parametric").}
-
-\item{\code{exact}}{logical Whether to display exact p-values instead of rounded values (default = FALSE).}
-
-\item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
-
-\item{\code{summary.metrics}}{data.frame Data frame of precomputed summary metrics for the samples (default = self$summary.metrics).}
-
-\item{\code{plot.geom}}{character Geometric used to plot the data. Options include \code{"bar"}, \code{"point"}, \code{"violin"}, \code{"histogram"} (default = "bar").}
-
-\item{\code{se}}{logical For regression lines, whether to display standard errors (default = FALSE)}
-
-\item{\code{group.reg.lines}}{logical For regression lines, if FALSE show a single line, if TRUE show one line per group defined by second.comp.group (default = FALSE)}
-
-\item{\code{secondary.testing}}{logical Whether to show post hoc testing which is performed in case of multiple-group comparisons (default = TRUE)}
-
-\item{\code{pal}}{character Plotting palette (default = self$pal)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-# Simulate data
+      \item{\code{metrics}}{character Vector of metrics to plot. If \code{NULL}, all available metrics are plotted (default = NULL).}
+      \item{\code{h.adj}}{numeric Relative vertical offset for displaying the statistical test p-value in the plot, expressed as \% of the maximum y-value (default = 0.05)}
+      \item{\code{plot.stat}}{logical Whether to show statistical test results in the plot. Automatically set to \code{FALSE} if \code{comp.group} is \code{"sample"} or continuous (default = TRUE)}
+      \item{\code{stat.test}}{character Statistical test to compare group means. Can either be "non-parametric" or "parametric" (default = "non-parametric").}
+      \item{\code{exact}}{logical Whether to display exact p-values instead of rounded values (default = FALSE).}
+      \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
+      \item{\code{summary.metrics}}{data.frame Data frame of precomputed summary metrics for the samples (default = self$summary.metrics).}
+      \item{\code{plot.geom}}{character Geometric used to plot the data. Options include \code{"bar"}, \code{"point"}, \code{"violin"}, \code{"histogram"} (default = "bar").}
+      \item{\code{se}}{logical For regression lines, whether to display standard errors (default = FALSE)}
+      \item{\code{group.reg.lines}}{logical For regression lines, if FALSE show a single line, if TRUE show one line per group defined by second.comp.group (default = FALSE)}
+      \item{\code{secondary.testing}}{logical Whether to show post hoc testing which is performed in case of multiple-group comparisons (default = TRUE)}
+      \item{\code{pal}}{character Plotting palette (default = self$pal)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -1130,19 +1081,18 @@ crm$addSummaryFromCms()
 
 crm$plotSummaryMetrics(plot.geom = "point")
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotDetailedMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotDetailedMetrics}{}}}
-\subsection{Method \code{plotDetailedMetrics()}}{
-Plot detailed metrics from the detailed.metrics object
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDetailedMetrics(
+\subsection{\code{CRMetrics$plotDetailedMetrics()}}{
+  Plot detailed metrics from the detailed.metrics object
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotDetailedMetrics(
   comp.group = self$comp.group,
   detailed.metrics = self$detailed.metrics,
   metadata = self$metadata,
@@ -1150,37 +1100,29 @@ Plot detailed metrics from the detailed.metrics object
   plot.geom = "violin",
   hline = TRUE,
   pal = self$pal
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{comp.group}}{character Comparison metric (default = self$comp.group).}
-
-\item{\code{detailed.metrics}}{data.frame Object containing the count matrices (default = self$detailed.metrics).}
-
-\item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
-
-\item{\code{metrics}}{character Metrics to plot. NULL plots both plots (default = NULL).}
-
-\item{\code{plot.geom}}{character How to plot the data (default = "violin").}
-
-\item{\code{hline}}{logical Whether to show median as horizontal line (default = TRUE)}
-
-\item{\code{pal}}{character Plotting palette (default = self$pal)}
-
-\item{\code{data.path}}{character Path to Cell Ranger count data (default = self$data.path).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-# Simulate data
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{comp.group}}{character Comparison metric (default = self$comp.group).}
+      \item{\code{detailed.metrics}}{data.frame Object containing the count matrices (default = self$detailed.metrics).}
+      \item{\code{metadata}}{data.frame Metadata for samples (default = self$metadata).}
+      \item{\code{metrics}}{character Metrics to plot. NULL plots both plots (default = NULL).}
+      \item{\code{plot.geom}}{character How to plot the data (default = "violin").}
+      \item{\code{hline}}{logical Whether to show median as horizontal line (default = TRUE)}
+      \item{\code{pal}}{character Plotting palette (default = self$pal)}
+      \item{\code{data.path}}{character Path to Cell Ranger count data (default = self$data.path).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -1198,19 +1140,18 @@ crm$addDetailedMetrics()
 # Plot
 crm$plotDetailedMetrics()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotEmbedding"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotEmbedding}{}}}
-\subsection{Method \code{plotEmbedding()}}{
-Plot cells in an embedding using Conos, with coloring based on depth (= total UMI count per cell), doublet status, or mitochondrial gene fraction. Users can either specify cutoff thresholds to highlight filtered cells or plot the raw continuous values on the UMAP.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotEmbedding(
+\subsection{\code{CRMetrics$plotEmbedding()}}{
+  Plot cells in an embedding using Conos, with coloring based on depth (= total UMI count per cell), doublet status, or mitochondrial gene fraction. Users can either specify cutoff thresholds to highlight filtered cells or plot the raw continuous values on the UMAP.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotEmbedding(
   doublet.method = NULL,
   doublet.scores = FALSE,
   doublet.score.threshold = NULL,
@@ -1224,47 +1165,34 @@ Plot cells in an embedding using Conos, with coloring based on depth (= total UM
   sep = "!!",
   pal = NULL,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{doublet.method}}{character Colour cells based on doublet calling result of respective doublet detection method (default = NULL).}
-
-\item{\code{doublet.scores}}{logical Colour cells by doublet score. Applied doublet method must be supplied in parameter 'doublet.method' (default = FALSE).}
-
-\item{\code{doublet.score.threshold}}{numeric Set manual threshold for doublets. If NULL and doublet.scores = TRUE, continuous scores are plotted. Applied doublet method must be supplied in parameter 'doublet.method' (default = NULL).}
-
-\item{\code{depth}}{logical Colour cells by depth. If TRUE and no cutoffs are supplied, continuous depth values are plotted (default = FALSE).}
-
-\item{\code{depth.cutoff}}{numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
-
-\item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
-
-\item{\code{mito.frac}}{logical Plot mitochondrial fraction. If TRUE and mito.cutoff is NULL, continuous values are plotted (default = FALSE).}
-
-\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
-
-\item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
-
-\item{\code{size}}{numeric Dot size (default = 0.3)}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-
-\item{\code{pal}}{character Plotting palette (default = NULL)}
-
-\item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{doublet.method}}{character Colour cells based on doublet calling result of respective doublet detection method (default = NULL).}
+      \item{\code{doublet.scores}}{logical Colour cells by doublet score. Applied doublet method must be supplied in parameter 'doublet.method' (default = FALSE).}
+      \item{\code{doublet.score.threshold}}{numeric Set manual threshold for doublets. If NULL and doublet.scores = TRUE, continuous scores are plotted. Applied doublet method must be supplied in parameter 'doublet.method' (default = NULL).}
+      \item{\code{depth}}{logical Colour cells by depth. If TRUE and no cutoffs are supplied, continuous depth values are plotted (default = FALSE).}
+      \item{\code{depth.cutoff}}{numeric Lower depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
+      \item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff. Can be a single value or a named numeric vector specifying cutoffs per sample (default = NULL).}
+      \item{\code{mito.frac}}{logical Plot mitochondrial fraction. If TRUE and mito.cutoff is NULL, continuous values are plotted (default = FALSE).}
+      \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
+      \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
+      \item{\code{size}}{numeric Dot size (default = 0.3)}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+      \item{\code{pal}}{character Plotting palette (default = NULL)}
+      \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1290,49 +1218,43 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotDepth}{}}}
-\subsection{Method \code{plotDepth()}}{
-Plot per-sample density histograms of cell depths (=total UMI counts per cell). The plot highlights cells below or above a specified UMI cutoff with distinct colors, helping to assess data quality and filtering thresholds.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotDepth(
+\subsection{\code{CRMetrics$plotDepth()}}{
+  Plot per-sample density histograms of cell depths (=total UMI counts per cell). The plot highlights cells below or above a specified UMI cutoff with distinct colors, helping to assess data quality and filtering thresholds.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotDepth(
   cutoff = 1000,
   samples = self$metadata$sample,
   sep = "!!",
   keep.col = "#E7CDC2",
   filter.col = "#A65141"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cutoff}}{numeric Depth cutoff (lower). Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).}
-
-\item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-
-\item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
-
-\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cutoff}}{numeric Depth cutoff (lower). Can be a single value or a named numeric vector specifying cutoffs per sample (default = 1e3).}
+      \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample).}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+      \item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
+      \item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1359,86 +1281,77 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotRawDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotRawDepth}{}}}
-\subsection{Method \code{plotRawDepth()}}{
-Plot per-sample histograms of total UMI counts per cell (= cell depth), allowing visualization of sequencing depth distributions across samples.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotRawDepth(
+\subsection{\code{CRMetrics$plotRawDepth()}}{
+  Plot per-sample histograms of total UMI counts per cell (= cell depth), allowing visualization of sequencing depth distributions across samples.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotRawDepth(
   cutoff = 1000,
   samples = self$metadata$sample,
   sep = "!!",
   binwidth = 10,
   xupper = 20000
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cutoff}}{numeric Depth cutoff (lower) used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (Default = 1e3).}
+      \item{\code{samples}}{character Vector of sample names to include in the plot (default = self$metadata$sample).}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+      \item{\code{binwidth}}{numeric Width of the histogram bins (default = 10).}
+      \item{\code{xupper}}{numeric Optional upper x-axis limit (default = 2e4).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A combined \code{ggplot} object showing UMI count histograms per sample.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cutoff}}{numeric Depth cutoff (lower) used to distinguish filtered and retained cells. Can be a single value or a named numeric vector specifying cutoffs per sample (Default = 1e3).}
-
-\item{\code{samples}}{character Vector of sample names to include in the plot (default = self$metadata$sample).}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-
-\item{\code{binwidth}}{numeric Width of the histogram bins (default = 10).}
-
-\item{\code{xupper}}{numeric Optional upper x-axis limit (default = 2e4).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A combined \code{ggplot} object showing UMI count histograms per sample.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotMitoFraction"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotMitoFraction}{}}}
-\subsection{Method \code{plotMitoFraction()}}{
-Plot the mitochondrial fraction in histogram.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotMitoFraction(
+\subsection{\code{CRMetrics$plotMitoFraction()}}{
+  Plot the mitochondrial fraction in histogram.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotMitoFraction(
   cutoff = 0.05,
   species = c("human", "mouse"),
   samples = self$metadata$sample,
   sep = "!!",
   keep.col = "#E7CDC2",
   filter.col = "#A65141"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cutoff}}{numeric The mito. fraction cutoff to color the embedding (default = 0.05)}
-
-\item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human")}
-
-\item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample)}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-
-\item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
-
-\item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cutoff}}{numeric The mito. fraction cutoff to color the embedding (default = 0.05)}
+      \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human")}
+      \item{\code{samples}}{character Sample names to include for plotting (default = $metadata$sample)}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+      \item{\code{keep.col}}{character Color for density of cells that are kept (default = "#E7CDC2")}
+      \item{\code{filter.col}}{Character Color for density of cells to be filtered (default = "#A65141")}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1465,19 +1378,18 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-detectDoublets"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-detectDoublets}{}}}
-\subsection{Method \code{detectDoublets()}}{
-Run doublet detection methods.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$detectDoublets(
+\subsection{\code{CRMetrics$detectDoublets()}}{
+  Run doublet detection methods.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$detectDoublets(
   method = c("scrublet", "doubletdetection", "scdblfinder"),
   cms = self$cms,
   samples = self$metadata$sample,
@@ -1488,41 +1400,31 @@ Run doublet detection methods.
   args = list(),
   export = FALSE,
   data.path = self$data.path
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{method}}{character Which method to use, \code{scrublet}, \code{doubletdetection} or \code{scdblfinder} (default="scrublet").}
-
-\item{\code{cms}}{list List containing the count matrices (default=self$cms).}
-
-\item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
-
-\item{\code{env}}{character Environment to run python in (default="r-reticulate").}
-
-\item{\code{conda.path}}{character Path to conda environment (default=system("whereis conda")).}
-
-\item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
-
-\item{\code{verbose}}{logical Print messages or not (default = self$verbose)}
-
-\item{\code{args}}{list A list with additional arguments for \code{DoubletDetection}, \code{scrublet} or \code{scDblFinder}. Please check the respective manuals.}
-
-\item{\code{export}}{boolean Export count matrices as transposed .mtx files and save python script to run doublet detection outside R (default = FALSE)}
-
-\item{\code{data.path}}{character Path to write data, only relevant if \code{export = TRUE}. Last character must be \code{/} (default = self$data.path)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-data.frame
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-# Simulate data
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{method}}{character Which method to use, \code{scrublet}, \code{doubletdetection} or \code{scdblfinder} (default="scrublet").}
+      \item{\code{cms}}{list List containing the count matrices (default=self$cms).}
+      \item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
+      \item{\code{env}}{character Environment to run python in (default="r-reticulate").}
+      \item{\code{conda.path}}{character Path to conda environment (default=system("whereis conda")).}
+      \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
+      \item{\code{verbose}}{logical Print messages or not (default = self$verbose)}
+      \item{\code{args}}{list A list with additional arguments for \code{DoubletDetection}, \code{scrublet} or \code{scDblFinder}. Please check the respective manuals.}
+      \item{\code{export}}{boolean Export count matrices as transposed .mtx files and save python script to run doublet detection outside R (default = FALSE)}
+      \item{\code{data.path}}{character Path to write data, only relevant if \code{export = TRUE}. Last character must be \code{/} (default = self$data.path)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    data.frame
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -1539,19 +1441,18 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 crm$detectDoublets(method = "scrublet", 
 conda.path = "/opt/software/miniconda/4.12.0/condabin/conda")
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-doPreprocessing"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-doPreprocessing}{}}}
-\subsection{Method \code{doPreprocessing()}}{
-Perform conos preprocessing.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$doPreprocessing(
+\subsection{\code{CRMetrics$doPreprocessing()}}{
+  Perform conos preprocessing.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$doPreprocessing(
   cms = self$cms,
   preprocess = c("pagoda2", "seurat"),
   min.transcripts.per.cell = 100,
@@ -1562,41 +1463,31 @@ Perform conos preprocessing.
   make.geneknn = FALSE,
   cluster = FALSE,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cms}}{list List containing the count matrices (default = self$cms).}
-
-\item{\code{preprocess}}{character Method to use for preprocessing (default = c("pagoda2","seurat")).}
-
-\item{\code{min.transcripts.per.cell}}{numeric Minimal transcripts per cell (default = 100)}
-
-\item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
-
-\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
-
-\item{\code{get.largevis}}{logical For Pagoda2, create largeVis embedding (default = FALSE)}
-
-\item{\code{tsne}}{logical Create tSNE embedding (default = FALSE)}
-
-\item{\code{make.geneknn}}{logical For Pagoda2, estimate gene kNN (default = FALSE)}
-
-\item{\code{cluster}}{logical For Seurat, estimate clusters (default = FALSE)}
-
-\item{\code{...}}{Additional arguments for \code{Pagaoda2::basicP2Proc} or \code{conos:::basicSeuratProc}}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Conos object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cms}}{list List containing the count matrices (default = self$cms).}
+      \item{\code{preprocess}}{character Method to use for preprocessing (default = c("pagoda2","seurat")).}
+      \item{\code{min.transcripts.per.cell}}{numeric Minimal transcripts per cell (default = 100)}
+      \item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
+      \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+      \item{\code{get.largevis}}{logical For Pagoda2, create largeVis embedding (default = FALSE)}
+      \item{\code{tsne}}{logical Create tSNE embedding (default = FALSE)}
+      \item{\code{make.geneknn}}{logical For Pagoda2, estimate gene kNN (default = FALSE)}
+      \item{\code{cluster}}{logical For Seurat, estimate clusters (default = FALSE)}
+      \item{\code{...}}{Additional arguments for \code{Pagaoda2::basicP2Proc} or \code{conos:::basicSeuratProc}}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Conos object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
@@ -1615,52 +1506,45 @@ crm$doPreprocessing(preprocess = "pagoda2")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-createEmbedding"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-createEmbedding}{}}}
-\subsection{Method \code{createEmbedding()}}{
-Create Conos embedding.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$createEmbedding(
+\subsection{\code{CRMetrics$createEmbedding()}}{
+  Create Conos embedding.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$createEmbedding(
   cms = self$cms.preprocessed,
   verbose = self$verbose,
   n.cores = self$n.cores,
   arg.buildGraph = list(),
   arg.findCommunities = list(),
   arg.embedGraph = list(method = "UMAP")
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cms}}{list List containing the preprocessed count matrices (default = self$cms.preprocessed).}
-
-\item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
-
-\item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
-
-\item{\code{arg.buildGraph}}{list A list with additional arguments for the \code{buildGraph} function in Conos (default = list())}
-
-\item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list())}
-
-\item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP"))}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Conos object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cms}}{list List containing the preprocessed count matrices (default = self$cms.preprocessed).}
+      \item{\code{verbose}}{logical Print messages or not (default = self$verbose).}
+      \item{\code{n.cores}}{integer Number of cores for the calculations (default = self$n.cores).}
+      \item{\code{arg.buildGraph}}{list A list with additional arguments for the \code{buildGraph} function in Conos (default = list())}
+      \item{\code{arg.findCommunities}}{list A list with additional arguments for the \code{findCommunities} function in Conos (default = list())}
+      \item{\code{arg.embedGraph}}{list A list with additional arguments for the \code{embedGraph} function in Conos (default = list(method = "UMAP"))}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Conos object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1684,19 +1568,18 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-filterCms"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-filterCms}{}}}
-\subsection{Method \code{filterCms()}}{
-Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$filterCms(
+\subsection{\code{CRMetrics$filterCms()}}{
+  Filter cells based on depth, mitochondrial fraction and doublets from the count matrix.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$filterCms(
   depth.cutoff = NULL,
   depth.cutoff.upper = NULL,
   mito.cutoff = NULL,
@@ -1707,41 +1590,31 @@ Filter cells based on depth, mitochondrial fraction and doublets from the count 
   verbose = self$verbose,
   sep = "!!",
   raw = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{depth.cutoff}}{numeric Lower depth (total UMI counts per cell) cutoff (default = NULL).}
-
-\item{\code{depth.cutoff.upper}}{numeric Upper depth (total UMI counts per cell) cutoff (default = NULL).}
-
-\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
-
-\item{\code{doublet.method}}{character Doublet detection method to use (default = NULL).}
-
-\item{\code{doublet.score.threshold}}{Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets (default = NULL).}
-
-\item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
-
-\item{\code{samples.to.exclude}}{character Sample names to exclude (default = NULL)}
-
-\item{\code{verbose}}{logical Show progress (default = self$verbose)}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-
-\item{\code{raw}}{boolean Filter on raw, unfiltered count matrices. Usually not intended (default = FALSE)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-list of filtered count matrices
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{depth.cutoff}}{numeric Lower depth (total UMI counts per cell) cutoff (default = NULL).}
+      \item{\code{depth.cutoff.upper}}{numeric Upper depth (total UMI counts per cell) cutoff (default = NULL).}
+      \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff (default = NULL).}
+      \item{\code{doublet.method}}{character Doublet detection method to use (default = NULL).}
+      \item{\code{doublet.score.threshold}}{Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets (default = NULL).}
+      \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
+      \item{\code{samples.to.exclude}}{character Sample names to exclude (default = NULL)}
+      \item{\code{verbose}}{logical Show progress (default = self$verbose)}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+      \item{\code{raw}}{boolean Filter on raw, unfiltered count matrices. Usually not intended (default = FALSE)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    list of filtered count matrices
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1769,34 +1642,33 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-selectMetrics"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-selectMetrics}{}}}
-\subsection{Method \code{selectMetrics()}}{
-Select metrics from summary.metrics
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$selectMetrics(ids = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{ids}}{character Metric id to select (default = NULL).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-vector
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+\subsection{\code{CRMetrics$selectMetrics()}}{
+  Select metrics from summary.metrics
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$selectMetrics(ids = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{ids}}{character Metric id to select (default = NULL).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    vector
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -1812,72 +1684,59 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 crm$selectMetrics()
 selection.metrics <- crm$selectMetrics(c(1:4))
 }
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotFilteredCells"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotFilteredCells}{}}}
-\subsection{Method \code{plotFilteredCells()}}{
-Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotFilteredCells(
+\subsection{\code{CRMetrics$plotFilteredCells()}}{
+  Plot filtered cells in an embedding, in a bar plot, on a tile or export the data frame
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotFilteredCells(
   type = c("embedding", "bar", "tile", "export"),
-  depth = TRUE,
-  depth.cutoff = 1000,
+  depth = FALSE,
+  depth.cutoff = NULL,
   depth.cutoff.upper = NULL,
   doublet.method = NULL,
   doublet.score.threshold = NULL,
-  mito.frac = TRUE,
-  mito.cutoff = 0.05,
+  mito.frac = FALSE,
+  mito.cutoff = NULL,
   species = c("human", "mouse"),
   size = 0.3,
   sep = "!!",
   cols = c("grey80", "red", "blue", "green", "yellow", "black", "pink", "purple"),
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{type}}{character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).}
-
-\item{\code{depth}}{logical Plot the depth (= total amount of UMI counts per cell) or not (default = TRUE).}
-
-\item{\code{depth.cutoff}}{numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = 1e3).}
-
-\item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).}
-
-\item{\code{doublet.method}}{character Method to detect doublets (default = NULL).}
-
-\item{\code{doublet.score.threshold}}{Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets. (default = NULL)}
-
-\item{\code{mito.frac}}{logical Plot the mitochondrial fraction or not (default = TRUE).}
-
-\item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sampleIDs as names (default = 0.05).}
-
-\item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
-
-\item{\code{size}}{numeric Dot size (default = 0.3)}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-
-\item{\code{cols}}{character Colors used for plotting (default = c("grey80","red","blue","green","yellow","black","pink","purple"))}
-
-\item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-ggplot2 object or data frame
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{type}}{character The type of plot to use: embedding, bar, tile or export (default = c("embedding","bar","tile","export")).}
+      \item{\code{depth}}{logical Plot the depth (= total amount of UMI counts per cell) or not (default = FALSE).}
+      \item{\code{depth.cutoff}}{numeric Lower depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).}
+      \item{\code{depth.cutoff.upper}}{numeric Upper depth cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).}
+      \item{\code{doublet.method}}{character Method to detect doublets (default = NULL).}
+      \item{\code{doublet.score.threshold}}{Manually set threshold for doublets across all samples. Cells with a doublet score above the threshold are declared doublets. (default = NULL)}
+      \item{\code{mito.frac}}{logical Plot the mitochondrial fraction or not (default = FALSE).}
+      \item{\code{mito.cutoff}}{numeric Mitochondrial fraction cutoff, either a single number or a vector with cutoff per sample and with sample IDs as names (default = NULL).}
+      \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = c("human","mouse")).}
+      \item{\code{size}}{numeric Dot size (default = 0.3)}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+      \item{\code{cols}}{character Colors used for plotting (default = c("grey80","red","blue","green","yellow","black","pink","purple"))}
+      \item{\code{...}}{Plotting parameters passed to \code{sccore::embeddingPlot}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    ggplot2 object or data frame
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1905,35 +1764,33 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-getDepth"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-getDepth}{}}}
-\subsection{Method \code{getDepth()}}{
-Extract sum of UMI counts per cell (= cell depth)
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getDepth(cms = self$cms)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-data frame
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+\subsection{\code{CRMetrics$getDepth()}}{
+  Extract sum of UMI counts per cell (= cell depth)
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$getDepth(cms = self$cms)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    data frame
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -1960,37 +1817,34 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-getMitoFraction"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-getMitoFraction}{}}}
-\subsection{Method \code{getMitoFraction()}}{
-Calculate the fraction of mitochondrial genes.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"), cms = self$cms)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
-
-\item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-data frame
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-if (requireNamespace("pagoda2", quietly = TRUE)) {
+\subsection{\code{CRMetrics$getMitoFraction()}}{
+  Calculate the fraction of mitochondrial genes.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$getMitoFraction(species = c("human", "mouse"), cms = self$cms)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{species}}{character Species to calculate the mitochondrial fraction for (default = "human").}
+      \item{\code{cms}}{list List of (sparse) count matrices (default = self$cms)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    data frame
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{if (requireNamespace("pagoda2", quietly = TRUE)) {
 if (requireNamespace("conos", quietly = TRUE)) {
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -2017,19 +1871,18 @@ message("Package 'conos' not available.")
 message("Package 'pagoda2' not available.")
 }
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-prepareCellbender"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-prepareCellbender}{}}}
-\subsection{Method \code{prepareCellbender()}}{
-Generates input files for CellBender from Parse's split-pipe output.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$prepareCellbender(
+\subsection{\code{CRMetrics$prepareCellbender()}}{
+  Generates input files for CellBender from Parse's split-pipe output.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$prepareCellbender(
   technology = self$technology,
   data.path = self$data.path,
   samples = self$metadata$sample,
@@ -2037,50 +1890,42 @@ Generates input files for CellBender from Parse's split-pipe output.
   n.cores = self$n.cores,
   unique.names = FALSE,
   sep = "!!"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{verbose}}{logical Show progress (default: stored vector)}
-
-\item{\code{n.cores}}{integer Number of cores (default: stored vector)}
-
-\item{\code{unique.names}}{logical Create unique cell names (default = FALSE)}
-
-\item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Saves files to disc.
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{verbose}}{logical Show progress (default: stored vector)}
+      \item{\code{n.cores}}{integer Number of cores (default: stored vector)}
+      \item{\code{unique.names}}{logical Create unique cell names (default = FALSE)}
+      \item{\code{sep}}{character Separator for creating unique cell names (default = "!!")}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Saves files to disc.
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data")
 crm$prepareCellbender()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-saveCellbenderScript"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-saveCellbenderScript}{}}}
-\subsection{Method \code{saveCellbenderScript()}}{
-Create CellBender script
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$saveCellbenderScript(
+\subsection{\code{CRMetrics$saveCellbenderScript()}}{
+  Create CellBender script
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$saveCellbenderScript(
   file = "cellbender_script.sh",
   technology = self$technology,
   fpr = 0.01,
@@ -2091,57 +1936,46 @@ Create CellBender script
   data.path = self$data.path,
   samples = self$metadata$sample,
   args = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{file}}{character File name for CellBender script. Will be stored in \code{data.path} (default: "cellbender_script.sh")}
-
-\item{\code{technology}}{character Applied single cell technology (default = self$technology).}
-
-\item{\code{fpr}}{numeric False positive rate for CellBender (default = 0.01)}
-
-\item{\code{epochs}}{integer Number of epochs for CellBender (default = 150)}
-
-\item{\code{use.gpu}}{logical Use CUDA capable GPU (default = TRUE)}
-
-\item{\code{expected.cells}}{named numeric vector By default, the --expected-cells argument is omitted in the generated script. Otherwise, a named vector of expected cell numbers with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).}
-
-\item{\code{total.droplets}}{named numeric vector By default, the --total-droplets-included argument is omitted in the generated script. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).}
-
-\item{\code{data.path}}{character Path to Cell Ranger or Parse's split-pipe outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{args}}{character (optional) Additional parameters for CellBender}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-bash script
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{file}}{character File name for CellBender script. Will be stored in \code{data.path} (default: "cellbender_script.sh")}
+      \item{\code{technology}}{character Applied single cell technology (default = self$technology).}
+      \item{\code{fpr}}{numeric False positive rate for CellBender (default = 0.01)}
+      \item{\code{epochs}}{integer Number of epochs for CellBender (default = 150)}
+      \item{\code{use.gpu}}{logical Use CUDA capable GPU (default = TRUE)}
+      \item{\code{expected.cells}}{named numeric vector By default, the --expected-cells argument is omitted in the generated script. Otherwise, a named vector of expected cell numbers with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).}
+      \item{\code{total.droplets}}{named numeric vector By default, the --total-droplets-included argument is omitted in the generated script. Otherwise, a named vector of total droplets included with sample IDs as names. Sample IDs must match those in summary.metrics (default = NULL).}
+      \item{\code{data.path}}{character Path to Cell Ranger or Parse's split-pipe outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{args}}{character (optional) Additional parameters for CellBender}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    bash script
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addCms"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addCms}{}}}
-\subsection{Method \code{addCms()}}{
-Add a list of count matrices to the CRMetrics object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addCms(
+\subsection{\code{CRMetrics$addCms()}}{
+  Add a list of count matrices to the CRMetrics object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$addCms(
   cms = NULL,
   data.path = self$data.path,
   technology = self$technology,
@@ -2154,45 +1988,33 @@ Add a list of count matrices to the CRMetrics object.
   add.metadata = TRUE,
   n.cores = self$n.cores,
   verbose = self$verbose
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cms}}{list List of (sparse) count matrices (default = NULL)}
-
-\item{\code{data.path}}{character Path to Cell Ranger or Parse's split-pipe count data (default = self$data.path).}
-
-\item{\code{technology}}{character Applied single cell technology (default = self$technology).}
-
-\item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
-
-\item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
-
-\item{\code{raw}}{logical Add raw count matrices from Cell Ranger or Parse's split-pipe output. Cannot be combined with \code{cellbender=TRUE}. (default = FALSE)}
-
-\item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
-
-\item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
-
-\item{\code{sep}}{character Separator used to create unique cell names (default = "!!")}
-
-\item{\code{add.metadata}}{boolean Add metadata from cms or not (default = TRUE)}
-
-\item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
-
-\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Add list of (sparse) count matrices to R6 class object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cms}}{list List of (sparse) count matrices (default = NULL)}
+      \item{\code{data.path}}{character Path to Cell Ranger or Parse's split-pipe count data (default = self$data.path).}
+      \item{\code{technology}}{character Applied single cell technology (default = self$technology).}
+      \item{\code{samples}}{character Vector of sample names. If NULL, samples are extracted from cms (default = self$metadata$sample)}
+      \item{\code{cellbender}}{logical Add CellBender filtered count matrices in HDF5 format. Requires that "cellbender" is in the names of the files (default = FALSE)}
+      \item{\code{raw}}{logical Add raw count matrices from Cell Ranger or Parse's split-pipe output. Cannot be combined with \code{cellbender=TRUE}. (default = FALSE)}
+      \item{\code{symbol}}{character The type of gene IDs to use, SYMBOL (TRUE) or ENSEMBLE (default = TRUE)}
+      \item{\code{unique.names}}{logical Make cell names unique based on \code{sep} parameter (default = TRUE)}
+      \item{\code{sep}}{character Separator used to create unique cell names (default = "!!")}
+      \item{\code{add.metadata}}{boolean Add metadata from cms or not (default = TRUE)}
+      \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
+      \item{\code{verbose}}{boolean Print progress (default = self$verbose)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Add list of (sparse) count matrices to R6 class object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 
 # Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
@@ -2205,228 +2027,203 @@ return(out)
 
 crm$addCms(cms = testdata.cms)
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotCbTraining"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotCbTraining}{}}}
-\subsection{Method \code{plotCbTraining()}}{
-Plot the results from the CellBender estimations
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbTraining(
+\subsection{\code{CRMetrics$plotCbTraining()}}{
+  Plot the results from the CellBender estimations
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotCbTraining(
   data.path = self$data.path,
   samples = self$metadata$sample,
   technology = self$technology,
   pal = self$pal
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-
-\item{\code{pal}}{character Plotting palette (default = self$pal)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+      \item{\code{pal}}{character Plotting palette (default = self$pal)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbTraining()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotCbCellProbs"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotCbCellProbs}{}}}
-\subsection{Method \code{plotCbCellProbs()}}{
-Plot the CellBender assigned cell probabilities
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCellProbs(
+\subsection{\code{CRMetrics$plotCbCellProbs()}}{
+  Plot the CellBender assigned cell probabilities
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotCbCellProbs(
   data.path = self$data.path,
   samples = self$metadata$sample,
   technology = self$technology,
   low.col = "gray",
   high.col = "red"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-
-\item{\code{low.col}}{character Color for low probabilities (default = "gray")}
-
-\item{\code{high.col}}{character Color for high probabilities (default = "red")}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+      \item{\code{low.col}}{character Color for low probabilities (default = "gray")}
+      \item{\code{high.col}}{character Color for high probabilities (default = "red")}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run the CellBender script
 crm$plotCbCellProbs()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotCbAmbExp"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotCbAmbExp}{}}}
-\subsection{Method \code{plotCbAmbExp()}}{
-Plot the estimated ambient gene expression per sample from CellBender calculations
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbExp(
+\subsection{\code{CRMetrics$plotCbAmbExp()}}{
+  Plot the estimated ambient gene expression per sample from CellBender calculations
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotCbAmbExp(
   cutoff = 0.005,
   data.path = self$data.path,
   samples = self$metadata$sample,
   technology = self$technology
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cutoff}}{numeric Horizontal line included in the plot to indicate highly expressed ambient genes (default = 0.005)}
-
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cutoff}}{numeric Horizontal line included in the plot to indicate highly expressed ambient genes (default = 0.005)}
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbAmbExp()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotCbAmbGenes"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotCbAmbGenes}{}}}
-\subsection{Method \code{plotCbAmbGenes()}}{
-Plot the most abundant estimated ambient genes from the CellBender calculations
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbAmbGenes(
+\subsection{\code{CRMetrics$plotCbAmbGenes()}}{
+  Plot the most abundant estimated ambient genes from the CellBender calculations
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotCbAmbGenes(
   cutoff = 0.005,
   data.path = self$data.path,
   samples = self$metadata$sample,
   technology = self$technology,
   pal = self$pal
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cutoff}}{numeric Cutoff of ambient gene expression to use to extract ambient genes per sample}
-
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
-
-\item{\code{pal}}{character Plotting palette (default = self$pal)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cutoff}}{numeric Cutoff of ambient gene expression to use to extract ambient genes per sample}
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse"))}
+      \item{\code{pal}}{character Plotting palette (default = self$pal)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbAmbGenes()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addSummaryFromCms"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addSummaryFromCms}{}}}
-\subsection{Method \code{addSummaryFromCms()}}{
-Add summary metrics from a list of count matrices
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addSummaryFromCms(
+\subsection{\code{CRMetrics$addSummaryFromCms()}}{
+  Add summary metrics from a list of count matrices
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$addSummaryFromCms(
   cms = self$cms,
   n.cores = self$n.cores,
   verbose = self$verbose
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cms}}{list A list of filtered count matrices (default = self$cms)}
-
-\item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
-
-\item{\code{verbose}}{logical Show progress (default = self$verbose)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-data.frame
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{# Simulate data
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cms}}{list A list of filtered count matrices (default = self$cms)}
+      \item{\code{n.cores}}{integer Number of cores to use (default = self$n.cores)}
+      \item{\code{verbose}}{logical Show progress (default = self$verbose)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    data.frame
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{# Simulate data
 testdata.cms <- lapply(seq_len(2), \(x) {
 out <- Matrix::rsparsematrix(2e3, 1e3, 0.1)
 out[out < 0] <- 1
@@ -2441,18 +2238,18 @@ crm <- CRMetrics$new(cms = testdata.cms, samples = c("sample1", "sample2"), n.co
 # Add summary
 crm$addSummaryFromCms()
 }
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-runSoupX"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-runSoupX}{}}}
-\subsection{Method \code{runSoupX()}}{
-Run SoupX ambient RNA estimation and correction
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$runSoupX(
+\subsection{\code{CRMetrics$runSoupX()}}{
+  Run SoupX ambient RNA estimation and correction
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$runSoupX(
   data.path = self$data.path,
   samples = self$metadata$sample,
   n.cores = self$n.cores,
@@ -2460,182 +2257,162 @@ Run SoupX ambient RNA estimation and correction
   arg.load10X = list(),
   arg.autoEstCont = list(),
   arg.adjustCounts = list()
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{n.cores}}{numeric Number of cores (default = self$n.cores)}
-
-\item{\code{verbose}}{logical Show progress (default = self$verbose)}
-
-\item{\code{arg.load10X}}{list A list with additional parameters for \code{SoupX::load10X} (default = list())}
-
-\item{\code{arg.autoEstCont}}{list A list with additional parameters for \code{SoupX::autoEstCont} (default = list())}
-
-\item{\code{arg.adjustCounts}}{list A list with additional parameters for \code{SoupX::adjustCounts} (default = list())}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-List containing a list with corrected counts, and a data.frame containing plotting estimations
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{n.cores}}{numeric Number of cores (default = self$n.cores)}
+      \item{\code{verbose}}{logical Show progress (default = self$verbose)}
+      \item{\code{arg.load10X}}{list A list with additional parameters for \code{SoupX::load10X} (default = list())}
+      \item{\code{arg.autoEstCont}}{list A list with additional parameters for \code{SoupX::autoEstCont} (default = list())}
+      \item{\code{arg.adjustCounts}}{list A list with additional parameters for \code{SoupX::adjustCounts} (default = list())}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    List containing a list with corrected counts, and a data.frame containing plotting estimations
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$runSoupX()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotSoupX"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotSoupX}{}}}
-\subsection{Method \code{plotSoupX()}}{
-Plot the results from the SoupX estimations
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotSoupX(plot.df = self$soupx$plot.df)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{plot.df}}{data.frame SoupX estimations (default = self$soupx$plot.df)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+\subsection{\code{CRMetrics$plotSoupX()}}{
+  Plot the results from the SoupX estimations
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotSoupX(plot.df = self$soupx$plot.df)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{plot.df}}{data.frame SoupX estimations (default = self$soupx$plot.df)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$runSoupX()
 crm$plotSoupX()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-plotCbCells"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-plotCbCells}{}}}
-\subsection{Method \code{plotCbCells()}}{
-Plot CellBender cell estimations against the estimated cell numbers from Cell Ranger
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$plotCbCells(
+\subsection{\code{CRMetrics$plotCbCells()}}{
+  Plot CellBender cell estimations against the estimated cell numbers from Cell Ranger
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$plotCbCells(
   data.path = self$data.path,
   samples = self$metadata$sample,
   technology = self$technology,
   pal = self$pal
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) description}
-
-\item{\code{pal}}{character Plotting palette (default = self$pal)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A ggplot2 object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{technology}}{character applied single cell technology (default = c("10x", "10xflex", "10xmultiome", "parse")) description}
+      \item{\code{pal}}{character Plotting palette (default = self$pal)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A ggplot2 object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$prepareCellbender()
 crm$saveCellbenderScript()
 ## Run CellBender script
 crm$plotCbCells()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-addDoublets"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-addDoublets}{}}}
-\subsection{Method \code{addDoublets()}}{
-Add doublet results created from exported Python script
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$addDoublets(
+\subsection{\code{CRMetrics$addDoublets()}}{
+  Add doublet results created from exported Python script
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$addDoublets(
   method = c("scrublet", "doubletdetection"),
   data.path = self$data.path,
   samples = self$metadata$sample,
   cms = self$cms,
   verbose = self$verbose
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{method}}{character Which method to use, either \code{scrublet} or \code{doubletdetection} (default is both).}
-
-\item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
-
-\item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
-
-\item{\code{cms}}{list List containing the count matrices (default = self$cms).}
-
-\item{\code{verbose}}{boolean Print progress (default = self$verbose)}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-List of doublet results
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-crm <- CRMetrics$new(data.path = "/path/to/count/data/")
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{method}}{character Which method to use, either \code{scrublet} or \code{doubletdetection} (default is both).}
+      \item{\code{data.path}}{character Path to Cell Ranger outputs (default = self$data.path)}
+      \item{\code{samples}}{character Sample names to include (default = self$metadata$sample)}
+      \item{\code{cms}}{list List containing the count matrices (default = self$cms).}
+      \item{\code{verbose}}{boolean Print progress (default = self$verbose)}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    List of doublet results
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{crm <- CRMetrics$new(data.path = "/path/to/count/data/")
 crm$detectDoublets(export = TRUE)
 ## Run Python script
 crm$addDoublets()
 }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
 
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CRMetrics-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-CRMetrics-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CRMetrics$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{CRMetrics$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{CRMetrics$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }
